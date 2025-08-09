@@ -16,21 +16,28 @@
   </head>
 <body>
     <div class="container">
-        <header class="app-header">
-            <h1>Sudoku</h1>
-            <div class="header-actions">
-                <button id="daily-icon-btn" class="icon-btn badged" title="Daily">
-                    📅
-                    <span id="daily-badge" class="badge-mini">Daily</span>
-                </button>
-                <button id="new-game-btn" class="icon-btn" title="New Game">🔄</button>
-                <button id="undo-btn" class="icon-btn" title="Undo">↶</button>
-                <button id="redo-btn" class="icon-btn" title="Redo">↷</button>
-                <button id="hint-btn" class="icon-btn" title="Hint">💡</button>
-                <button id="notes-toggle" class="icon-btn" title="Notes">✎</button>
-                <button id="pause-btn" class="icon-btn" title="Pause">⏸</button>
-                <button id="menu-btn" class="icon-btn" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
-                <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
+        <header>
+            <div class="rail app-header">
+                <div class="header-left">
+                    <h1>Sudoku</h1>
+                </div>
+                <div class="header-right">
+                    <div class="newgame-group">
+                        <button id="new-game-btn" class="icon-btn" title="New Game">🔄</button>
+                        <div class="menu-wrap">
+                          <button id="newgame-dropdown" class="icon-btn caret-btn" title="Change difficulty">▾</button>
+                          <div id="newgame-popover" class="popover-menu" role="menu" style="display:none;">
+                            <button class="popover-item" data-diff="easy">Easy</button>
+                            <button class="popover-item" data-diff="medium">Medium</button>
+                            <button class="popover-item" data-diff="hard">Hard</button>
+                            <button class="popover-item" data-diff="expert">Expert</button>
+                          </div>
+                        </div>
+                    </div>
+                    <button id="daily-icon-btn" class="icon-btn badged" title="Daily">📅<span id="daily-badge" class="badge-mini">Daily</span></button>
+                    <div class="menu-wrap">
+                        <button id="menu-btn" class="icon-btn" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+                        <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
                     <button id="menu-check" class="popover-item" role="menuitem">Check</button>
                     <button id="menu-solve" class="popover-item" role="menuitem">Solve</button>
                     <button id="menu-clear" class="popover-item" role="menuitem">Clear All</button>
@@ -39,27 +46,25 @@
                     <button id="menu-stats" class="popover-item" role="menuitem">Stats</button>
                     <hr/>
                     <button id="menu-settings" class="popover-item" role="menuitem">Settings</button>
-                    <button id="menu-help" class="popover-item" role="menuitem">Help</button>
+                        <button id="menu-help" class="popover-item" role="menuitem">Help</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
 
         <main>
-            <div class="game-info">
-                <div class="difficulty-selector">
-                    <label for="difficulty">Difficulty:</label>
-                    <select id="difficulty" class="difficulty-select">
-                        <option value="easy">Easy</option>
-                        <option value="medium">Medium</option>
-                        <option value="hard">Hard</option>
-                        <option value="expert">Expert</option>
-                    </select>
-                    <span id="daily-diff-inline" class="badge" style="display:none;"></span>
+            <div class="rail controls-strip">
+                <div class="controls-left">
+                    <div class="difficulty-display">Difficulty: <span id="difficulty-label">Medium</span></div>
                 </div>
-                <div class="timer">
-                    <span id="time">00:00</span>
+                <button id="timer-toggle" class="timer timer-btn" title="Pause/Resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
+                <div class="controls-right">
+                    <button id="hint-btn" class="icon-btn" title="Hint">💡</button>
+                    <button id="notes-toggle" class="icon-btn" title="Notes">✎</button>
+                    <button id="undo-btn" class="icon-btn" title="Undo">↶</button>
+                    <button id="redo-btn" class="icon-btn" title="Redo">↷</button>
                 </div>
-                
             </div>
 
             <div class="sudoku-board">

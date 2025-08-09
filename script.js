@@ -38,14 +38,16 @@ class SudokuGame {
         try {
             const saved = localStorage.getItem('sudoku-last-difficulty');
             if (saved) {
-                const sel = document.getElementById('difficulty');
-                if (sel) sel.value = saved;
+                const label = document.getElementById('difficulty-label');
+                if (label) label.textContent = saved[0].toUpperCase() + saved.slice(1);
                 this.generatePuzzle(saved);
             } else {
                 this.generatePuzzle('medium');
+                const label = document.getElementById('difficulty-label'); if (label) label.textContent = 'Medium';
             }
         } catch {
             this.generatePuzzle('medium');
+            const label = document.getElementById('difficulty-label'); if (label) label.textContent = 'Medium';
         }
         this.startTimer();
         this.updateDisplay();
@@ -59,7 +61,7 @@ class SudokuGame {
             // available width (in px)
             const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
             // Container paddings/margins are inside .container; give the board some side breathing room
-            const maxBoardWidth = Math.min(560, Math.max(300, vw - 32));
+            const maxBoardWidth = Math.min(520, Math.max(300, vw - 28));
             // Choose the largest integer cell size that fits (account for 8 gaps of 1px)
             const raw = Math.floor((maxBoardWidth - 8) / 9);
             const cellSize = Math.max(34, Math.min(60, raw));
@@ -759,8 +761,11 @@ class SudokuGame {
     newGame() {
         // Ensure we return to normal mode from Daily
         this.setDailyUiState && this.setDailyUiState(false);
-        const diffSelectEl = document.getElementById('difficulty');
-        const difficulty = diffSelectEl ? diffSelectEl.value : 'medium';
+        let difficulty = 'medium';
+        try {
+            const saved = localStorage.getItem('sudoku-last-difficulty');
+            if (saved) difficulty = saved;
+        } catch {}
         // Remember last chosen difficulty
         try { localStorage.setItem('sudoku-last-difficulty', difficulty); } catch {}
         this.isGameComplete = false;
@@ -783,6 +788,7 @@ class SudokuGame {
         });
 
         this.resetMistakes();
+        const label = document.getElementById('difficulty-label'); if (label) label.textContent = difficulty[0].toUpperCase() + difficulty.slice(1);
     }
 
     getDailyDifficulty() {
@@ -931,7 +937,11 @@ class SudokuGame {
         const popover = document.getElementById('menu-popover');
         if (menuBtn && popover) {
             menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const open = popover.style.display === 'block';
+                // Close newgame popover if open
+                const ng = document.getElementById('newgame-popover');
+                if (ng) ng.style.display = 'none';
                 popover.style.display = open ? 'none' : 'block';
                 menuBtn.setAttribute('aria-expanded', (!open).toString());
             });
@@ -1113,6 +1123,45 @@ class SudokuGame {
                 this.checkGameComplete();
             }
         });
+
+        // New game dropdown and label handling
+        const newDropdownBtn = document.getElementById('newgame-dropdown');
+        const newPopover = document.getElementById('newgame-popover');
+        if (newDropdownBtn && newPopover) {
+            const toggleNewPopover = (e) => {
+                e.stopPropagation();
+                const open = newPopover.style.display === 'block';
+                // Close hamburger menu if open
+                const mp = document.getElementById('menu-popover');
+                if (mp) mp.style.display = 'none';
+                newPopover.style.display = open ? 'none' : 'block';
+            };
+            newDropdownBtn.addEventListener('click', toggleNewPopover);
+            // Also open when clicking New Game label if desired
+            // document.getElementById('new-game-btn')?.addEventListener('contextmenu', toggleNewPopover);
+            newPopover.addEventListener('click', (e) => { e.stopPropagation(); });
+            newPopover.querySelectorAll('[data-diff]').forEach(item => {
+                item.addEventListener('click', () => {
+                    const diff = item.getAttribute('data-diff');
+                    try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
+                    const label = document.getElementById('difficulty-label'); if (label) label.textContent = diff[0].toUpperCase() + diff.slice(1);
+                    newPopover.style.display = 'none';
+                    this.setDailyUiState && this.setDailyUiState(false);
+                    this.stopTimer();
+                    this.generatePuzzle(diff);
+                    this.startTimer();
+                    this.updateDisplay();
+                });
+            });
+            document.addEventListener('click', (e) => {
+                const wrap = newDropdownBtn.closest('.menu-wrap') || newDropdownBtn;
+                if (!wrap.contains(e.target)) newPopover.style.display = 'none';
+            });
+        }
+
+        // Clicking timer toggles pause
+        const timerBtn = document.getElementById('timer-toggle');
+        if (timerBtn) timerBtn.addEventListener('click', () => this.togglePause());
     }
 
     // ----- Optional helpers wired by UI buttons -----
