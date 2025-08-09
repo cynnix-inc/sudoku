@@ -32,8 +32,8 @@ class SudokuGame {
         this._notesHoldWas = null;
         this._notesHoldTimer = null;
 
-        // Mistakes control
-        this.mistakesEnabled = false;
+        // Mistakes control (default to limited hearts until settings are loaded)
+        this.mistakesEnabled = true;
         this.mistakeLimit = 3;
         this.mistakesCount = 0;
         this.lastWrongValues = Array(9).fill().map(() => Array(9).fill(null));
@@ -43,6 +43,7 @@ class SudokuGame {
         this.setupEventListeners();
         // Try to resume saved progress and settings
         this.resumeSettings && this.resumeSettings();
+        this.renderHealthBar();
         this.resumeFromStorage && this.resumeFromStorage();
 
         // Seed calendar and daily state
@@ -279,6 +280,17 @@ class SudokuGame {
     }
 
     generateDaily(difficulty) {
+        // Ensure any previous Game Over or Pause overlays are cleared when starting Daily
+        this.isGameComplete = false;
+        this.isGameOver = false;
+        const go = document.getElementById('gameover-overlay');
+        if (go) go.style.display = 'none';
+        const po = document.getElementById('pause-overlay');
+        if (po) po.style.display = 'none';
+        this.lockedNumber = null;
+        document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
+        if (this.selectedCell) { this.selectedCell.classList.remove('selected'); this.selectedCell = null; }
+        document.querySelectorAll('.cell.highlighted').forEach(cell => cell.classList.remove('highlighted'));
         const key = this.getUtcDateKey();
         const storeKey = `sudoku-daily-${key}`;
         const cached = localStorage.getItem(storeKey);
@@ -353,6 +365,17 @@ class SudokuGame {
 
     // Generate or load daily by specific UTC date key
     loadDailyByKey(key, difficulty) {
+        // Ensure any previous Game Over or Pause overlays are cleared when loading a Daily
+        this.isGameComplete = false;
+        this.isGameOver = false;
+        const go = document.getElementById('gameover-overlay');
+        if (go) go.style.display = 'none';
+        const po = document.getElementById('pause-overlay');
+        if (po) po.style.display = 'none';
+        this.lockedNumber = null;
+        document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
+        if (this.selectedCell) { this.selectedCell.classList.remove('selected'); this.selectedCell = null; }
+        document.querySelectorAll('.cell.highlighted').forEach(cell => cell.classList.remove('highlighted'));
         const storeKey = `sudoku-daily-${key}`;
         const cached = localStorage.getItem(storeKey);
         if (cached) {
@@ -417,11 +440,59 @@ class SudokuGame {
     }
 
     getDifficultyForDateKey(key) {
-        // Map weekday to difficulty by UTC weekday for the provided key
+        // Build a weekly varied pattern based on the week's seed
+        const weekSeed = this.getWeekSeedFromDateKey(key);
+        const pattern = this.buildWeeklyPattern(weekSeed);
         const dt = this.parseUtcKeyToDate(key);
-        const day = dt.getUTCDay();
-        const map = ['expert','easy','medium','medium','hard','hard','expert'];
-        return map[day] || 'medium';
+        const day = dt.getUTCDay(); // 0..6, Sunday..Saturday
+        return pattern[day] || 'medium';
+    }
+
+    getWeekSeedFromDateKey(key) {
+        // Anchor seed: the Sunday of this UTC week
+        const dt = this.parseUtcKeyToDate(key);
+        const dow = dt.getUTCDay();
+        const sunday = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate() - dow));
+        return this.getUtcDateKey(sunday);
+    }
+
+    buildWeeklyPattern(weekSeed) {
+        const rng = this.createSeededRng('W:' + weekSeed);
+        // Choose one of a few mixes to vary counts weekly
+        const mixes = [
+            { easy: 2, medium: 3, hard: 1, expert: 1 },
+            { easy: 2, medium: 2, hard: 2, expert: 1 },
+            { easy: 1, medium: 3, hard: 2, expert: 1 },
+            { easy: 2, medium: 1, hard: 3, expert: 1 },
+        ];
+        const mix = mixes[Math.floor(rng() * mixes.length)];
+        const bag = [];
+        Object.entries(mix).forEach(([k, n]) => { for (let i = 0; i < n; i++) bag.push(k); });
+        while (bag.length < 7) bag.push('medium');
+        if (bag.length > 7) bag.length = 7;
+        for (let i = bag.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            [bag[i], bag[j]] = [bag[j], bag[i]];
+        }
+        // Light bias: if a harder puzzle is early and easier late, swap them
+        if (rng() < 0.5) {
+            const early = Math.floor(rng() * 3); // 0..2
+            const late = 4 + Math.floor(rng() * 3); // 4..6
+            if (this.rankDifficulty(bag[early]) > this.rankDifficulty(bag[late])) {
+                [bag[early], bag[late]] = [bag[late], bag[early]];
+            }
+        }
+        return bag; // Sunday..Saturday
+    }
+
+    rankDifficulty(d) {
+        switch (d) {
+            case 'easy': return 0;
+            case 'medium': return 1;
+            case 'hard': return 2;
+            case 'expert': return 3;
+            default: return 1;
+        }
     }
 
     createSeededRng(seedString) {
@@ -782,6 +853,8 @@ class SudokuGame {
         if (typeof this.recomputeCandidatesForPeers === 'function' && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
             this.recomputeCandidatesForPeers(row, col);
         }
+        // Update availability of numbers on the pad
+        this.updateNumberPadAvailability();
     }
 
     undo() {
@@ -879,6 +952,7 @@ class SudokuGame {
             }
         }
         this.highlightSameNumbers();
+        this.updateNumberPadAvailability();
     }
 
     highlightSameNumbers() {
@@ -897,6 +971,29 @@ class SudokuGame {
                 }
             }
         }
+    }
+
+    updateNumberPadAvailability() {
+        // Compute remaining counts for digits 1..9
+        const remaining = Array(10).fill(9);
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                const v = this.board[r][c];
+                if (v >= 1 && v <= 9) remaining[v] -= 1;
+            }
+        }
+        document.querySelectorAll('.number-btn').forEach(btn => {
+            const n = parseInt(btn.dataset.number);
+            if (n >= 1 && n <= 9) {
+                const done = remaining[n] <= 0;
+                btn.classList.toggle('disabled', done);
+                btn.disabled = done;
+                if (done && this.lockedNumber === n) {
+                    this.lockedNumber = null;
+                    btn.classList.remove('active');
+                }
+            }
+        });
     }
 
     checkGameComplete() {
@@ -1009,10 +1106,9 @@ class SudokuGame {
     }
 
     getDailyDifficulty() {
-        // Map weekday to difficulty (Mon..Sun: 1..7)
-        const day = new Date().getUTCDay(); // 0=Sun..6=Sat
-        const map = ['expert','easy','medium','medium','hard','hard','expert'];
-        return map[day] || 'medium';
+        // Derive today's difficulty from a varied weekly pattern
+        const key = this.getUtcDateKey();
+        return this.getDifficultyForDateKey(key);
     }
 
     openDailyModal() {
@@ -1299,6 +1395,24 @@ class SudokuGame {
 
         const settingsClose = document.getElementById('settings-close');
         if (settingsClose) settingsClose.addEventListener('click', () => { document.getElementById('settings-modal').style.display = 'none'; });
+        const settingsReset = document.getElementById('settings-reset');
+        if (settingsReset) settingsReset.addEventListener('click', () => {
+            if (!confirm('Reset all settings to defaults?')) return;
+            if (!confirm('Are you sure?')) return;
+            try { localStorage.removeItem('sudoku-settings'); } catch {}
+            // Defaults
+            const ac = document.getElementById('auto-candidates-toggle'); if (ac) ac.checked = false;
+            const aa = document.getElementById('auto-advance-toggle'); if (aa) aa.checked = false;
+            const ml = document.getElementById('mistakes-limit'); const mlv = document.getElementById('mistakes-limit-value');
+            if (ml && mlv) { ml.value = '3'; mlv.textContent = '3'; this.mistakesEnabled = true; this.mistakeLimit = 3; this.resetMistakes(); this.renderHealthBar(); }
+            const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = false;
+            const weekSeg = document.getElementById('weekstart-segment'); if (weekSeg) { weekSeg.querySelectorAll('.segment').forEach(seg => seg.setAttribute('aria-checked', seg.dataset.week === 'sunday' ? 'true' : 'false')); }
+            document.querySelectorAll('#accent-swatches .swatch').forEach(b => b.setAttribute('aria-checked', b.dataset.accent === 'indigo' ? 'true' : 'false'));
+            // Apply UI
+            this.persistSettings && this.persistSettings();
+            this.resumeSettings && this.resumeSettings();
+            this._showSavedToast && this._showSavedToast();
+        });
         const helpClose = document.getElementById('help-close');
         if (helpClose) helpClose.addEventListener('click', () => { document.getElementById('help-modal').style.display = 'none'; });
         const dailyClose = document.getElementById('daily-close');
@@ -1338,50 +1452,86 @@ class SudokuGame {
         // Settings: mistakes limit slider
         const mistakesSlider = document.getElementById('mistakes-limit');
         const mistakesValue = document.getElementById('mistakes-limit-value');
-        if (mistakesSlider && mistakesValue) {
+        const mistakesPill = document.getElementById('mistakes-limit-pill');
+        const mistakesPreview = document.getElementById('mistakes-preview');
+        if (mistakesSlider) {
             const sync = () => {
                 const v = parseInt(mistakesSlider.value);
                 if (v >= 11) { // unlimited/off
-                    mistakesValue.textContent = 'Unlimited';
+                    if (mistakesValue) mistakesValue.textContent = 'Unlimited';
+                    if (mistakesPill) mistakesPill.textContent = '∞';
+                    if (mistakesPreview) mistakesPreview.textContent = 'Hearts: ∞';
                     this.mistakesEnabled = false;
                     this.mistakeLimit = Infinity;
                 } else {
-                    mistakesValue.textContent = String(v);
+                    if (mistakesValue) mistakesValue.textContent = String(v);
+                    if (mistakesPill) mistakesPill.textContent = String(v);
+                    if (mistakesPreview) mistakesPreview.textContent = `Hearts: ×${v}`;
                     this.mistakesEnabled = true;
                     this.mistakeLimit = v;
                 }
             };
-            mistakesSlider.addEventListener('input', sync);
+            mistakesSlider.addEventListener('input', () => { sync(); this._showSavedToast && this._showSavedToast(); });
             mistakesSlider.addEventListener('change', () => { this.resetMistakes(); this.persistSettings && this.persistSettings(); });
             // initialize display
             sync();
         }
-        // Settings: theme + accent + weekstart + auto-advance
+        // Settings: theme + accent swatches + weekstart segmented + auto-advance
         const themeToggle = document.getElementById('theme-dark-toggle');
-        const accentSelect = document.getElementById('accent-select');
-        const weekstartSelect = document.getElementById('weekstart-select');
         const autoAdvanceToggle = document.getElementById('auto-advance-toggle');
-        const applyTheme = () => {
-            document.documentElement.dataset.theme = themeToggle && themeToggle.checked ? 'dark' : 'light';
-        };
-        const applyAccent = () => {
-            const v = (accentSelect && accentSelect.value) || 'indigo';
-            // Map accents to HSLs; update CSS variables at root
-            const map = {
-                indigo: ['#6366f1', '#5558ee'],
-                teal: ['#14b8a6', '#0ea5a3'],
-                rose: ['#f43f5e', '#e11d48'],
-            };
-            const [a1, a2] = map[v] || map.indigo;
+        const applyTheme = () => { document.documentElement.dataset.theme = themeToggle && themeToggle.checked ? 'dark' : 'light'; };
+        const applyAccent = (v) => {
+            const color = v || (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo';
+            const map = { indigo: ['#6366f1', '#5558ee'], teal: ['#14b8a6', '#0ea5a3'], rose: ['#f43f5e', '#e11d48'] };
+            const [a1, a2] = map[color] || map.indigo;
             document.documentElement.style.setProperty('--accent', a1);
             document.documentElement.style.setProperty('--accent-600', a2);
         };
         if (themeToggle) themeToggle.addEventListener('change', () => { applyTheme(); this.persistSettings && this.persistSettings(); });
-        if (accentSelect) accentSelect.addEventListener('change', () => { applyAccent(); this.persistSettings && this.persistSettings(); });
-        if (weekstartSelect) weekstartSelect.addEventListener('change', () => { this.persistSettings && this.persistSettings(); this.refreshCalendarHeaders && this.refreshCalendarHeaders(); this.renderCalendar && this.renderCalendar(); });
         if (autoAdvanceToggle) autoAdvanceToggle.addEventListener('change', () => { this.persistSettings && this.persistSettings(); });
+        // Accent swatches
+        const swatches = document.querySelectorAll('#accent-swatches .swatch');
+        swatches.forEach(btn => {
+            btn.addEventListener('click', () => {
+                swatches.forEach(b => b.setAttribute('aria-checked','false'));
+                btn.setAttribute('aria-checked','true');
+                applyAccent(btn.dataset.accent);
+                this.persistSettings && this.persistSettings();
+            });
+        });
+        // Weekstart slider toggle (false=sunday, true=monday)
+        const weekToggle = document.getElementById('weekstart-toggle');
+        if (weekToggle) {
+            const setChecked = (val) => { weekToggle.setAttribute('aria-checked', val ? 'true' : 'false'); };
+            weekToggle.addEventListener('click', () => {
+                const cur = weekToggle.getAttribute('aria-checked') === 'true';
+                setChecked(!cur);
+                this.persistSettings && this.persistSettings();
+                this.refreshCalendarHeaders && this.refreshCalendarHeaders();
+                this.renderCalendar && this.renderCalendar();
+                this._showSavedToast && this._showSavedToast();
+            });
+        }
         // Initialize from persisted settings if present
         applyTheme(); applyAccent();
+        // Settings saved toast helper
+        const savedToast = document.getElementById('settings-saved');
+        this._showSavedToast = () => {
+            if (!savedToast) return;
+            savedToast.classList.add('show');
+            clearTimeout(this._savedToastTimer);
+            this._savedToastTimer = setTimeout(() => savedToast.classList.remove('show'), 900);
+        };
+        // Hook toast on relevant changes
+        const savedHooks = [
+            document.getElementById('auto-candidates-toggle'),
+            document.getElementById('auto-advance-toggle'),
+            document.getElementById('theme-dark-toggle'),
+            document.getElementById('mistakes-limit')
+        ];
+        savedHooks.forEach(el => { if (el) el.addEventListener('change', () => this._showSavedToast()); });
+        swatches.forEach(b => b.addEventListener('click', () => this._showSavedToast()));
+        if (weekSeg) weekSeg.querySelectorAll('.segment').forEach(s => s.addEventListener('click', () => this._showSavedToast()));
         const statsOpen = document.getElementById('stats-btn');
         if (statsOpen && this.showStats) statsOpen.addEventListener('click', () => this.showStats());
         const statsClose = document.getElementById('stats-close');
@@ -1402,24 +1552,40 @@ class SudokuGame {
                         this.checkGameComplete();
                     }
                 }
-                // Lock number mode: clicking a number locks it for repeated placement
-                const isAlreadyActive = btn.classList.contains('active');
-                document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
-                if (isAlreadyActive) {
-                    // Toggle off
-                    this.lockedNumber = null;
-                } else {
-                    if (number > 0) {
-                        this.lockedNumber = number;
-                        btn.classList.add('active');
+                // Lock number mode depending on toggle
+                const lockToggle = document.getElementById('pad-lock-toggle');
+                const lockEnabled = !lockToggle || lockToggle.getAttribute('aria-pressed') === 'true';
+                if (lockEnabled) {
+                    // locking behavior (sticky)
+                    const isAlreadyActive = btn.classList.contains('active');
+                    document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
+                    if (isAlreadyActive) {
+                        this.lockedNumber = null;
                     } else {
-                        this.lockedNumber = 0; // erase mode
-                        btn.classList.add('active');
+                        if (number > 0) { this.lockedNumber = number; btn.classList.add('active'); }
+                        else { this.lockedNumber = 0; btn.classList.add('active'); }
                     }
+                } else {
+                    // single-shot behavior (no sticky lock)
+                    this.lockedNumber = null;
+                    document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
                 }
                 this.syncNotesBadgeState();
             });
         });
+        // Lock toggle behavior
+        const lockToggle = document.getElementById('pad-lock-toggle');
+        if (lockToggle) {
+            lockToggle.addEventListener('click', () => {
+                const pressed = lockToggle.getAttribute('aria-pressed') === 'true';
+                lockToggle.setAttribute('aria-pressed', (!pressed).toString());
+                if (!pressed === false) {
+                    // when turning off, clear any active lock highlight
+                    this.lockedNumber = null;
+                    document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
+                }
+            });
+        }
         
         // Modal buttons
         document.getElementById('modal-new-game').addEventListener('click', () => {
@@ -1519,11 +1685,23 @@ class SudokuGame {
                     // Update the icons inside the popover to match new colorful style
                     // (no-op here; icons are styled via CSS)
                     newPopover.hidden = true; newPopover.style.display = 'none';
+                    // Reset any Game Over or Pause state when starting via difficulty picker
+                    this.isGameComplete = false;
+                    this.isGameOver = false;
+                    const go = document.getElementById('gameover-overlay');
+                    if (go) go.style.display = 'none';
+                    const po = document.getElementById('pause-overlay');
+                    if (po) po.style.display = 'none';
+                    this.lockedNumber = null;
+                    document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
+                    if (this.selectedCell) { this.selectedCell.classList.remove('selected'); this.selectedCell = null; }
+                    document.querySelectorAll('.cell.highlighted').forEach(cell => cell.classList.remove('highlighted'));
                     this.setDailyUiState && this.setDailyUiState(false);
                     this.stopTimer();
                     this.generatePuzzle(diff);
                     this.startTimer();
                     this.updateDisplay();
+                    this.clearStatus && this.clearStatus();
                 });
             });
             document.addEventListener('click', (e) => {
@@ -1666,7 +1844,7 @@ class SudokuGame {
 
         // Determine first weekday offset and number of days
         const baseFirstDow = new Date(ref.getFullYear(), ref.getMonth(), 1).getDay(); // 0..6 local, Sun=0
-        const weekstart = (document.getElementById('weekstart-select')?.value) || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
+        const weekstart = ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
         const startOffset = weekstart === 'monday' ? ((baseFirstDow + 6) % 7) : baseFirstDow;
         const daysInMonth = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
 
@@ -1746,7 +1924,7 @@ class SudokuGame {
     refreshCalendarHeaders() {
         const wrap = document.getElementById('calendar-weekdays');
         if (!wrap) return;
-        const weekstart = (document.getElementById('weekstart-select')?.value) || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
+        const weekstart = ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
         const days = weekstart === 'monday' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
         wrap.innerHTML = days.map(d => `<div>${d}</div>`).join('');
     }
@@ -1878,8 +2056,8 @@ class SudokuGame {
             mistakesEnabled: this.mistakesEnabled,
             mistakeLimit: this.mistakeLimit === Infinity ? 11 : this.mistakeLimit,
             themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
-            weekstart: document.getElementById('weekstart-select')?.value || 'sunday',
-            accent: document.getElementById('accent-select')?.value || 'indigo',
+            weekstart: ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || 'sunday',
+            accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
         };
         try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
     }
@@ -1904,14 +2082,19 @@ class SudokuGame {
             const ac = document.getElementById('auto-candidates-toggle'); if (ac) ac.checked = !!s.autoCandidates;
             const aa = document.getElementById('auto-advance-toggle'); if (aa) aa.checked = !!s.autoAdvance;
             const ml = document.getElementById('mistakes-limit'); const mlv = document.getElementById('mistakes-limit-value');
-            if (ml && mlv && typeof s.mistakeLimit === 'number') {
+            if (ml && typeof s.mistakeLimit === 'number') {
                 ml.value = s.mistakeLimit;
-                if (s.mistakeLimit >= 11) { mlv.textContent = 'Unlimited'; this.mistakeLimit = Infinity; this.mistakesEnabled = false; }
-                else { mlv.textContent = s.mistakeLimit; this.mistakeLimit = s.mistakeLimit; this.mistakesEnabled = true; }
+                if (mlv) mlv.textContent = s.mistakeLimit >= 11 ? 'Unlimited' : String(s.mistakeLimit);
+                this.mistakeLimit = s.mistakeLimit >= 11 ? Infinity : s.mistakeLimit;
+                this.mistakesEnabled = !(s.mistakeLimit >= 11);
             }
             const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = !!s.themeDark;
-            const weekstartSelect = document.getElementById('weekstart-select'); if (weekstartSelect && s.weekstart) weekstartSelect.value = s.weekstart;
-            const accentSelect = document.getElementById('accent-select'); if (accentSelect && s.accent) accentSelect.value = s.accent;
+            const weekToggle = document.getElementById('weekstart-toggle');
+            if (weekToggle && s.weekstart) { weekToggle.setAttribute('aria-checked', s.weekstart === 'monday' ? 'true' : 'false'); }
+            const swatches = document.querySelectorAll('#accent-swatches .swatch');
+            if (swatches && s.accent) {
+                swatches.forEach(b => b.setAttribute('aria-checked', b.dataset.accent === s.accent ? 'true' : 'false'));
+            }
             // Apply values to document
             document.documentElement.dataset.theme = s.themeDark ? 'dark' : 'light';
             if (s.accent) {
@@ -1924,6 +2107,8 @@ class SudokuGame {
                 // Ensure candidates are visible after restoring settings
                 this.recomputeAllCandidates();
             }
+            // Ensure hearts reflect restored settings
+            this.renderHealthBar();
             // Update calendar headers after loading settings
             this.refreshCalendarHeaders && this.refreshCalendarHeaders();
         } catch {}
@@ -1958,24 +2143,135 @@ class SudokuGame {
         const winRatio = totalCompleted > 0 ? Math.round((totalWins / totalCompleted) * 100) : 0;
         const fmt = (s) => typeof s === 'number' ? `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}` : '-';
         const dailyResults = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
-        const streak = localStorage.getItem('sudoku-daily-streak') || '0';
+        const streak = parseInt(localStorage.getItem('sudoku-daily-streak') || '0', 10);
         const dailyCount = Object.keys(dailyResults).length;
-        const rows = Object.keys(dailyResults).sort().reverse().slice(0, 10).map(k => {
+
+        // Recent list (max 10)
+        const recentKeys = Object.keys(dailyResults).sort().reverse().slice(0, 10);
+        const recentRows = recentKeys.map(k => {
             const r = dailyResults[k];
-            return `<div>${k.slice(0,4)}-${k.slice(4,6)}-${k.slice(6)} (${r.difficulty}): ${fmt(r.elapsed)} | mistakes: ${r.mistakes}</div>`;
+            const label = `${k.slice(0,4)}-${k.slice(4,6)}-${k.slice(6)}`;
+            const diff = r.difficulty || this.getDifficultyForDateKey(k);
+            const icon = this.getDifficultyIcon(diff);
+            const time = fmt(r.elapsed);
+            const mistakes = (typeof r.mistakes === 'number') ? r.mistakes : '-';
+            return `<button class="table-row" data-key="${k}" aria-label="Open daily ${label}">
+                <span>${label}</span>
+                <span class="diff-chip diff-${diff}">${icon}</span>
+                <span>${time}</span>
+                <span>${mistakes}</span>
+            </button>`;
         }).join('');
+
+        // Mini chart buckets from recent (or all) daily results
+        const allKeys = Object.keys(dailyResults);
+        const sourceKeys = allKeys.length <= 10 ? allKeys : recentKeys;
+        const buckets = [0, 0, 0, 0]; // 0-5,5-10,10-15,15+
+        sourceKeys.forEach(k => {
+            const sec = (dailyResults[k] && typeof dailyResults[k].elapsed === 'number') ? dailyResults[k].elapsed : null;
+            if (sec == null) return;
+            if (sec < 5*60) buckets[0]++; else if (sec < 10*60) buckets[1]++; else if (sec < 15*60) buckets[2]++; else buckets[3]++;
+        });
+        const maxBucket = Math.max(1, ...buckets);
+        const bucketHeights = buckets.map(n => Math.round((n / maxBucket) * 100));
+
+        // Build UI
         content.innerHTML = `
-            <div>Total Played: ${totalCompleted} &nbsp;|&nbsp; Wins: ${totalWins} &nbsp;|&nbsp; Losses: ${totalLosses} &nbsp;|&nbsp; Win Ratio: ${winRatio}%</div>
-            <div>Best Times:
-              <div>Easy: ${fmt(best.easy)}</div>
-              <div>Medium: ${fmt(best.medium)}</div>
-              <div>Hard: ${fmt(best.hard)}</div>
-              <div>Expert: ${fmt(best.expert)}</div>
+            <div class="stat-grid">
+                <div class="stat-card"><div class="stat-value" id="stat-played">${totalCompleted}</div><div class="stat-label">Total Played</div></div>
+                <div class="stat-card"><div class="stat-value" id="stat-wins">${totalWins}</div><div class="stat-label">Wins</div></div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-winrate">${winRatio}%</div>
+                    <div class="progress"><div class="progress-bar" id="winrate-bar" style="width:0%"></div></div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+                <div class="stat-card"><div class="stat-value" id="stat-losses">${totalLosses}</div><div class="stat-label">Losses</div></div>
             </div>
-            <hr/>
-            <div>Daily: ${dailyCount} completed | Streak: ${streak}</div>
-            ${rows}
+
+            <div class="best-times" aria-label="Best times by difficulty">
+                <div class="best-row"><span class="diff-chip diff-easy">${this.getDifficultyIcon('easy')}</span><span>Easy</span><span class="time">${fmt(best.easy)}</span></div>
+                <div class="best-row"><span class="diff-chip diff-medium">${this.getDifficultyIcon('medium')}</span><span>Medium</span><span class="time">${fmt(best.medium)}</span></div>
+                <div class="best-row"><span class="diff-chip diff-hard">${this.getDifficultyIcon('hard')}</span><span>Hard</span><span class="time">${fmt(best.hard)}</span></div>
+                <div class="best-row"><span class="diff-chip diff-expert">${this.getDifficultyIcon('expert')}</span><span>Expert</span><span class="time">${fmt(best.expert)}</span></div>
+            </div>
+
+            <div class="streak-card stat-card ${streak > 0 ? 'streak-hot' : ''}" style="margin-bottom: 0.6rem">
+                <div class="stat-value">${streak > 0 ? '🔥 ' + streak : '0'}</div>
+                <div class="stat-label">Daily streak • ${dailyCount} completed</div>
+            </div>
+
+            <div class="chart" aria-label="Time distribution chart">
+                <div class="chart-title">Time distribution ${sourceKeys.length ? `(last ${sourceKeys.length})` : ''}</div>
+                <div class="chart-bars">
+                    <div class="bar" style="height:0%"><span>0–5m</span></div>
+                    <div class="bar" style="height:0%"><span>5–10m</span></div>
+                    <div class="bar" style="height:0%"><span>10–15m</span></div>
+                    <div class="bar" style="height:0%"><span>15m+</span></div>
+                </div>
+            </div>
+
+            <div class="stats-table" aria-label="Recent daily results">
+                <div class="table-head"><span>Date</span><span>Diff</span><span>Time</span><span>Mist.</span></div>
+                ${recentRows || `<div class="empty">No daily results yet. Play today’s Daily to get started!</div>`}
+            </div>
+
+            <div class="stats-actions"></div>
         `;
+
+        // Animate progress bar after insertion for smooth width transition
+        requestAnimationFrame(() => {
+            const bar = document.getElementById('winrate-bar');
+            if (bar) bar.style.width = `${winRatio}%`;
+        });
+
+        // Animate KPI count-up
+        const animateNumber = (el, to, suffix = '', duration = 600) => {
+            if (!el) return;
+            const start = performance.now();
+            const from = 0;
+            const step = (t) => {
+                const p = Math.min(1, (t - start) / duration);
+                const val = Math.round(from + (to - from) * p);
+                el.textContent = `${val}${suffix}`;
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        };
+        animateNumber(document.getElementById('stat-played'), totalCompleted);
+        animateNumber(document.getElementById('stat-wins'), totalWins);
+        animateNumber(document.getElementById('stat-losses'), totalLosses);
+        animateNumber(document.getElementById('stat-winrate'), winRatio, '%');
+
+        // Animate chart bars
+        const bars = content.querySelectorAll('.chart-bars .bar');
+        bucketHeights.forEach((h, i) => {
+            const b = bars[i]; if (b) requestAnimationFrame(() => { b.style.height = `${h}%`; });
+        });
+
+        // Wire row clicks to load daily
+        content.querySelectorAll('.table-row[data-key]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const k = btn.getAttribute('data-key');
+                const dff = this.getDifficultyForDateKey(k);
+                this.loadDailyByKey(k, dff);
+                modal.style.display = 'none';
+            });
+        });
+
+        // Actions
+        const resetBtn = document.getElementById('stats-reset');
+        if (resetBtn) resetBtn.addEventListener('click', () => {
+            if (!confirm('Reset all Sudoku stats (wins, losses, best times, daily results)?')) return;
+            if (!confirm('Are you sure? This cannot be undone.')) return;
+            try {
+                localStorage.removeItem('sudoku-stats');
+                localStorage.removeItem('sudoku-daily-results');
+                localStorage.removeItem('sudoku-daily-last');
+                localStorage.removeItem('sudoku-daily-streak');
+            } catch {}
+            this.showStats();
+        });
+
         modal.style.display = 'block';
     }
 

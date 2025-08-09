@@ -59,8 +59,8 @@
                     <div class="difficulty-display"><div id="mode-indicator" class="mode-indicator" aria-live="polite"></div></div>
                 </div>
                 <div class="controls-center">
-                    <button id="timer-toggle" class="timer timer-btn" title="Pause/Resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
                     <div id="health-bar" class="health-bar-stack" aria-label="Mistakes" aria-live="polite"></div>
+                    <button id="timer-toggle" class="timer timer-btn" title="Pause/Resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
                 </div>
                 <div class="controls-right">
                     <button id="hint-btn" class="icon-btn" title="Hint">💡</button>
@@ -77,16 +77,23 @@
             </div>
 
             <div class="number-pad">
-                <button class="number-btn" data-number="1">1</button>
-                <button class="number-btn" data-number="2">2</button>
-                <button class="number-btn" data-number="3">3</button>
-                <button class="number-btn" data-number="4">4</button>
-                <button class="number-btn" data-number="5">5</button>
-                <button class="number-btn" data-number="6">6</button>
-                <button class="number-btn" data-number="7">7</button>
-                <button class="number-btn" data-number="8">8</button>
-                <button class="number-btn" data-number="9">9</button>
-                <button class="number-btn clear-cell" data-number="0">Erase</button>
+                <div class="pad-numbers">
+                    <button class="number-btn" data-number="1">1</button>
+                    <button class="number-btn" data-number="2">2</button>
+                    <button class="number-btn" data-number="3">3</button>
+                    <button class="number-btn" data-number="4">4</button>
+                    <button class="number-btn" data-number="5">5</button>
+                    <button class="number-btn" data-number="6">6</button>
+                    <button class="number-btn" data-number="7">7</button>
+                    <button class="number-btn" data-number="8">8</button>
+                    <button class="number-btn" data-number="9">9</button>
+                </div>
+                <div class="pad-actions">
+                    <button id="pad-lock-toggle" class="pad-action-btn icon-btn" title="Toggle number lock" aria-pressed="true">🔒</button>
+                    <button class="pad-action-btn clear-cell" data-number="0" title="Erase" aria-label="Erase" id="pad-erase-btn">
+                        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16.24 3.56a2 2 0 0 1 2.83 0l1.37 1.37a2 2 0 0 1 0 2.83l-7.9 7.9a2 2 0 0 1-1.41.59H7.83a2 2 0 0 1-1.41-.59L3.56 13.4a2 2 0 0 1 0-2.83l7.9-7.01c.78-.69 1.96-.65 2.71.1l2.07 2.07.01-.01ZM7.17 14.66l1.76 1.76h3.3l7.9-7.9-1.37-1.37-1.95 1.73-2.12-2.12-7.52 6.68 0 .01z"/></svg>
+                    </button>
+                </div>
             </div>
 
             <div class="game-status">
@@ -113,42 +120,71 @@
             <div class="modal-buttons">
                 <button id="stats-close" class="btn btn-secondary">Close</button>
             </div>
+            <div class="modal-footer-minor">
+                <button id="stats-reset" class="link-danger" aria-label="Reset all stats">Reset Stats</button>
+            </div>
         </div>
     </div>
 
     <div id="settings-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content settings-modal-content">
             <h2>Settings</h2>
-            <div class="settings-group">
-                <label class="toggle-item"><input type="checkbox" id="auto-candidates-toggle"> Auto Candidates</label>
-                <label class="toggle-item"><input type="checkbox" id="auto-advance-toggle"> Auto-advance after keyboard entry</label>
-                <div class="field">
-                    <label for="mistakes-limit">Max mistakes: <span id="mistakes-limit-value">3</span></label>
-                    <input type="range" id="mistakes-limit" min="0" max="11" step="1" value="3" />
-                    <small class="hint">Drag to 11 for Unlimited (turns the limit off)</small>
-                         <small id="mistakes-daily-note" class="hint" style="display:none">Daily uses fixed mistake limits based on difficulty.</small>
+            <div id="settings-saved" class="save-toast" role="status" aria-live="polite">Saved ✓</div>
+            <div class="settings-form">
+                <div class="settings-section">
+                    <h3 class="section-title">Gameplay</h3>
+                    <div class="control-row">
+                        <span class="control-label">Auto Candidates</span>
+                        <label class="switch"><input type="checkbox" id="auto-candidates-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
+                    </div>
+                    <div class="control-row">
+                        <span class="control-label">Auto‑advance after keyboard entry</span>
+                        <label class="switch"><input type="checkbox" id="auto-advance-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
+                    </div>
+                    <div class="control-col">
+                        <div class="control-label">Max mistakes <span class="value-pill" id="mistakes-limit-pill">3</span><span id="mistakes-limit-value" style="display:none">3</span></div>
+                        <input type="range" id="mistakes-limit" min="0" max="11" step="1" value="3" />
+                        <div class="control-hints">
+                            <small class="hint">Drag to 11 for Unlimited (turns the limit off)</small>
+                            <small id="mistakes-daily-note" class="hint" style="display:none">Daily uses fixed mistake limits based on difficulty.</small>
+                            <small class="hint" id="mistakes-preview">Hearts: ×3</small>
+                        </div>
+                    </div>
                 </div>
-                <hr/>
-                <label class="toggle-item"><input type="checkbox" id="theme-dark-toggle"> Dark mode</label>
-                 <div class="field">
-                     <label for="weekstart-select">Week starts on</label>
-                     <select id="weekstart-select">
-                         <option value="sunday">Sunday</option>
-                         <option value="monday">Monday</option>
-                     </select>
-                 </div>
-                <div class="field">
-                    <label for="accent-select">Accent color</label>
-                    <select id="accent-select">
-                        <option value="indigo">Indigo</option>
-                        <option value="teal">Teal</option>
-                        <option value="rose">Rose</option>
-                    </select>
-                    <small class="hint">Applies to highlights and primary buttons</small>
+                <div class="settings-section">
+                    <h3 class="section-title">Appearance</h3>
+                    <div class="control-row">
+                        <span class="control-label">Dark mode</span>
+                        <label class="switch"><input type="checkbox" id="theme-dark-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
+                    </div>
+                    <div class="control-col">
+                        <div class="control-label">Accent color</div>
+                        <div id="accent-swatches" class="swatch-row" role="radiogroup" aria-label="Accent color">
+                            <button type="button" class="swatch swatch-indigo" data-accent="indigo" role="radio" aria-checked="true" aria-label="Indigo"></button>
+                            <button type="button" class="swatch swatch-teal" data-accent="teal" role="radio" aria-checked="false" aria-label="Teal"></button>
+                            <button type="button" class="swatch swatch-rose" data-accent="rose" role="radio" aria-checked="false" aria-label="Rose"></button>
+                        </div>
+                        <small class="hint">Used for highlights and primary buttons.</small>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3 class="section-title">Calendar</h3>
+                    <div class="control-col">
+                        <div class="control-label">Week starts on</div>
+                        <div id="weekstart-toggle" class="toggle-slider" role="switch" aria-checked="false" aria-label="Week start">
+                            <span class="toggle-label left">Sun</span>
+                            <span class="toggle-thumb" aria-hidden="true"></span>
+                            <span class="toggle-label right">Mon</span>
+                        </div>
+                        <small id="weekstart-hint" class="hint">Applies to the Daily calendar.</small>
+                    </div>
                 </div>
             </div>
             <div class="modal-buttons">
                 <button id="settings-close" class="btn btn-secondary">Close</button>
+            </div>
+            <div class="modal-footer-minor">
+                <button id="settings-reset" class="link-danger">Reset to defaults</button>
             </div>
         </div>
     </div>
