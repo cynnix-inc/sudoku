@@ -60,11 +60,11 @@ class SudokuGame {
             const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
             // Container paddings/margins are inside .container; give the board some side breathing room
             const maxBoardWidth = Math.min(560, Math.max(300, vw - 32));
-            // Choose the largest integer cell size that fits
-            const raw = Math.floor(maxBoardWidth / 9);
+            // Choose the largest integer cell size that fits (account for 8 gaps of 1px)
+            const raw = Math.floor((maxBoardWidth - 8) / 9);
             const cellSize = Math.max(34, Math.min(60, raw));
             // Compute exact board width for these integer tracks
-            const boardWidth = cellSize * 9; // grid lines drawn via overlay; no gap accounting
+            const boardWidth = cellSize * 9 + 8; // add 8px for 1px gaps between 9 columns
             boardElement.style.width = boardWidth + 'px';
             document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
         };

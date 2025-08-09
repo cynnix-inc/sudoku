@@ -183,8 +183,8 @@ h1 {
     position: relative;
     display: grid;
     grid-template-columns: repeat(9, var(--cell-size));
-    gap: 0;
-    background: white;
+    gap: 1px; /* crisp 1px grid lines via gaps */
+    background: var(--grid-color);
     border-radius: 10px;
     border: 2px solid #cbd5e1; /* clear perimeter */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* softer */
@@ -202,26 +202,19 @@ h1 {
     pointer-events: none;
     z-index: 2;
     border-radius: inherit;
-    /* light 1px grid lines */
+    /* Only draw 3x3 separators; 1px grid lines come from CSS grid gaps */
     background-image:
-        repeating-linear-gradient(to right, var(--grid-color) 0 1px, transparent 1px calc(var(--cell-size))),
-        repeating-linear-gradient(to bottom, var(--grid-color) 0 1px, transparent 1px calc(var(--cell-size))),
-        /* thick 3x3 separators */
         linear-gradient(var(--separator-color), var(--separator-color)),
         linear-gradient(var(--separator-color), var(--separator-color)),
         linear-gradient(var(--separator-color), var(--separator-color)),
         linear-gradient(var(--separator-color), var(--separator-color));
-    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+    background-repeat: no-repeat;
     background-position:
-        0 0,
-        0 0,
-        calc(var(--cell-size) * 3) 0,
-        calc(var(--cell-size) * 6) 0,
-        0 calc(var(--cell-size) * 3),
-        0 calc(var(--cell-size) * 6);
+        calc(var(--cell-size) * 3 + 2px) 0,
+        calc(var(--cell-size) * 6 + 4px) 0,
+        0 calc(var(--cell-size) * 3 + 2px),
+        0 calc(var(--cell-size) * 6 + 4px);
     background-size:
-        100% 100%,
-        100% 100%,
         var(--sep-thickness) 100%,
         var(--sep-thickness) 100%,
         100% var(--sep-thickness),
