@@ -1024,6 +1024,33 @@ class SudokuGame {
             // initialize display
             sync();
         }
+        // Settings: theme + compact + accent
+        const themeToggle = document.getElementById('theme-dark-toggle');
+        const compactToggle = document.getElementById('compact-toggle');
+        const accentSelect = document.getElementById('accent-select');
+        const applyTheme = () => {
+            document.documentElement.dataset.theme = themeToggle && themeToggle.checked ? 'dark' : 'light';
+        };
+        const applyCompact = () => {
+            document.documentElement.dataset.compact = compactToggle && compactToggle.checked ? '1' : '';
+        };
+        const applyAccent = () => {
+            const v = (accentSelect && accentSelect.value) || 'indigo';
+            // Map accents to HSLs; update CSS variables at root
+            const map = {
+                indigo: ['#6366f1', '#5558ee'],
+                teal: ['#14b8a6', '#0ea5a3'],
+                rose: ['#f43f5e', '#e11d48'],
+            };
+            const [a1, a2] = map[v] || map.indigo;
+            document.documentElement.style.setProperty('--accent', a1);
+            document.documentElement.style.setProperty('--accent-600', a2);
+        };
+        if (themeToggle) themeToggle.addEventListener('change', () => { applyTheme(); this.persistSettings && this.persistSettings(); });
+        if (compactToggle) compactToggle.addEventListener('change', () => { applyCompact(); this.persistSettings && this.persistSettings(); });
+        if (accentSelect) accentSelect.addEventListener('change', () => { applyAccent(); this.persistSettings && this.persistSettings(); });
+        // Initialize from persisted settings if present
+        applyTheme(); applyCompact(); applyAccent();
         const statsOpen = document.getElementById('stats-btn');
         if (statsOpen && this.showStats) statsOpen.addEventListener('click', () => this.showStats());
         const statsClose = document.getElementById('stats-close');
@@ -1162,6 +1189,9 @@ class SudokuGame {
             autoCandidates: !!(document.getElementById('auto-candidates-toggle')?.checked),
             mistakesEnabled: this.mistakesEnabled,
             mistakeLimit: this.mistakeLimit === Infinity ? 11 : this.mistakeLimit,
+            themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
+            compact: !!(document.getElementById('compact-toggle')?.checked),
+            accent: document.getElementById('accent-select')?.value || 'indigo',
         };
         try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
     }
@@ -1189,6 +1219,18 @@ class SudokuGame {
                 ml.value = s.mistakeLimit;
                 if (s.mistakeLimit >= 11) { mlv.textContent = 'Unlimited'; this.mistakeLimit = Infinity; this.mistakesEnabled = false; }
                 else { mlv.textContent = s.mistakeLimit; this.mistakeLimit = s.mistakeLimit; this.mistakesEnabled = true; }
+            }
+            const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = !!s.themeDark;
+            const compactToggle = document.getElementById('compact-toggle'); if (compactToggle) compactToggle.checked = !!s.compact;
+            const accentSelect = document.getElementById('accent-select'); if (accentSelect && s.accent) accentSelect.value = s.accent;
+            // Apply values to document
+            document.documentElement.dataset.theme = s.themeDark ? 'dark' : 'light';
+            document.documentElement.dataset.compact = s.compact ? '1' : '';
+            if (s.accent) {
+                const map = { indigo: ['#6366f1', '#5558ee'], teal: ['#14b8a6', '#0ea5a3'], rose: ['#f43f5e', '#e11d48'] };
+                const [a1, a2] = map[s.accent] || map.indigo;
+                document.documentElement.style.setProperty('--accent', a1);
+                document.documentElement.style.setProperty('--accent-600', a2);
             }
             if (s.autoCandidates) {
                 // Ensure candidates are visible after restoring settings
