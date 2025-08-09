@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#667eea">
+    <title>Sudoku Game</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      if('serviceWorker' in navigator){
+        window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js'));
+      }
+    </script>
+  </head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1>Sudoku</h1>
+            <div class="header-actions">
+                <button id="daily-icon-btn" class="icon-btn badged" title="Daily">
+                    📅
+                    <span id="daily-badge" class="badge-mini">Daily</span>
+                </button>
+                <button id="new-game-btn" class="icon-btn" title="New Game">🔄</button>
+                <button id="undo-btn" class="icon-btn" title="Undo">↶</button>
+                <button id="redo-btn" class="icon-btn" title="Redo">↷</button>
+                <button id="hint-btn" class="icon-btn" title="Hint">💡</button>
+                <button id="notes-toggle" class="icon-btn" title="Notes">✎</button>
+                <button id="pause-btn" class="icon-btn" title="Pause">⏸</button>
+                <button id="menu-btn" class="icon-btn" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+                <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
+                    <button id="menu-check" class="popover-item" role="menuitem">Check</button>
+                    <button id="menu-solve" class="popover-item" role="menuitem">Solve</button>
+                    <button id="menu-clear" class="popover-item" role="menuitem">Clear All</button>
+                    <hr/>
+                    <button id="menu-archive" class="popover-item" role="menuitem">Archive</button>
+                    <button id="menu-stats" class="popover-item" role="menuitem">Stats</button>
+                    <hr/>
+                    <button id="menu-settings" class="popover-item" role="menuitem">Settings</button>
+                    <button id="menu-help" class="popover-item" role="menuitem">Help</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="game-info">
+                <div class="difficulty-selector">
+                    <label for="difficulty">Difficulty:</label>
+                    <select id="difficulty" class="difficulty-select">
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                        <option value="expert">Expert</option>
+                    </select>
+                    <span id="daily-diff-inline" class="badge" style="display:none;"></span>
+                </div>
+                <div class="timer">
+                    <span id="time">00:00</span>
+                </div>
+                
+            </div>
+
+            <div class="sudoku-board">
+                <div id="board" class="board"></div>
+                <div id="pause-overlay" class="pause-overlay" style="display:none;">Paused</div>
+                <div id="gameover-overlay" class="pause-overlay" style="display:none;">Game Over</div>
+            </div>
+
+            <div class="number-pad">
+                <button class="number-btn" data-number="1">1</button>
+                <button class="number-btn" data-number="2">2</button>
+                <button class="number-btn" data-number="3">3</button>
+                <button class="number-btn" data-number="4">4</button>
+                <button class="number-btn" data-number="5">5</button>
+                <button class="number-btn" data-number="6">6</button>
+                <button class="number-btn" data-number="7">7</button>
+                <button class="number-btn" data-number="8">8</button>
+                <button class="number-btn" data-number="9">9</button>
+                <button class="number-btn clear-cell" data-number="0">Erase</button>
+            </div>
+
+            <div class="game-status">
+                <div id="status-message" class="status-message"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Game Complete!</h2>
+            <p id="modal-message">Congratulations! You've solved the puzzle!</p>
+            <div class="modal-buttons">
+                <button id="modal-new-game" class="btn btn-primary">New Game</button>
+                <button id="modal-close" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stats-modal" class="modal">
+        <div class="modal-content">
+            <h2>Stats</h2>
+            <div id="stats-content"></div>
+            <div class="modal-buttons">
+                <button id="stats-close" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <div class="settings-group">
+                <label class="toggle-item"><input type="checkbox" id="auto-candidates-toggle"> Auto Candidates</label>
+                <div class="field">
+                    <label for="mistakes-limit">Max mistakes: <span id="mistakes-limit-value">3</span></label>
+                    <input type="range" id="mistakes-limit" min="0" max="11" step="1" value="3" />
+                    <small class="hint">Drag to 11 for Unlimited (turns the limit off)</small>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="settings-close" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal">
+        <div class="modal-content">
+            <h2>How to play</h2>
+            <div class="help-content">
+                <p>Goal: Fill the grid so each row, column, and 3×3 box contains 1–9 with no repeats.</p>
+                <div class="help-grid">
+                    <div>
+                        <h4>Basics</h4>
+                        <ul>
+                            <li>Click a cell and type 1–9, or use the number pad.</li>
+                            <li>Erase with Delete/Backspace or Erase button.</li>
+                            <li>Use Notes (✎) to place small candidates.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Shortcuts</h4>
+                        <ul>
+                            <li>Undo/Redo: Ctrl+Z / Ctrl+Y</li>
+                            <li>Arrows: move selection</li>
+                            <li>0/Delete: erase</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="help-close" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="daily-modal" class="modal">
+        <div class="modal-content">
+            <h2>Daily Puzzle</h2>
+            <div class="daily-meta">
+                <div>Date: <span id="daily-date"></span></div>
+                <div>Difficulty: <span id="daily-diff" class="badge"></span></div>
+                <div>Next in: <span id="daily-modal-countdown"></span></div>
+            </div>
+            <div class="modal-buttons">
+                <button id="daily-start" class="btn btn-primary">Start</button>
+                <button id="daily-reroll" class="btn btn-secondary">Reroll (1/day)</button>
+                <button id="daily-close" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="archive-modal" class="modal">
+        <div class="modal-content">
+            <h2>Daily Archive</h2>
+            <div class="archive-list" id="archive-list"></div>
+            <div class="modal-buttons">
+                <button id="archive-close" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
