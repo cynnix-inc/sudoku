@@ -56,7 +56,7 @@
         <main>
             <div class="rail controls-strip">
                 <div class="controls-left">
-                    <div class="difficulty-display">Difficulty: <span id="difficulty-label">Medium</span></div>
+                    <div class="difficulty-display"><div id="mode-indicator" class="mode-indicator" aria-live="polite"></div></div>
                 </div>
                 <button id="timer-toggle" class="timer timer-btn" title="Pause/Resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
                 <div class="controls-right">
@@ -125,7 +125,13 @@
                 </div>
                 <hr/>
                 <label class="toggle-item"><input type="checkbox" id="theme-dark-toggle"> Dark mode</label>
-                <label class="toggle-item"><input type="checkbox" id="compact-toggle"> Compact layout</label>
+                 <div class="field">
+                     <label for="weekstart-select">Week starts on</label>
+                     <select id="weekstart-select">
+                         <option value="sunday">Sunday</option>
+                         <option value="monday">Monday</option>
+                     </select>
+                 </div>
                 <div class="field">
                     <label for="accent-select">Accent color</label>
                     <select id="accent-select">
@@ -187,6 +193,22 @@
             </div>
         </div>
     </div>
+
+     <div id="calendar-modal" class="modal">
+         <div class="modal-content calendar-modal-content">
+             <h2>Daily Calendar</h2>
+             <div class="calendar-header">
+                 <button id="calendar-prev" class="btn btn-secondary" title="Previous month">◀</button>
+                 <div id="calendar-month-label" class="calendar-month-label"></div>
+                 <button id="calendar-next" class="btn btn-secondary" title="Next month">▶</button>
+             </div>
+             <div id="calendar-weekdays" class="calendar-weekdays" aria-hidden="true"></div>
+             <div id="calendar-grid" class="calendar-grid" role="grid" aria-label="Daily calendar"></div>
+             <div class="modal-buttons">
+                 <button id="calendar-close" class="btn btn-secondary">Close</button>
+             </div>
+         </div>
+     </div>
 
     <div id="archive-modal" class="modal">
         <div class="modal-content">

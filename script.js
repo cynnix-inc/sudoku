@@ -29,6 +29,28 @@ class SudokuGame {
         // Try to resume saved progress and settings
         this.resumeSettings && this.resumeSettings();
         this.resumeFromStorage && this.resumeFromStorage();
+
+        // Seed calendar and daily state
+        this._calendarRefMonth = new Date();
+        this._activeDailyKey = null;
+    }
+    
+    updateModeIndicator({ type, difficulty, dateKey }) {
+        const host = document.getElementById('mode-indicator');
+        if (!host) return;
+        // Build pill with icon + label (for daily show date)
+        const cls = `mode-pill mode-${difficulty || 'medium'}`;
+        const icon = this.getDifficultyIcon(difficulty || 'medium');
+        if (type === 'daily' && dateKey) {
+            const d = this.parseUtcKeyToDate(dateKey);
+            const mon = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+            const day = String(d.getUTCDate()).padStart(2, '0');
+            const formatted = `${mon}-${day}`; // mmm-DD
+            host.innerHTML = `<span class="mode-label">Daily</span><span class="${cls}"><span class="icon">${icon}</span><span class="mode-date">${formatted}</span></span>`;
+        } else {
+            const label = (difficulty || 'medium');
+            host.innerHTML = `<span class="mode-label">Mode</span><span class="${cls}"><span class="icon">${icon}</span><span class="mode-date">${label[0].toUpperCase()+label.slice(1)}</span></span>`;
+        }
     }
 
     initializeGame() {
@@ -38,16 +60,15 @@ class SudokuGame {
         try {
             const saved = localStorage.getItem('sudoku-last-difficulty');
             if (saved) {
-                const label = document.getElementById('difficulty-label');
-                if (label) label.textContent = saved[0].toUpperCase() + saved.slice(1);
+                this.updateModeIndicator({ type: 'normal', difficulty: saved });
                 this.generatePuzzle(saved);
             } else {
                 this.generatePuzzle('medium');
-                const label = document.getElementById('difficulty-label'); if (label) label.textContent = 'Medium';
+                this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
             }
         } catch {
             this.generatePuzzle('medium');
-            const label = document.getElementById('difficulty-label'); if (label) label.textContent = 'Medium';
+            this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
         }
         this.startTimer();
         this.updateDisplay();
@@ -163,6 +184,13 @@ class SudokuGame {
         return `${y}${m}${d}`;
     }
 
+    parseUtcKeyToDate(key) {
+        const y = parseInt(key.slice(0,4));
+        const m = parseInt(key.slice(4,6)) - 1;
+        const d = parseInt(key.slice(6,8));
+        return new Date(Date.UTC(y, m, d));
+    }
+
     getNextUtcMidnight() {
         const now = new Date();
         const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
@@ -185,15 +213,7 @@ class SudokuGame {
     }
 
     setDailyUiState(isDaily, difficulty) {
-        const diffSelect = document.getElementById('difficulty');
-        const dailyInline = document.getElementById('daily-diff-inline');
-        if (isDaily) {
-            if (diffSelect) diffSelect.style.display = 'none';
-            if (dailyInline) { dailyInline.style.display = 'inline-block'; dailyInline.textContent = `Daily: ${difficulty[0].toUpperCase()+difficulty.slice(1)}`; }
-        } else {
-            if (diffSelect) diffSelect.style.display = '';
-            if (dailyInline) dailyInline.style.display = 'none';
-        }
+        // No-op in current UI; indicator handled by updateModeIndicator
     }
 
     generateDaily(difficulty) {
@@ -262,7 +282,81 @@ class SudokuGame {
         // Cache daily
         try { localStorage.setItem(storeKey, JSON.stringify({ board: this.board, solution: this.solution, difficulty })); } catch {}
         this.showStatus(`Generated Daily ${key} (${difficulty})`, 'info');
+        this._activeDailyKey = key;
         this.startDailyCountdown();
+        this.updateModeIndicator({ type: 'daily', difficulty, dateKey: key });
+    }
+
+    // Generate or load daily by specific UTC date key
+    loadDailyByKey(key, difficulty) {
+        const storeKey = `sudoku-daily-${key}`;
+        const cached = localStorage.getItem(storeKey);
+        if (cached) {
+            try {
+                const data = JSON.parse(cached);
+                if (data && data.board && data.solution) {
+                    this.board = data.board;
+                    this.solution = data.solution;
+                    this.initialBoard = data.board.map(row => [...row]);
+                    this.updateDisplay();
+                    this.setDailyUiState(true, data.difficulty || difficulty);
+                    this.showStatus(`Loaded Daily ${key} (${data.difficulty || difficulty})`, 'info');
+                    this._activeDailyKey = key;
+                    this.updateModeIndicator({ type: 'daily', difficulty: data.difficulty || difficulty, dateKey: key });
+                    return;
+                }
+            } catch {}
+        }
+        // If not cached, generate deterministically for that day (using its key as seed)
+        const rng = this.createSeededRng(key);
+        const randInt = (max) => Math.floor(rng() * max);
+        // generate solved
+        this.board = Array(9).fill().map(() => Array(9).fill(0));
+        const fillBox = (row, col) => {
+            const nums = [1,2,3,4,5,6,7,8,9];
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const idx = randInt(nums.length);
+                    this.board[row+i][col+j] = nums[idx];
+                    nums.splice(idx,1);
+                }
+            }
+        };
+        fillBox(0,0); fillBox(3,3); fillBox(6,6);
+        this.solveBoard();
+        this.solution = this.board.map(r => [...r]);
+        const removeSymUnique = (count) => {
+            const positions = [];
+            for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (r < 4 || (r === 4 && c <= 4)) positions.push([r,c]);
+            for (let i = positions.length - 1; i > 0; i--) { const j = randInt(i+1); [positions[i], positions[j]] = [positions[j], positions[i]]; }
+            let removed = 0;
+            for (const [r,c] of positions) {
+                if (removed >= count) break;
+                const sr = 8 - r, sc = 8 - c;
+                if (this.board[r][c] === 0) continue;
+                const v1 = this.board[r][c], v2 = this.board[sr][sc];
+                this.board[r][c] = 0; if (r !== sr || c !== sc) this.board[sr][sc] = 0;
+                if (this.hasUniqueSolution()) { removed += (r===sr && c===sc) ? 1 : 2; }
+                else { this.board[r][c] = v1; if (r !== sr || c !== sc) this.board[sr][sc] = v2; }
+            }
+        };
+        const cellsToRemove = { easy: 30, medium: 40, hard: 50, expert: 60 };
+        const diff = difficulty || this.getDifficultyForDateKey(key);
+        removeSymUnique(cellsToRemove[diff] || 40);
+        this.initialBoard = this.board.map(r => [...r]);
+        this.updateDisplay();
+        this.setDailyUiState(true, diff);
+        try { localStorage.setItem(storeKey, JSON.stringify({ board: this.board, solution: this.solution, difficulty: diff })); } catch {}
+        this._activeDailyKey = key;
+        this.updateModeIndicator({ type: 'daily', difficulty: diff, dateKey: key });
+    }
+
+    getDifficultyForDateKey(key) {
+        // Map weekday to difficulty by UTC weekday for the provided key
+        const dt = this.parseUtcKeyToDate(key);
+        const day = dt.getUTCDay();
+        const map = ['expert','easy','medium','medium','hard','hard','expert'];
+        return map[day] || 'medium';
     }
 
     createSeededRng(seedString) {
@@ -761,6 +855,8 @@ class SudokuGame {
     newGame() {
         // Ensure we return to normal mode from Daily
         this.setDailyUiState && this.setDailyUiState(false);
+        this.updateModeIndicator({ type: 'normal', difficulty });
+        this._activeDailyKey = null;
         let difficulty = 'medium';
         try {
             const saved = localStorage.getItem('sudoku-last-difficulty');
@@ -988,7 +1084,7 @@ class SudokuGame {
         const archiveClose = document.getElementById('archive-close');
         if (archiveClose) archiveClose.addEventListener('click', () => { const m = document.getElementById('archive-modal'); if (m) m.style.display = 'none'; });
         const dailyIcon = document.getElementById('daily-icon-btn');
-        if (dailyIcon) dailyIcon.addEventListener('click', () => { hideMenu(); this.openDailyModal(); });
+        if (dailyIcon) dailyIcon.addEventListener('click', () => { hideMenu(); this.openCalendar(); });
         // Difficulty picker persistence
         const diffEl = document.getElementById('difficulty');
         if (diffEl) {
@@ -1034,15 +1130,12 @@ class SudokuGame {
             // initialize display
             sync();
         }
-        // Settings: theme + compact + accent
+        // Settings: theme + accent + weekstart
         const themeToggle = document.getElementById('theme-dark-toggle');
-        const compactToggle = document.getElementById('compact-toggle');
         const accentSelect = document.getElementById('accent-select');
+        const weekstartSelect = document.getElementById('weekstart-select');
         const applyTheme = () => {
             document.documentElement.dataset.theme = themeToggle && themeToggle.checked ? 'dark' : 'light';
-        };
-        const applyCompact = () => {
-            document.documentElement.dataset.compact = compactToggle && compactToggle.checked ? '1' : '';
         };
         const applyAccent = () => {
             const v = (accentSelect && accentSelect.value) || 'indigo';
@@ -1057,10 +1150,10 @@ class SudokuGame {
             document.documentElement.style.setProperty('--accent-600', a2);
         };
         if (themeToggle) themeToggle.addEventListener('change', () => { applyTheme(); this.persistSettings && this.persistSettings(); });
-        if (compactToggle) compactToggle.addEventListener('change', () => { applyCompact(); this.persistSettings && this.persistSettings(); });
         if (accentSelect) accentSelect.addEventListener('change', () => { applyAccent(); this.persistSettings && this.persistSettings(); });
+        if (weekstartSelect) weekstartSelect.addEventListener('change', () => { this.persistSettings && this.persistSettings(); this.refreshCalendarHeaders && this.refreshCalendarHeaders(); this.renderCalendar && this.renderCalendar(); });
         // Initialize from persisted settings if present
-        applyTheme(); applyCompact(); applyAccent();
+        applyTheme(); applyAccent();
         const statsOpen = document.getElementById('stats-btn');
         if (statsOpen && this.showStats) statsOpen.addEventListener('click', () => this.showStats());
         const statsClose = document.getElementById('stats-close');
@@ -1171,7 +1264,9 @@ class SudokuGame {
                 item.addEventListener('click', () => {
                     const diff = item.getAttribute('data-diff');
                     try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
-                    const label = document.getElementById('difficulty-label'); if (label) label.textContent = diff[0].toUpperCase() + diff.slice(1);
+                    this.updateModeIndicator({ type: 'normal', difficulty: diff });
+                    // Update the icons inside the popover to match new colorful style
+                    // (no-op here; icons are styled via CSS)
                     newPopover.hidden = true; newPopover.style.display = 'none';
                     this.setDailyUiState && this.setDailyUiState(false);
                     this.stopTimer();
@@ -1194,6 +1289,174 @@ class SudokuGame {
         // Clicking timer toggles pause
         const timerBtn = document.getElementById('timer-toggle');
         if (timerBtn) timerBtn.addEventListener('click', () => this.togglePause());
+    }
+
+    // ----- Calendar UI -----
+    openCalendar() {
+        const modal = document.getElementById('calendar-modal');
+        if (!modal) return this.openDailyModal();
+        // Default ref month is current in local time for UX; comparisons use UTC keys
+        this._calendarRefMonth = this._calendarRefMonth || new Date();
+        this.refreshCalendarHeaders();
+        this.renderCalendar();
+        modal.style.display = 'block';
+        const closeBtn = document.getElementById('calendar-close');
+        const prevBtn = document.getElementById('calendar-prev');
+        const nextBtn = document.getElementById('calendar-next');
+        if (closeBtn && !closeBtn._bound) { closeBtn._bound = true; closeBtn.addEventListener('click', () => { modal.style.display = 'none'; }); }
+        if (prevBtn && !prevBtn._bound) { prevBtn._bound = true; prevBtn.addEventListener('click', () => { this.shiftCalendar(-1); }); }
+        if (nextBtn && !nextBtn._bound) { nextBtn._bound = true; nextBtn.addEventListener('click', () => { this.shiftCalendar(1); }); }
+    }
+
+    shiftCalendar(deltaMonths) {
+        const d = this._calendarRefMonth || new Date();
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const newDate = new Date(year, month + deltaMonths, 1);
+        this._calendarRefMonth = newDate;
+        this.renderCalendar();
+    }
+
+    renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        const label = document.getElementById('calendar-month-label');
+        if (!grid || !label) return;
+        const ref = new Date(this._calendarRefMonth.getFullYear(), this._calendarRefMonth.getMonth(), 1);
+        const monthName = ref.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+        label.textContent = monthName;
+        grid.innerHTML = '';
+
+        // Determine first weekday offset and number of days
+        const baseFirstDow = new Date(ref.getFullYear(), ref.getMonth(), 1).getDay(); // 0..6 local, Sun=0
+        const weekstart = (document.getElementById('weekstart-select')?.value) || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
+        const startOffset = weekstart === 'monday' ? ((baseFirstDow + 6) % 7) : baseFirstDow;
+        const daysInMonth = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
+
+        const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
+        const nowUtcMidnight = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
+        const todayLocal = new Date();
+        const todayLocalYear = todayLocal.getFullYear();
+        const todayLocalMonth = todayLocal.getMonth();
+        const todayLocalDate = todayLocal.getDate();
+
+        // Leading blank spacers to align weekday columns
+        for (let i = 0; i < startOffset; i++) {
+            const spacer = document.createElement('div');
+            spacer.className = 'calendar-cell empty';
+            spacer.setAttribute('aria-hidden', 'true');
+            grid.appendChild(spacer);
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(ref.getFullYear(), ref.getMonth(), d);
+            const cell = document.createElement('div');
+            cell.className = 'calendar-cell';
+
+            const key = this.getUtcDateKey(new Date(Date.UTC(date.getUTCFullYear?.() ?? date.getFullYear(), (date.getUTCMonth?.() ?? date.getMonth()), date.getUTCDate?.() ?? date.getDate())));
+
+            const header = document.createElement('div');
+            header.className = 'date-num';
+            header.textContent = String(d);
+
+            // Difficulty chip
+            const diff = this.getDifficultyForDateKey(key);
+            const chip = document.createElement('span');
+            chip.className = `diff-chip diff-${diff}`;
+            chip.title = diff[0].toUpperCase() + diff.slice(1);
+            chip.textContent = this.getDifficultyIcon(diff);
+
+            // Flags
+            const thisUtcMidnight = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const isFuture = thisUtcMidnight.getTime() > nowUtcMidnight.getTime();
+            if (isFuture) cell.classList.add('future');
+            if (results[key]?.completed) {
+                cell.classList.add('completed');
+                const check = document.createElement('span');
+                check.className = 'check-badge';
+                check.textContent = '✓';
+                cell.appendChild(check);
+            }
+            if (date.getFullYear() === todayLocalYear && date.getMonth() === todayLocalMonth && date.getDate() === todayLocalDate) {
+                cell.classList.add('today');
+            }
+
+            if (!isFuture) {
+                cell.addEventListener('click', () => {
+                    const dff = this.getDifficultyForDateKey(key);
+                    this.loadDailyByKey(key, dff);
+                    const modal = document.getElementById('calendar-modal');
+                    if (modal) modal.style.display = 'none';
+                });
+            }
+
+            cell.appendChild(header);
+            cell.appendChild(chip);
+            grid.appendChild(cell);
+        }
+
+        // Trailing blank spacers to complete final week row
+        const used = startOffset + daysInMonth;
+        const trailing = (7 - (used % 7)) % 7;
+        for (let i = 0; i < trailing; i++) {
+            const spacer = document.createElement('div');
+            spacer.className = 'calendar-cell empty';
+            spacer.setAttribute('aria-hidden', 'true');
+            grid.appendChild(spacer);
+        }
+    }
+
+    refreshCalendarHeaders() {
+        const wrap = document.getElementById('calendar-weekdays');
+        if (!wrap) return;
+        const weekstart = (document.getElementById('weekstart-select')?.value) || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
+        const days = weekstart === 'monday' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        wrap.innerHTML = days.map(d => `<div>${d}</div>`).join('');
+    }
+
+    getDifficultyIcon(diff) {
+        // Use glyphs consistent with dropdown icons
+        switch (diff) {
+            case 'easy': return '●'; // circle
+            case 'medium': return '▲'; // triangle
+            case 'hard': return '■'; // square
+            case 'expert': return '⬢'; // hexagon
+            default: return '●';
+        }
+    }
+
+    // ----- Daily results tracking -----
+    recordDailyResult() {
+        // Determine if current board corresponds to an active daily key
+        const activeKey = this._activeDailyKey || this.getUtcDateKey();
+        const cacheKey = `sudoku-daily-${activeKey}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (!cached) return; // Not in a daily context
+        const diff = JSON.parse(cached)?.difficulty || this.getDifficultyForDateKey(activeKey);
+        const elapsed = this.getElapsedSeconds();
+        const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
+        results[activeKey] = { completed: true, elapsed, difficulty: diff, mistakes: this.mistakesCount };
+        try { localStorage.setItem('sudoku-daily-results', JSON.stringify(results)); } catch {}
+
+        // Update streak if completing today’s daily
+        const todayKey = this.getUtcDateKey();
+        if (activeKey === todayKey) {
+            try {
+                const lastKey = localStorage.getItem('sudoku-daily-last');
+                let streak = parseInt(localStorage.getItem('sudoku-daily-streak') || '0');
+                if (lastKey) {
+                    const lastDate = this.parseUtcKeyToDate(lastKey);
+                    const todayDate = this.parseUtcKeyToDate(todayKey);
+                    const diffDays = Math.round((todayDate - lastDate) / (24*3600*1000));
+                    if (diffDays === 1) streak += 1;
+                    else if (diffDays === 0) {/* do nothing */}
+                    else streak = 1; // reset
+                } else {
+                    streak = 1;
+                }
+                localStorage.setItem('sudoku-daily-last', todayKey);
+                localStorage.setItem('sudoku-daily-streak', String(streak));
+            } catch {}
+        }
     }
 
     // ----- Optional helpers wired by UI buttons -----
@@ -1271,7 +1534,7 @@ class SudokuGame {
             mistakesEnabled: this.mistakesEnabled,
             mistakeLimit: this.mistakeLimit === Infinity ? 11 : this.mistakeLimit,
             themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
-            compact: !!(document.getElementById('compact-toggle')?.checked),
+            weekstart: document.getElementById('weekstart-select')?.value || 'sunday',
             accent: document.getElementById('accent-select')?.value || 'indigo',
         };
         try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
@@ -1302,11 +1565,10 @@ class SudokuGame {
                 else { mlv.textContent = s.mistakeLimit; this.mistakeLimit = s.mistakeLimit; this.mistakesEnabled = true; }
             }
             const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = !!s.themeDark;
-            const compactToggle = document.getElementById('compact-toggle'); if (compactToggle) compactToggle.checked = !!s.compact;
+            const weekstartSelect = document.getElementById('weekstart-select'); if (weekstartSelect && s.weekstart) weekstartSelect.value = s.weekstart;
             const accentSelect = document.getElementById('accent-select'); if (accentSelect && s.accent) accentSelect.value = s.accent;
             // Apply values to document
             document.documentElement.dataset.theme = s.themeDark ? 'dark' : 'light';
-            document.documentElement.dataset.compact = s.compact ? '1' : '';
             if (s.accent) {
                 const map = { indigo: ['#6366f1', '#5558ee'], teal: ['#14b8a6', '#0ea5a3'], rose: ['#f43f5e', '#e11d48'] };
                 const [a1, a2] = map[s.accent] || map.indigo;
@@ -1317,6 +1579,8 @@ class SudokuGame {
                 // Ensure candidates are visible after restoring settings
                 this.recomputeAllCandidates();
             }
+            // Update calendar headers after loading settings
+            this.refreshCalendarHeaders && this.refreshCalendarHeaders();
         } catch {}
     }
     recordWin() {
@@ -1375,7 +1639,7 @@ class SudokuGame {
                 const cacheKey = `sudoku-daily-${k}`;
                 const cached = localStorage.getItem(cacheKey);
                 if (cached) {
-                    try { const data = JSON.parse(cached); this.board = data.board; this.solution = data.solution; this.initialBoard = data.board.map(row => [...row]); this.updateDisplay(); } catch {}
+                    try { const data = JSON.parse(cached); this.board = data.board; this.solution = data.solution; this.initialBoard = data.board.map(row => [...row]); this.updateDisplay(); this._activeDailyKey = k; this.setDailyUiState(true, data.difficulty || this.getDifficultyForDateKey(k)); } catch {}
                 } else {
                     this.showStatus('Cached board not found for that date', 'error');
                 }
