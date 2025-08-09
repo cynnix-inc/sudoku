@@ -58,7 +58,10 @@
                 <div class="controls-left">
                     <div class="difficulty-display"><div id="mode-indicator" class="mode-indicator" aria-live="polite"></div></div>
                 </div>
-                <button id="timer-toggle" class="timer timer-btn" title="Pause/Resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
+                <div class="controls-center">
+                    <button id="timer-toggle" class="timer timer-btn" title="Pause/Resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
+                    <div id="health-bar" class="health-bar-stack" aria-label="Mistakes" aria-live="polite"></div>
+                </div>
                 <div class="controls-right">
                     <button id="hint-btn" class="icon-btn" title="Hint">💡</button>
                     <button id="notes-toggle" class="icon-btn" title="Notes">✎</button>
@@ -123,6 +126,7 @@
                     <label for="mistakes-limit">Max mistakes: <span id="mistakes-limit-value">3</span></label>
                     <input type="range" id="mistakes-limit" min="0" max="11" step="1" value="3" />
                     <small class="hint">Drag to 11 for Unlimited (turns the limit off)</small>
+                         <small id="mistakes-daily-note" class="hint" style="display:none">Daily uses fixed mistake limits based on difficulty.</small>
                 </div>
                 <hr/>
                 <label class="toggle-item"><input type="checkbox" id="theme-dark-toggle"> Dark mode</label>
@@ -155,20 +159,34 @@
             <div class="help-content">
                 <p>Goal: Fill the grid so each row, column, and 3×3 box contains 1–9 with no repeats.</p>
                 <div class="help-grid">
-                    <div>
-                        <h4>Basics</h4>
-                        <ul>
-                            <li>Click a cell and type 1–9, or use the number pad.</li>
-                            <li>Erase with Delete/Backspace or Erase button.</li>
-                            <li>Use Notes (✎) to place small candidates.</li>
+                    <div class="help-card">
+                        <h4>📱 Mobile / Touch</h4>
+                        <ul class="help-list">
+                            <li><span class="key">1–9</span><span class="desc">Enter number (on‑screen pad)</span></li>
+                            <li><span class="key">🧹 Erase</span><span class="desc">Clear cell</span></li>
+                            <li><span class="key">👆 Double‑tap</span><span class="desc">Erase cell</span></li>
+                            <li><span class="key">✎ (tap)</span><span class="desc">Toggle Notes</span></li>
+                            <li><span class="key">✎ (press‑and‑hold)</span><span class="desc">Temporary Notes while held</span></li>
+                            <li><span class="key">Pad 1–9 (tap)</span><span class="desc">Lock/unlock number; drag to paint</span></li>
+                            <li><span class="key">📌 Long‑press cell</span><span class="desc">Add note for locked number</span></li>
+                            <li><span class="key">⏱</span><span class="desc">Pause/Resume (tap timer)</span></li>
+                            <li><span class="key">💡</span><span class="desc">Hint: fill one correct cell</span></li>
                         </ul>
                     </div>
-                    <div>
-                        <h4>Shortcuts</h4>
-                        <ul>
-                            <li>Undo/Redo: Ctrl+Z / Ctrl+Y</li>
-                            <li>Arrows: move selection</li>
-                            <li>0/Delete: erase</li>
+                    <div class="help-card">
+                        <h4>⌨️ Mouse / Keyboard</h4>
+                        <ul class="help-list">
+                            <li><span class="key"><kbd>1</kbd>…<kbd>9</kbd></span><span class="desc">Enter number</span></li>
+                            <li><span class="key"><kbd>0</kbd> / ⌫ / ⌦</span><span class="desc">Erase (0, Backspace, Delete)</span></li>
+                            <li><span class="key">← ↑ → ↓ / WASD / H J K L</span><span class="desc">Move selection</span></li>
+                            <li><span class="key">Auto‑advance</span><span class="desc">After typing, moves forward; hold <kbd>Shift</kbd> to move backward</span></li>
+                            <li><span class="key">✎ (click)</span><span class="desc">Toggle Notes</span></li>
+                            <li><span class="key">✎ (press‑and‑hold)</span><span class="desc">Temporary Notes while held</span></li>
+                            <li><span class="key">Pad 1–9 (click)</span><span class="desc">Lock/unlock number; drag to paint; <kbd>ESC</kbd> clears lock</span></li>
+                            <li><span class="key"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span><span class="desc">Undo</span></li>
+                            <li><span class="key"><kbd>Ctrl</kbd>+<kbd>Y</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span><span class="desc">Redo</span></li>
+                            <li><span class="key">⏱</span><span class="desc">Pause/Resume (click timer)</span></li>
+                            <li><span class="key">💡</span><span class="desc">Hint: fill one correct cell</span></li>
                         </ul>
                     </div>
                 </div>

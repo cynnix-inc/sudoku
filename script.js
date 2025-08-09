@@ -68,6 +68,22 @@ class SudokuGame {
         }
     }
 
+    spawnMistakeFloater(row, col) {
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (!cell || !cell.parentElement) return;
+        const floater = document.createElement('div');
+        floater.className = 'mistake-floater show';
+        floater.textContent = '−1';
+        // position relative to cell wrapper
+        const wrapper = cell.parentElement;
+        wrapper.style.position = wrapper.style.position || 'relative';
+        floater.style.left = '50%';
+        floater.style.top = '6px';
+        floater.style.transform = 'translateX(-50%)';
+        wrapper.appendChild(floater);
+        floater.addEventListener('animationend', () => { floater.remove(); }, { once: true });
+    }
+
     initializeGame() {
         this.createBoard();
         this.setupResponsiveSizing();
@@ -87,6 +103,8 @@ class SudokuGame {
         }
         this.startTimer();
         this.updateDisplay();
+        // Ensure health bar is visible according to current settings
+        this.renderHealthBar();
     }
 
     // Compute pixel-perfect cell size to avoid subpixel gaps on mobile
@@ -240,7 +258,24 @@ class SudokuGame {
     }
 
     setDailyUiState(isDaily, difficulty) {
-        // No-op in current UI; indicator handled by updateModeIndicator
+        // Enforce fixed mistake limits in Daily; enable slider otherwise
+        const slider = document.getElementById('mistakes-limit');
+        const label = document.getElementById('mistakes-limit-value');
+        const note = document.getElementById('mistakes-daily-note');
+        const map = { easy: 5, medium: 4, hard: 3, expert: 2 };
+        if (isDaily) {
+            const lim = map[difficulty] ?? 3;
+            this.mistakesEnabled = true;
+            this.mistakeLimit = lim;
+            if (slider) { slider.value = String(lim); slider.disabled = true; }
+            if (label) label.textContent = String(lim);
+            if (note) note.style.display = 'block';
+        } else {
+            if (slider) slider.disabled = false;
+            if (note) note.style.display = 'none';
+        }
+        this.resetMistakes();
+        this.renderHealthBar();
     }
 
     generateDaily(difficulty) {
@@ -256,6 +291,7 @@ class SudokuGame {
                     this.initialBoard = data.board.map(row => [...row]);
                     this.updateDisplay();
                     this.setDailyUiState(true, data.difficulty || difficulty);
+                    this.renderHealthBar();
                     this.showStatus(`Loaded Daily ${key} (${data.difficulty || difficulty})`, 'info');
                     this.startDailyCountdown();
                     return;
@@ -305,6 +341,7 @@ class SudokuGame {
         this.initialBoard = this.board.map(r => [...r]);
         this.updateDisplay();
         this.setDailyUiState(true, difficulty);
+        this.renderHealthBar();
 
         // Cache daily
         try { localStorage.setItem(storeKey, JSON.stringify({ board: this.board, solution: this.solution, difficulty })); } catch {}
@@ -373,6 +410,7 @@ class SudokuGame {
         this.initialBoard = this.board.map(r => [...r]);
         this.updateDisplay();
         this.setDailyUiState(true, diff);
+        this.renderHealthBar();
         try { localStorage.setItem(storeKey, JSON.stringify({ board: this.board, solution: this.solution, difficulty: diff })); } catch {}
         this._activeDailyKey = key;
         this.updateModeIndicator({ type: 'daily', difficulty: diff, dateKey: key });
@@ -729,11 +767,13 @@ class SudokuGame {
             if (this.lastWrongValues[row][col] !== value) {
                 this.lastWrongValues[row][col] = value;
                 this.mistakesCount += 1;
-                this.showStatus(`Mistake ${this.mistakesCount}/${this.mistakeLimit}`, 'error');
+                this.updateHealthBar();
+                this.spawnMistakeFloater(row, col);
                 if (this.mistakesCount >= this.mistakeLimit) {
                     this.isGameOver = true;
                     this.stopTimer();
                     this.showGameOver();
+                    this.recordLoss();
                 }
             }
         }
@@ -892,6 +932,7 @@ class SudokuGame {
         modal.style.display = 'block';
         // If today’s daily is active, record result
         this.recordDailyResult && this.recordDailyResult();
+        this.recordWin();
     }
 
     startTimer() {
@@ -952,6 +993,7 @@ class SudokuGame {
         this.startTimer();
         this.updateDisplay();
         this.clearStatus();
+        this.renderHealthBar();
         
         if (this.selectedCell) {
             this.selectedCell.classList.remove('selected');
@@ -1025,6 +1067,80 @@ class SudokuGame {
     resetMistakes() {
         this.mistakesCount = 0;
         this.lastWrongValues = Array(9).fill().map(() => Array(9).fill(null));
+        this.updateHealthBar(true);
+    }
+
+    // ---- Health bar (hearts) ----
+    renderHealthBar() {
+        const host = document.getElementById('health-bar');
+        if (!host) return;
+        host.className = 'health-bar-row';
+        host.innerHTML = '';
+        const unlimited = !this.mistakesEnabled || !Number.isFinite(this.mistakeLimit) || this.mistakeLimit >= 11;
+        const total = unlimited ? 0 : (this.mistakesEnabled && Number.isFinite(this.mistakeLimit)) ? this.mistakeLimit : 0;
+        const compact = window.matchMedia('(max-width: 420px)').matches;
+        if (unlimited) {
+            // Infinity display at normal heart size
+            const wrap = document.createElement('div');
+            wrap.className = 'health-compact';
+            wrap.innerHTML = `<span class="health-heart"><div class="heart-full">${this.renderHeartSvg()}</div></span><span class="x">∞</span>`;
+            host.appendChild(wrap);
+            host.setAttribute('aria-label', 'Unlimited mistakes');
+            return;
+        } else if (compact) {
+            const wrap = document.createElement('div');
+            wrap.className = 'health-compact';
+            wrap.innerHTML = `<span class="health-heart"><div class="heart-full">${this.renderHeartSvg()}</div></span><span class="x">×${Math.max(0, total - this.mistakesCount)}</span>`;
+            host.appendChild(wrap);
+            host.setAttribute('aria-label', `Mistakes remaining: ${Math.max(0, total - this.mistakesCount)} of ${total}`);
+        } else {
+            for (let i = 0; i < total; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'health-heart appear';
+                heart.setAttribute('aria-hidden','true');
+                heart.innerHTML = `<div class="heart-full">${this.renderHeartSvg()}</div><div class="heart-half left">${this.renderHeartSvg()}</div><div class="heart-half right">${this.renderHeartSvg()}</div>`;
+                host.appendChild(heart);
+            }
+            this.updateHealthBar(true);
+        }
+    }
+
+    renderHeartSvg() {
+        // full heart SVG path
+        return `<svg class="heart-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12.1 8.64l-.1.1-.1-.1C10.14 6.88 7.4 6.86 5.64 8.6c-1.76 1.76-1.76 4.62 0 6.38L12 21.34l6.36-6.36c1.76-1.76 1.76-4.62 0-6.38-1.76-1.74-4.5-1.72-6.26.04z"/></svg>`;
+    }
+    updateHealthBar(reset = false) {
+        const host = document.getElementById('health-bar');
+        if (!host) return;
+        const compactCount = host.querySelector('.health-compact .x');
+        if (compactCount) {
+            const unlimited = !this.mistakesEnabled || !Number.isFinite(this.mistakeLimit) || this.mistakeLimit >= 11;
+            if (unlimited) { compactCount.textContent = '∞'; host.setAttribute('aria-label', 'Unlimited mistakes'); return; }
+            const total = (this.mistakesEnabled && Number.isFinite(this.mistakeLimit)) ? this.mistakeLimit : 0;
+            compactCount.textContent = `×${Math.max(0, total - this.mistakesCount)}`;
+            host.setAttribute('aria-label', `Mistakes remaining: ${Math.max(0, total - this.mistakesCount)} of ${total}`);
+            // low-health color states on compact
+            host.classList.toggle('health-critical', (total - this.mistakesCount) <= 1 && total > 0);
+            host.classList.toggle('health-low', (total - this.mistakesCount) === 2);
+            return;
+        }
+        const hearts = Array.from(host.querySelectorAll('.health-heart'));
+        const total = hearts.length;
+        const lost = Math.min(this.mistakesCount, total);
+        hearts.forEach((h, idx) => {
+            if (reset) { h.classList.remove('lost'); h.style.opacity = '1'; h.style.transform = ''; }
+            if (idx < lost && !h.classList.contains('lost')) {
+                const isFinal = (idx === total - 1);
+                if (isFinal) h.classList.add('final');
+                h.classList.add('lost');
+                h.addEventListener('animationend', () => { h.style.display = 'none'; }, { once: true });
+            }
+        });
+        const remaining = Math.max(0, total - lost);
+        host.setAttribute('aria-label', `Mistakes remaining: ${remaining} of ${total}`);
+        // Low-health state color/pulse
+        host.classList.toggle('health-critical', remaining <= 1 && total > 0);
+        host.classList.toggle('health-low', remaining === 2);
     }
 
     solvePuzzle() {
@@ -1813,13 +1929,21 @@ class SudokuGame {
         } catch {}
     }
     recordWin() {
-        const diff = document.getElementById('difficulty').value || 'medium';
+        const diff = document.getElementById('difficulty')?.value || 'medium';
         const elapsed = this.getElapsedSeconds();
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
         stats.totalWins = (stats.totalWins || 0) + 1;
+        stats.totalCompleted = (stats.totalCompleted || 0) + 1; // includes wins and losses
         stats.bestTimes = stats.bestTimes || {};
         const best = stats.bestTimes[diff];
         if (!best || elapsed < best) stats.bestTimes[diff] = elapsed;
+        try { localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
+    }
+
+    recordLoss() {
+        const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
+        stats.totalLosses = (stats.totalLosses || 0) + 1;
+        stats.totalCompleted = (stats.totalCompleted || 0) + 1; // includes wins and losses
         try { localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
     }
     showStats() {
@@ -1827,7 +1951,11 @@ class SudokuGame {
         const content = document.getElementById('stats-content');
         if (!modal || !content) return;
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
-        const total = stats.totalWins || 0; const best = stats.bestTimes || {};
+        const totalWins = stats.totalWins || 0;
+        const totalLosses = stats.totalLosses || 0;
+        const totalCompleted = stats.totalCompleted || (totalWins + totalLosses);
+        const best = stats.bestTimes || {};
+        const winRatio = totalCompleted > 0 ? Math.round((totalWins / totalCompleted) * 100) : 0;
         const fmt = (s) => typeof s === 'number' ? `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}` : '-';
         const dailyResults = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
         const streak = localStorage.getItem('sudoku-daily-streak') || '0';
@@ -1837,7 +1965,7 @@ class SudokuGame {
             return `<div>${k.slice(0,4)}-${k.slice(4,6)}-${k.slice(6)} (${r.difficulty}): ${fmt(r.elapsed)} | mistakes: ${r.mistakes}</div>`;
         }).join('');
         content.innerHTML = `
-            <div>Total Wins: ${total}</div>
+            <div>Total Played: ${totalCompleted} &nbsp;|&nbsp; Wins: ${totalWins} &nbsp;|&nbsp; Losses: ${totalLosses} &nbsp;|&nbsp; Win Ratio: ${winRatio}%</div>
             <div>Best Times:
               <div>Easy: ${fmt(best.easy)}</div>
               <div>Medium: ${fmt(best.medium)}</div>
