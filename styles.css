@@ -177,16 +177,55 @@ h1 {
 }
 
 .board {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(9, var(--cell-size));
-    gap: 1px;
-    background: #cbd5e1;
-    padding: 0; /* handled by computed width */
+    gap: 0;
+    background: white;
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     margin-left: auto;
     margin-right: auto;
+}
+
+/* Draw crisp grid lines and thicker 3x3 separators using a single overlay
+   to avoid subpixel artifacts on mobile */
+.board::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* light 1px grid lines */
+    background-image:
+        repeating-linear-gradient(to right,
+            #cbd5e1 0 1px,
+            transparent 1px calc(var(--cell-size))
+        ),
+        repeating-linear-gradient(to bottom,
+            #cbd5e1 0 1px,
+            transparent 1px calc(var(--cell-size))
+        ),
+        /* thick 3x3 separators */
+        linear-gradient(#4a5568, #4a5568),
+        linear-gradient(#4a5568, #4a5568),
+        linear-gradient(#4a5568, #4a5568),
+        linear-gradient(#4a5568, #4a5568);
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+    background-position:
+        0 0,
+        0 0,
+        calc(var(--cell-size) * 3) 0,
+        calc(var(--cell-size) * 6) 0,
+        0 calc(var(--cell-size) * 3),
+        0 calc(var(--cell-size) * 6);
+    background-size:
+        100% 100%,
+        100% 100%,
+        2px 100%,
+        2px 100%,
+        100% 2px,
+        100% 2px;
 }
 
 .cell-container {
@@ -267,16 +306,7 @@ h1 {
     background: #fffbea;
 }
 
-/* 3x3 box borders */
-.cell[data-col="2"],
-.cell[data-col="5"] {
-    border-right: 2px solid #4a5568;
-}
-
-.cell[data-row="2"],
-.cell[data-row="5"] {
-    border-bottom: 2px solid #4a5568;
-}
+/* Removed per-board overlay draws 3x3 borders */
 
 /* Corner cell border radius for rounded game box */
 .cell[data-row="0"][data-col="0"] {
@@ -491,9 +521,5 @@ h1 {
     .number-pad { position: sticky; bottom: 0; background: white; padding: 0.5rem 0 0.75rem; }
     /* Larger digits for readability on phones; still tied to cell size */
     .cell { font-size: calc(var(--cell-size) * 0.52); }
-    /* Slightly thinner 3x3 separators to reduce visual heaviness on mobile */
-    .cell[data-col="2"],
-    .cell[data-col="5"] { border-right-width: 1.5px; }
-    .cell[data-row="2"],
-    .cell[data-row="5"] { border-bottom-width: 1.5px; }
+    /* 3x3 separators handled by .board::before */
 }
