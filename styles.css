@@ -340,6 +340,9 @@ h1 {
 /* Same-number highlight */
 .cell.same-number { background: var(--same-bg); }
 
+/* Ensure error styling remains visible even when selected/highlighted */
+.cell.error { background: #fed7d7 !important; color: #c53030 !important; }
+
 /* Removed per-board overlay draws 3x3 borders */
 
 /* Corner cell border radius for rounded game box */
@@ -388,6 +391,10 @@ h1 {
 }
 
 .number-btn.active { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-600) 100%); color: white; border-color: var(--accent); }
+
+/* Badge on number buttons when Notes mode is on */
+.number-btn .badge-note { display: none; position: absolute; top: 6px; left: 6px; width: 16px; height: 16px; border-radius: 999px; background: #0ea5a3; color: white; font-size: 11px; line-height: 16px; text-align: center; font-weight: 900; box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
+.notes-mode-active .number-btn.active .badge-note { display: inline-block; }
 
 .cell.placed {
     animation: popIn 120ms ease-out;

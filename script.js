@@ -16,6 +16,21 @@ class SudokuGame {
         // Modes/state
         this.isNotesMode = false;
         this.lockedNumber = null;
+        // Input environment
+        this.touchMode = (navigator.maxTouchPoints || 0) > 0;
+        // Pointer painting state (for locked-number drag painting)
+        this._isPainting = false;
+        this._paintingPointerId = null;
+        // Touch long-press and gesture state
+        this._pressTimer = null;
+        this._pressStartX = 0;
+        this._pressStartY = 0;
+        this._pressMoved = false;
+        this._longPressActive = false;
+        // Temporary notes-hold state
+        this._notesHoldActive = false;
+        this._notesHoldWas = null;
+        this._notesHoldTimer = null;
 
         // Mistakes control
         this.mistakesEnabled = false;
@@ -100,6 +115,11 @@ class SudokuGame {
     createBoard() {
         const boardElement = document.getElementById('board');
         boardElement.innerHTML = '';
+        // A11y: mark as grid
+        try {
+            boardElement.setAttribute('role', 'grid');
+            boardElement.setAttribute('aria-label', 'Sudoku board');
+        } catch {}
         
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
@@ -108,13 +128,20 @@ class SudokuGame {
 
                 const cell = document.createElement('input');
                 cell.type = 'text';
-                cell.setAttribute('inputmode','numeric');
+                // On touch devices, suppress OS keyboard; rely on on-screen number pad
+                if (this.touchMode) cell.setAttribute('inputmode', 'none'); else cell.setAttribute('inputmode', 'numeric');
                 cell.setAttribute('autocomplete','off');
                 cell.setAttribute('autocorrect','off');
                 cell.className = 'cell';
                 cell.dataset.row = row;
                 cell.dataset.col = col;
                 cell.maxLength = 1;
+                // A11y roles/labels
+                try {
+                    cell.setAttribute('role', 'gridcell');
+                    cell.setAttribute('aria-selected', 'false');
+                    cell.setAttribute('aria-label', `Row ${row + 1}, Column ${col + 1}`);
+                } catch {}
 
                 const notes = document.createElement('div');
                 notes.className = 'notes';
@@ -521,11 +548,20 @@ class SudokuGame {
         // Remove previous selection
         if (this.selectedCell) {
             this.selectedCell.classList.remove('selected');
+            try { this.selectedCell.setAttribute('aria-selected', 'false'); } catch {}
         }
         
         // Add selection to current cell
         cell.classList.add('selected');
         this.selectedCell = cell;
+        // Focus the input to keep keyboard entry in sync with the visible selection
+        try {
+            cell.focus();
+            // Move caret to end
+            const len = cell.value ? String(cell.value).length : 0;
+            if (cell.setSelectionRange) cell.setSelectionRange(len, len);
+            cell.setAttribute('aria-selected', 'true');
+        } catch {}
         
         // If a number is locked, placing it on click (or erase if 0)
         if (this.lockedNumber !== null && !cell.readOnly) {
@@ -600,31 +636,56 @@ class SudokuGame {
     }
 
     handleKeyDown(event, row, col) {
-        if (event.key >= '1' && event.key <= '9') {
+        const k = event.key;
+        const lower = k.toLowerCase();
+        if (k >= '1' && k <= '9') {
             if (this.isNotesMode) {
-                this.toggleNote(row, col, parseInt(event.key));
+                this.toggleNote(row, col, parseInt(k));
             } else {
-                this.setCellValue(row, col, parseInt(event.key), 'keydown');
+                this.setCellValue(row, col, parseInt(k), 'keydown');
             }
             this.checkGameComplete();
-        } else if (event.key === 'Backspace' || event.key === 'Delete') {
+            // Auto-advance after keyboard entry if enabled
+            const autoAdv = this.isAutoAdvanceEnabled && this.isAutoAdvanceEnabled();
+            if (autoAdv) {
+                event.preventDefault();
+                let nextRow = row;
+                let nextCol = col;
+                const forward = !event.shiftKey;
+                if (forward) {
+                    nextCol += 1;
+                    if (nextCol > 8) { nextCol = 0; nextRow += 1; }
+                } else {
+                    nextCol -= 1;
+                    if (nextCol < 0) { nextCol = 8; nextRow -= 1; }
+                }
+                if (nextRow >= 0 && nextRow <= 8) {
+                    const next = document.querySelector(`[data-row="${nextRow}"][data-col="${nextCol}"]`);
+                    if (next) this.selectCell(next, nextRow, nextCol);
+                }
+            }
+        } else if (k === '0' || k === 'Backspace' || k === 'Delete') {
             if (this.isNotesMode) {
                 this.clearNotes(row, col);
             } else {
                 this.setCellValue(row, col, 0, 'erase');
             }
-        } else if (event.key === 'ArrowUp' && row > 0) {
+        } else if ((k === 'ArrowUp' || lower === 'w' || lower === 'k') && row > 0) {
             event.preventDefault();
             this.selectCell(document.querySelector(`[data-row="${row - 1}"][data-col="${col}"]`), row - 1, col);
-        } else if (event.key === 'ArrowDown' && row < 8) {
+        } else if ((k === 'ArrowDown' || lower === 's' || lower === 'j') && row < 8) {
             event.preventDefault();
             this.selectCell(document.querySelector(`[data-row="${row + 1}"][data-col="${col}"]`), row + 1, col);
-        } else if (event.key === 'ArrowLeft' && col > 0) {
+        } else if ((k === 'ArrowLeft' || lower === 'a' || lower === 'h') && col > 0) {
             event.preventDefault();
             this.selectCell(document.querySelector(`[data-row="${row}"][data-col="${col - 1}"]`), row, col - 1);
-        } else if (event.key === 'ArrowRight' && col < 8) {
+        } else if ((k === 'ArrowRight' || lower === 'd' || lower === 'l') && col < 8) {
             event.preventDefault();
             this.selectCell(document.querySelector(`[data-row="${row}"][data-col="${col + 1}"]`), row, col + 1);
+        } else if (k === 'Escape') {
+            // Clear locked number and deactivate buttons
+            this.lockedNumber = null;
+            document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
         }
     }
 
@@ -651,6 +712,13 @@ class SudokuGame {
         // Clear notes on set
         if (value !== 0) this.notes[row][col].clear();
         this.updateCellDisplay(row, col);
+        // Haptic feedback for direct user placements/erases
+        try {
+            const userSources = ['numpad','keyboard','keydown','paint','locked-number','erase','input','tap'];
+            if (this.touchMode && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function' && userSources.includes(source)) {
+                navigator.vibrate(10);
+            }
+        } catch {}
         // record history
         this.history.push({ type: 'value', row, col, oldValue, newValue: value });
         this.redoStack = [];
@@ -726,6 +794,8 @@ class SudokuGame {
             added = true;
         }
         this.updateNotesDisplay(row, col);
+        // Subtle haptic for note toggles on touch
+        try { if (this.touchMode && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') navigator.vibrate(6); } catch {}
         this.history.push({ type: 'note', row, col, note: value, added });
         this.redoStack = [];
     }
@@ -761,6 +831,8 @@ class SudokuGame {
                     cell.value = value;
                     cell.classList.toggle('initial', this.initialBoard[row][col] !== 0);
                     cell.readOnly = this.initialBoard[row][col] !== 0;
+                    // Clear any lingering error class during a full repaint
+                    cell.classList.remove('error');
                     // console.log(`Cell [${row}][${col}]: value=${value}, initial=${this.initialBoard[row][col] !== 0}`);
                 }
                 this.updateNotesDisplay(row, col);
@@ -855,7 +927,6 @@ class SudokuGame {
     newGame() {
         // Ensure we return to normal mode from Daily
         this.setDailyUiState && this.setDailyUiState(false);
-        this.updateModeIndicator({ type: 'normal', difficulty });
         this._activeDailyKey = null;
         let difficulty = 'medium';
         try {
@@ -864,10 +935,18 @@ class SudokuGame {
         } catch {}
         // Remember last chosen difficulty
         try { localStorage.setItem('sudoku-last-difficulty', difficulty); } catch {}
+        // Update mode pill now that difficulty is known
+        this.updateModeIndicator && this.updateModeIndicator({ type: 'normal', difficulty });
         this.isGameComplete = false;
         this.isGameOver = false;
         const overlay = document.getElementById('gameover-overlay');
         if (overlay) overlay.style.display = 'none';
+        // Also ensure pause overlay is hidden
+        const pause = document.getElementById('pause-overlay');
+        if (pause) pause.style.display = 'none';
+        // Clear locked number and highlight on numpad
+        this.lockedNumber = null;
+        document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
         this.stopTimer();
         this.generatePuzzle(difficulty);
         this.startTimer();
@@ -1025,7 +1104,38 @@ class SudokuGame {
             this.isNotesMode = !this.isNotesMode;
             notesToggle.classList.toggle('btn-primary', this.isNotesMode);
             notesToggle.classList.toggle('btn-secondary', !this.isNotesMode);
+            this.syncNotesBadgeState();
         });
+        // Temporary Notes Hold: press-and-hold Notes button enables notes only while held (touch-friendly)
+        if (notesToggle) {
+            const startHold = () => {
+                if (this._notesHoldActive) return;
+                this._notesHoldActive = true;
+                this._notesHoldWas = this.isNotesMode;
+                this.isNotesMode = true;
+                notesToggle.classList.add('btn-primary');
+                notesToggle.classList.remove('btn-secondary');
+                this.syncNotesBadgeState();
+            };
+            const endHold = () => {
+                if (!this._notesHoldActive) return;
+                this._notesHoldActive = false;
+                if (this._notesHoldWas !== null) this.isNotesMode = !!this._notesHoldWas;
+                notesToggle.classList.toggle('btn-primary', this.isNotesMode);
+                notesToggle.classList.toggle('btn-secondary', !this.isNotesMode);
+                this._notesHoldWas = null;
+                this.syncNotesBadgeState();
+            };
+            // Pointer-based hold (works for mouse and touch)
+            notesToggle.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'touch' || e.buttons === 1) startHold();
+            });
+            window.addEventListener('pointerup', endHold);
+            window.addEventListener('pointercancel', endHold);
+            // Keyboard hold
+            notesToggle.addEventListener('keydown', (e) => { if (e.code === 'Space' || e.key === ' ') startHold(); });
+            notesToggle.addEventListener('keyup', (e) => { if (e.code === 'Space' || e.key === ' ') endHold(); });
+        }
 
         // mistakes toggle removed; slider controls behavior
 
@@ -1130,10 +1240,11 @@ class SudokuGame {
             // initialize display
             sync();
         }
-        // Settings: theme + accent + weekstart
+        // Settings: theme + accent + weekstart + auto-advance
         const themeToggle = document.getElementById('theme-dark-toggle');
         const accentSelect = document.getElementById('accent-select');
         const weekstartSelect = document.getElementById('weekstart-select');
+        const autoAdvanceToggle = document.getElementById('auto-advance-toggle');
         const applyTheme = () => {
             document.documentElement.dataset.theme = themeToggle && themeToggle.checked ? 'dark' : 'light';
         };
@@ -1152,6 +1263,7 @@ class SudokuGame {
         if (themeToggle) themeToggle.addEventListener('change', () => { applyTheme(); this.persistSettings && this.persistSettings(); });
         if (accentSelect) accentSelect.addEventListener('change', () => { applyAccent(); this.persistSettings && this.persistSettings(); });
         if (weekstartSelect) weekstartSelect.addEventListener('change', () => { this.persistSettings && this.persistSettings(); this.refreshCalendarHeaders && this.refreshCalendarHeaders(); this.renderCalendar && this.renderCalendar(); });
+        if (autoAdvanceToggle) autoAdvanceToggle.addEventListener('change', () => { this.persistSettings && this.persistSettings(); });
         // Initialize from persisted settings if present
         applyTheme(); applyAccent();
         const statsOpen = document.getElementById('stats-btn');
@@ -1175,15 +1287,21 @@ class SudokuGame {
                     }
                 }
                 // Lock number mode: clicking a number locks it for repeated placement
-                if (number > 0) {
-                    this.lockedNumber = number;
-                    document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+                const isAlreadyActive = btn.classList.contains('active');
+                document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
+                if (isAlreadyActive) {
+                    // Toggle off
+                    this.lockedNumber = null;
                 } else {
-                    this.lockedNumber = 0; // erase mode
-                    document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+                    if (number > 0) {
+                        this.lockedNumber = number;
+                        btn.classList.add('active');
+                    } else {
+                        this.lockedNumber = 0; // erase mode
+                        btn.classList.add('active');
+                    }
                 }
+                this.syncNotesBadgeState();
             });
         });
         
@@ -1205,17 +1323,34 @@ class SudokuGame {
             }
         });
         
-        // Keyboard shortcuts
+        // Keyboard shortcuts (global)
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); this.undo(); return; }
-            if (e.ctrlKey && e.key.toLowerCase() === 'y') { e.preventDefault(); this.redo(); return; }
-            if (e.key >= '1' && e.key <= '9' && this.selectedCell && !this.selectedCell.readOnly) {
-                const r = parseInt(this.selectedCell.dataset.row);
-                const c = parseInt(this.selectedCell.dataset.col);
-                this.setCellValue(r, c, parseInt(e.key), 'keyboard');
-                this.checkGameComplete();
+            // Ignore when a modal is open
+            const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.style.display === 'block');
+            if (anyModalOpen) return;
+            // Undo/Redo with Ctrl/Meta
+            const key = e.key.toLowerCase();
+            if ((e.ctrlKey || e.metaKey) && key === 'z' && !e.shiftKey) { e.preventDefault(); this.undo(); return; }
+            if ((e.ctrlKey || e.metaKey) && ((key === 'y') || (key === 'z' && e.shiftKey))) { e.preventDefault(); this.redo(); return; }
+            // Global Escape clears locked number
+            if (e.key === 'Escape') {
+                this.lockedNumber = null;
+                document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
+                return;
             }
+            // Do not handle numeric input globally; rely on focused cell handlers
         });
+
+        // Pointer-based drag painting across cells when a number is locked
+        const board = document.getElementById('board');
+        if (board) {
+            // Improve touch responsiveness during drags
+            try { board.style.touchAction = 'none'; } catch {}
+            board.addEventListener('pointerdown', (e) => this.onBoardPointerDown(e));
+            board.addEventListener('pointermove', (e) => this.onBoardPointerMove(e));
+            window.addEventListener('pointerup', (e) => this.onBoardPointerUp(e));
+            window.addEventListener('pointercancel', (e) => this.onBoardPointerUp(e));
+        }
 
         // New game dropdown and label handling
         const newDropdownBtn = document.getElementById('newgame-dropdown');
@@ -1289,6 +1424,93 @@ class SudokuGame {
         // Clicking timer toggles pause
         const timerBtn = document.getElementById('timer-toggle');
         if (timerBtn) timerBtn.addEventListener('click', () => this.togglePause());
+    }
+
+    onBoardPointerDown(e) {
+        const target = e.target.closest && e.target.closest('.cell');
+        if (!target) return;
+        // Track long-press gesture start for quick-note affordance
+        this._pressStartX = e.clientX;
+        this._pressStartY = e.clientY;
+        this._pressMoved = false;
+        this._longPressActive = false;
+        if (this.touchMode) {
+            clearTimeout(this._pressTimer);
+            this._pressTimer = setTimeout(() => {
+                // If pointer hasn't moved much, treat as long-press
+                if (!this._pressMoved) {
+                    this._longPressActive = true;
+                    // If a number is locked and > 0, toggle a note for that number here
+                    const locked = this.lockedNumber;
+                    const r = parseInt(target.dataset.row);
+                    const c = parseInt(target.dataset.col);
+                    if (locked && locked > 0 && !target.readOnly) {
+                        // Temporarily ensure notes mode behavior without altering global toggle
+                        this.toggleNote(r, c, locked);
+                    }
+                }
+            }, 450); // ~450ms long-press
+        }
+        const row = parseInt(target.dataset.row);
+        const col = parseInt(target.dataset.col);
+        this.selectCell(target, row, col);
+        // Double-tap to erase (works for touch and mouse quick double click)
+        const cellKey = `${row},${col}`;
+        const now = Date.now();
+        if (now - this._lastTapTime < 300 && this._lastTapCellKey === cellKey && !target.readOnly) {
+            this.setCellValue(row, col, 0, 'tap');
+            this.checkGameComplete();
+        }
+        this._lastTapTime = now;
+        this._lastTapCellKey = cellKey;
+        if (this.lockedNumber !== null && !target.readOnly) {
+            e.preventDefault();
+            this._isPainting = true;
+            this._paintingPointerId = e.pointerId;
+            const v = this.lockedNumber;
+            if (this.isNotesMode && v > 0) {
+                this.toggleNote(row, col, v);
+            } else {
+                this.setCellValue(row, col, v, 'paint');
+                this.checkGameComplete();
+            }
+        }
+    }
+
+    onBoardPointerMove(e) {
+        if (!this._isPainting || this._paintingPointerId !== e.pointerId) return;
+        // Mark as moved for long-press cancellation
+        const dx = Math.abs(e.clientX - this._pressStartX);
+        const dy = Math.abs(e.clientY - this._pressStartY);
+        if (dx > 6 || dy > 6) this._pressMoved = true;
+
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        if (!el) return;
+        const cell = el.closest && el.closest('.cell');
+        if (!cell) return;
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        if (cell.readOnly) return;
+        const v = this.lockedNumber;
+        if (v === null) return;
+        if (this.isNotesMode && v > 0) {
+            this.toggleNote(row, col, v);
+        } else {
+            this.setCellValue(row, col, v, 'paint');
+            this.checkGameComplete();
+        }
+    }
+
+    onBoardPointerUp(e) {
+        if (this._isPainting && this._paintingPointerId === e.pointerId) {
+            this._isPainting = false;
+            this._paintingPointerId = null;
+        }
+        // Cancel any pending long-press timer
+        clearTimeout(this._pressTimer);
+        this._pressTimer = null;
+        this._pressMoved = false;
+        this._longPressActive = false;
     }
 
     // ----- Calendar UI -----
@@ -1494,6 +1716,11 @@ class SudokuGame {
         const toggle = document.getElementById('auto-candidates-toggle');
         return !!(toggle && toggle.checked);
     }
+    // Auto-advance toggle
+    isAutoAdvanceEnabled() {
+        const toggle = document.getElementById('auto-advance-toggle');
+        return !!(toggle && toggle.checked);
+    }
     computeCandidates(row, col) {
         const s = new Set();
         if (this.board[row][col] !== 0) return s;
@@ -1531,6 +1758,7 @@ class SudokuGame {
     persistSettings() {
         const settings = {
             autoCandidates: !!(document.getElementById('auto-candidates-toggle')?.checked),
+            autoAdvance: !!(document.getElementById('auto-advance-toggle')?.checked),
             mistakesEnabled: this.mistakesEnabled,
             mistakeLimit: this.mistakeLimit === Infinity ? 11 : this.mistakeLimit,
             themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
@@ -1558,6 +1786,7 @@ class SudokuGame {
             const s = JSON.parse(raw);
             if (!s) return;
             const ac = document.getElementById('auto-candidates-toggle'); if (ac) ac.checked = !!s.autoCandidates;
+            const aa = document.getElementById('auto-advance-toggle'); if (aa) aa.checked = !!s.autoAdvance;
             const ml = document.getElementById('mistakes-limit'); const mlv = document.getElementById('mistakes-limit-value');
             if (ml && mlv && typeof s.mistakeLimit === 'number') {
                 ml.value = s.mistakeLimit;
