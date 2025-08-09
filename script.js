@@ -1128,15 +1128,42 @@ class SudokuGame {
         const newDropdownBtn = document.getElementById('newgame-dropdown');
         const newPopover = document.getElementById('newgame-popover');
         if (newDropdownBtn && newPopover) {
+            // Keep original parent to restore later when closing
+            const originalParent = newPopover.parentElement;
             const toggleNewPopover = (e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                const open = newPopover.style.display === 'block';
+                const open = !(newPopover.hidden === true || newPopover.style.display === 'none');
                 // Close hamburger menu if open
                 const mp = document.getElementById('menu-popover');
                 if (mp) mp.style.display = 'none';
-                newPopover.style.display = open ? 'none' : 'block';
+                if (open) {
+                    newPopover.hidden = true; newPopover.style.display = 'none';
+                    // restore to original parent to keep DOM clean
+                    if (originalParent && newPopover.parentElement !== originalParent) originalParent.appendChild(newPopover);
+                } else {
+                    // Float the popover to body to avoid clipping/overlap issues
+                    const rect = newDropdownBtn.getBoundingClientRect();
+                    document.body.appendChild(newPopover);
+                    newPopover.style.position = 'fixed';
+                    newPopover.style.visibility = 'hidden';
+                    newPopover.hidden = false; newPopover.style.display = 'block';
+                    // measure to align right edge under the caret
+                    const width = newPopover.offsetWidth;
+                    const left = Math.max(8, Math.min(window.innerWidth - width - 8, rect.right - width));
+                    const top = rect.bottom + 6;
+                    newPopover.style.left = `${left}px`;
+                    newPopover.style.top = `${top}px`;
+                    newPopover.style.right = 'auto';
+                    newPopover.style.visibility = 'visible';
+                    newPopover.style.zIndex = '1000';
+                    // Focus first item
+                    const first = newPopover.querySelector('button, [data-diff]');
+                    first && first.focus && first.focus();
+                }
             };
             newDropdownBtn.addEventListener('click', toggleNewPopover);
+            newDropdownBtn.addEventListener('pointerdown', (e)=>{ /* ensure pointer events trigger */ });
             // Also open when clicking New Game label if desired
             // document.getElementById('new-game-btn')?.addEventListener('contextmenu', toggleNewPopover);
             newPopover.addEventListener('click', (e) => { e.stopPropagation(); });
@@ -1145,7 +1172,7 @@ class SudokuGame {
                     const diff = item.getAttribute('data-diff');
                     try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
                     const label = document.getElementById('difficulty-label'); if (label) label.textContent = diff[0].toUpperCase() + diff.slice(1);
-                    newPopover.style.display = 'none';
+                    newPopover.hidden = true; newPopover.style.display = 'none';
                     this.setDailyUiState && this.setDailyUiState(false);
                     this.stopTimer();
                     this.generatePuzzle(diff);
@@ -1154,8 +1181,13 @@ class SudokuGame {
                 });
             });
             document.addEventListener('click', (e) => {
-                const wrap = newDropdownBtn.closest('.menu-wrap') || newDropdownBtn;
-                if (!wrap.contains(e.target)) newPopover.style.display = 'none';
+                const withinButton = (newDropdownBtn.contains(e.target));
+                const withinPopover = newPopover.contains(e.target);
+                if (!withinButton && !withinPopover) {
+                    newPopover.hidden = true; newPopover.style.display = 'none';
+                    // restore to original parent if moved to body
+                    if (originalParent && newPopover.parentElement !== originalParent) originalParent.appendChild(newPopover);
+                }
             });
         }
 

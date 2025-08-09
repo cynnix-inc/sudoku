@@ -26,11 +26,11 @@
                         <button id="new-game-btn" class="icon-btn" title="New Game">🔄</button>
                         <div class="menu-wrap">
                           <button id="newgame-dropdown" class="icon-btn caret-btn" title="Change difficulty">▾</button>
-                          <div id="newgame-popover" class="popover-menu" role="menu" style="display:none;">
-                            <button class="popover-item" data-diff="easy">Easy</button>
-                            <button class="popover-item" data-diff="medium">Medium</button>
-                            <button class="popover-item" data-diff="hard">Hard</button>
-                            <button class="popover-item" data-diff="expert">Expert</button>
+                          <div id="newgame-popover" class="popover-menu" role="menu" hidden>
+                            <button class="popover-item" data-diff="easy"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg></span><span>Easy</span></button>
+                            <button class="popover-item" data-diff="medium"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,3 14,13 2,13" fill="currentColor"/></svg></span><span>Medium</span></button>
+                            <button class="popover-item" data-diff="hard"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><rect x="3" y="3" width="10" height="10" fill="currentColor"/></svg></span><span>Hard</span></button>
+                            <button class="popover-item" data-diff="expert"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,2 14,6 14,10 8,14 2,10 2,6" fill="currentColor"/></svg></span><span>Expert</span></button>
                           </div>
                         </div>
                     </div>
@@ -38,15 +38,15 @@
                     <div class="menu-wrap">
                         <button id="menu-btn" class="icon-btn" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
                         <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
-                    <button id="menu-check" class="popover-item" role="menuitem">Check</button>
-                    <button id="menu-solve" class="popover-item" role="menuitem">Solve</button>
-                    <button id="menu-clear" class="popover-item" role="menuitem">Clear All</button>
+                          <button id="menu-check" class="popover-item" role="menuitem"><span class="menu-icon">🔎</span><span>Check</span></button>
+                          <button id="menu-solve" class="popover-item" role="menuitem"><span class="menu-icon">🧩</span><span>Solve</span></button>
+                          <button id="menu-clear" class="popover-item" role="menuitem"><span class="menu-icon">🧹</span><span>Clear All</span></button>
                     <hr/>
-                    <button id="menu-archive" class="popover-item" role="menuitem">Archive</button>
-                    <button id="menu-stats" class="popover-item" role="menuitem">Stats</button>
+                          <button id="menu-archive" class="popover-item" role="menuitem"><span class="menu-icon">🗂️</span><span>Archive</span></button>
+                          <button id="menu-stats" class="popover-item" role="menuitem"><span class="menu-icon">📊</span><span>Stats</span></button>
                     <hr/>
-                    <button id="menu-settings" class="popover-item" role="menuitem">Settings</button>
-                        <button id="menu-help" class="popover-item" role="menuitem">Help</button>
+                          <button id="menu-settings" class="popover-item" role="menuitem"><span class="menu-icon">⚙️</span><span>Settings</span></button>
+                          <button id="menu-help" class="popover-item" role="menuitem"><span class="menu-icon">❓</span><span>Help</span></button>
                         </div>
                     </div>
                 </div>

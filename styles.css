@@ -52,9 +52,11 @@ body {
 .newgame-group { position: relative; display: flex; gap: 0.25rem; align-items: center; }
 .caret-btn { width: 32px; height: 32px; font-size: 0.9rem; }
 /* Visually attach difficulty dropdown to New Game as a split control */
-.header-right .newgame-group { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; gap: 0; }
+.header-right .newgame-group { border: 1px solid var(--border); border-radius: 8px; overflow: visible; gap: 0; }
 .header-right #new-game-btn { border: 0; border-right: 1px solid var(--border); border-radius: 0; }
 .header-right #newgame-dropdown { border: 0; border-radius: 0; }
+/* Smaller dropdown width for difficulty picker */
+.newgame-group .popover-menu { min-width: 160px; display: none; }
 .caret-btn { width: 32px; height: 32px; --icon-size: 32px; font-size: 0.9rem; }
 /* Visually attach difficulty dropdown to New Game as a split control */
 .header-right .newgame-group { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; gap: 0; }
@@ -101,19 +103,30 @@ body {
     border-radius: 12px;
     box-shadow: var(--shadow);
     padding: 0.5rem;
-    min-width: 220px;
-    z-index: 900; /* ensure modals (1000+) cover it */
+    width: max-content;
+    min-width: unset;
+    max-width: 90vw;
+    white-space: nowrap;
+    box-sizing: border-box;
+    z-index: 950; /* ensure above main UI; modals still higher */
 }
+/* Specific widths */
+#newgame-popover { width: max-content !important; min-width: unset !important; }
+#menu-popover { width: max-content; }
 .popover-item {
+    display: block;
     width: 100%;
     background: var(--surface);
     color: var(--text);
     border: none;
     text-align: left;
-    padding: 0.5rem 0.75rem;
+    padding: 0.45rem 0.6rem;
     border-radius: 8px;
     cursor: pointer;
 }
+.popover-item { display: grid; grid-template-columns: 1.25rem auto; align-items: center; gap: 0.5rem; }
+.popover-item .menu-icon { text-align: center; opacity: 0.9; color: currentColor; display: inline-flex; align-items: center; justify-content: center; }
+.popover-menu hr { margin: 0.4rem 0; }
 .popover-item:hover { background: var(--surface-muted); }
 
 .container {
