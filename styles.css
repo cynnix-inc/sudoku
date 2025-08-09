@@ -15,7 +15,7 @@ body {
 }
 
 :root {
-    --cell-size: clamp(34px, 8.5vw, 50px);
+    --cell-size: 50px; /* will be overridden by JS for perfect pixel fit */
     --icon-size: 40px;
 }
 
@@ -178,20 +178,21 @@ h1 {
 
 .board {
     display: grid;
-    grid-template-columns: repeat(9, 1fr);
+    grid-template-columns: repeat(9, var(--cell-size));
     gap: 1px;
     background: #cbd5e1;
-    padding: 1px;
+    padding: 0; /* handled by computed width */
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    width: min(92vw, 540px);
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .cell-container {
     position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1;
+    width: var(--cell-size);
+    height: var(--cell-size);
 }
 
 .cell {
@@ -203,7 +204,7 @@ h1 {
     padding: 0;
     -webkit-appearance: none;
     appearance: none;
-    font-size: clamp(18px, 4.2vw, 28px);
+    font-size: calc(var(--cell-size) * 0.48);
     font-weight: 600;
     text-align: center;
     cursor: pointer;
@@ -488,10 +489,8 @@ h1 {
         font-size: 1rem;
     }
     .number-pad { position: sticky; bottom: 0; background: white; padding: 0.5rem 0 0.75rem; }
-    /* Make board slightly wider on very small screens */
-    .board { width: min(96vw, 540px); }
-    /* Larger digits for readability on phones */
-    .cell { font-size: clamp(20px, 6.2vw, 30px); }
+    /* Larger digits for readability on phones; still tied to cell size */
+    .cell { font-size: calc(var(--cell-size) * 0.52); }
     /* Slightly thinner 3x3 separators to reduce visual heaviness on mobile */
     .cell[data-col="2"],
     .cell[data-col="5"] { border-right-width: 1.5px; }

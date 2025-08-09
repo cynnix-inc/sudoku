@@ -33,6 +33,7 @@ class SudokuGame {
 
     initializeGame() {
         this.createBoard();
+        this.setupResponsiveSizing();
         // Restore last chosen difficulty if available
         try {
             const saved = localStorage.getItem('sudoku-last-difficulty');
@@ -48,6 +49,32 @@ class SudokuGame {
         }
         this.startTimer();
         this.updateDisplay();
+    }
+
+    // Compute pixel-perfect cell size to avoid subpixel gaps on mobile
+    setupResponsiveSizing() {
+        const boardElement = document.getElementById('board');
+        const apply = () => {
+            if (!boardElement) return;
+            // available width (in px)
+            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+            // Container paddings/margins are inside .container; give the board some side breathing room
+            const maxBoardWidth = Math.min(560, Math.max(300, vw - 32));
+            // We have 9 tracks and 8 gaps of 1px each
+            const gap = 1;
+            const totalGaps = gap * 8;
+            // Choose the largest integer cell size that fits
+            const raw = Math.floor((maxBoardWidth - totalGaps) / 9);
+            const cellSize = Math.max(34, Math.min(60, raw));
+            // Compute exact board width for these integer tracks
+            const boardWidth = cellSize * 9 + totalGaps;
+            boardElement.style.width = boardWidth + 'px';
+            document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
+        };
+        // Initial and on resize/orientation change
+        apply();
+        window.addEventListener('resize', apply);
+        window.addEventListener('orientationchange', apply);
     }
 
     createBoard() {
