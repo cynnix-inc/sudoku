@@ -15,8 +15,11 @@ body {
 }
 
 :root {
-    --cell-size: 50px; /* will be overridden by JS for perfect pixel fit */
+    --cell-size: 50px; /* overridden by JS for perfect pixel fit */
     --icon-size: 40px;
+    --grid-color: #e2e8f0;
+    --separator-color: #64748b;
+    --sep-thickness: 2px;
 }
 
 .app-header {
@@ -201,13 +204,13 @@ h1 {
     border-radius: inherit;
     /* light 1px grid lines */
     background-image:
-        repeating-linear-gradient(to right, #e2e8f0 0 1px, transparent 1px calc(var(--cell-size))),
-        repeating-linear-gradient(to bottom, #e2e8f0 0 1px, transparent 1px calc(var(--cell-size))),
+        repeating-linear-gradient(to right, var(--grid-color) 0 1px, transparent 1px calc(var(--cell-size))),
+        repeating-linear-gradient(to bottom, var(--grid-color) 0 1px, transparent 1px calc(var(--cell-size))),
         /* thick 3x3 separators */
-        linear-gradient(#64748b, #64748b),
-        linear-gradient(#64748b, #64748b),
-        linear-gradient(#64748b, #64748b),
-        linear-gradient(#64748b, #64748b);
+        linear-gradient(var(--separator-color), var(--separator-color)),
+        linear-gradient(var(--separator-color), var(--separator-color)),
+        linear-gradient(var(--separator-color), var(--separator-color)),
+        linear-gradient(var(--separator-color), var(--separator-color));
     background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
     background-position:
         0 0,
@@ -219,10 +222,10 @@ h1 {
     background-size:
         100% 100%,
         100% 100%,
-        2px 100%,
-        2px 100%,
-        100% 2px,
-        100% 2px;
+        var(--sep-thickness) 100%,
+        var(--sep-thickness) 100%,
+        100% var(--sep-thickness),
+        100% var(--sep-thickness);
 }
 
 .cell-container {
@@ -511,6 +514,8 @@ h1 {
 
 @media (max-width: 480px) {
     :root { --icon-size: 36px; }
+    /* slightly thinner separators and a hair darker grid for smaller screens */
+    :root { --sep-thickness: 1.5px; --grid-color: #dbe3ea; }
     .number-btn {
         padding: 0.75rem;
         font-size: 1rem;
