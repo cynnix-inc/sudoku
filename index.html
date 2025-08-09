@@ -10,7 +10,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       if('serviceWorker' in navigator){
-        window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js'));
+        window.addEventListener('load',()=>{
+          navigator.serviceWorker.register('service-worker.js').then(reg=>{
+            if (reg.waiting) { reg.waiting.postMessage({type:'SKIP_WAITING'}); }
+            reg.addEventListener('updatefound',()=>{
+              const sw = reg.installing;
+              if (!sw) return;
+              sw.addEventListener('statechange',()=>{
+                if (sw.state==='installed' && navigator.serviceWorker.controller) {
+                  // New version ready; activate immediately
+                  sw.postMessage({type:'SKIP_WAITING'});
+                }
+              });
+            });
+          });
+          // Reload when controller changes to pick up new assets without manual cache clear
+          navigator.serviceWorker.addEventListener('controllerchange',()=>{ window.location.reload(); });
+        });
       }
     </script>
   </head>
