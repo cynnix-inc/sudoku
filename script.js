@@ -40,6 +40,9 @@ class SudokuGame {
         this.mistakesCount = 0;
         this.lastWrongValues = Array(9).fill().map(() => Array(9).fill(null));
         this.isGameOver = false;
+        // Timer pause/resume state
+        this.isPaused = false;
+        this._elapsedBeforePause = 0;
         
         if (!this._headless) {
             this.initializeGame();
@@ -55,6 +58,16 @@ class SudokuGame {
         // Seed calendar and daily state
         this._calendarRefMonth = new Date();
         this._activeDailyKey = null;
+        // Initialize daily notification dot
+        this.updateDailyIconBadge && this.updateDailyIconBadge();
+    }
+
+    // Determine if there is an active, non-finished game that should trigger confirmation
+    isGameInProgress() {
+        // In progress if not complete/over and any move has been made or timer has started
+        const anyMoves = (this.history && this.history.length > 0);
+        const hasElapsed = this.getElapsedSeconds && this.getElapsedSeconds() > 0;
+        return !this.isGameComplete && !this.isGameOver && (anyMoves || hasElapsed);
     }
     
     updateModeIndicator({ type, difficulty, dateKey }) {
@@ -70,8 +83,24 @@ class SudokuGame {
             const formatted = `${mon}-${day}`; // mmm-DD
             host.innerHTML = `<span class="mode-label">Daily</span><span class="${cls}"><span class="icon">${icon}</span><span class="mode-date">${formatted}</span></span>`;
         } else {
-            const label = (difficulty || 'medium');
+        const label = (difficulty || 'medium');
             host.innerHTML = `<span class="mode-label">Mode</span><span class="${cls}"><span class="icon">${icon}</span><span class="mode-date">${label[0].toUpperCase()+label.slice(1)}</span></span>`;
+        }
+        // Update icon badge state whenever mode changes
+        this.updateDailyIconBadge && this.updateDailyIconBadge();
+    }
+
+    // Show a notification dot on the calendar icon if today's daily is not completed
+    updateDailyIconBadge() {
+        const dot = document.getElementById('daily-dot');
+        if (!dot) return;
+        try {
+            const key = this.getUtcDateKey();
+            const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
+            const completed = !!(results && results[key] && results[key].completed);
+            dot.style.display = completed ? 'none' : 'inline-block';
+        } catch {
+            dot.style.display = 'inline-block';
         }
     }
 
@@ -206,7 +235,9 @@ class SudokuGame {
             'easy': 30,
             'medium': 40,
             'hard': 50,
-            'expert': 60
+            'expert': 60,
+            'master': 62,
+            'extreme': 64
         };
         
         const cellsToRemoveCount = cellsToRemove[difficulty] || 40;
@@ -220,6 +251,9 @@ class SudokuGame {
         
         // Copy to initial board
         this.initialBoard = this.board.map(row => [...row]);
+        
+        // Reset all notes to empty for a fresh puzzle
+        this.notes = Array(9).fill().map(() => Array(9).fill(null).map(() => new Set()));
         // console.log('Initial board saved:', this.initialBoard);
         
         // Auto-candidates on start
@@ -269,7 +303,7 @@ class SudokuGame {
         const slider = document.getElementById('mistakes-limit');
         const label = document.getElementById('mistakes-limit-value');
         const note = document.getElementById('mistakes-daily-note');
-        const map = { easy: 5, medium: 4, hard: 3, expert: 2 };
+        const map = { easy: 6, medium: 5, hard: 4, expert: 3, master: 2, extreme: 1 };
         if (isDaily) {
             const lim = map[difficulty] ?? 3;
             this.mistakesEnabled = true;
@@ -354,7 +388,7 @@ class SudokuGame {
                 else { this.board[r][c] = v1; if (r !== sr || c !== sc) this.board[sr][sc] = v2; }
             }
         };
-        const cellsToRemove = { easy: 30, medium: 40, hard: 50, expert: 60 };
+        const cellsToRemove = { easy: 30, medium: 40, hard: 50, expert: 60, master: 62, extreme: 64 };
         removeSymUnique(cellsToRemove[difficulty] || 40);
         this.initialBoard = this.board.map(r => [...r]);
         this.updateDisplay();
@@ -371,6 +405,11 @@ class SudokuGame {
 
     // Generate or load daily by specific UTC date key
     loadDailyByKey(key, difficulty) {
+        if (this.isGameInProgress && this.isGameInProgress()) {
+            const proceed = confirm('Load this Daily? Current game will end and count as a loss.');
+            if (!proceed) return;
+            this.recordLoss();
+        }
         // Ensure any previous Game Over or Pause overlays are cleared when loading a Daily
         this.isGameComplete = false;
         this.isGameOver = false;
@@ -433,11 +472,19 @@ class SudokuGame {
                 else { this.board[r][c] = v1; if (r !== sr || c !== sc) this.board[sr][sc] = v2; }
             }
         };
-        const cellsToRemove = { easy: 30, medium: 40, hard: 50, expert: 60 };
+        const cellsToRemove = { easy: 30, medium: 40, hard: 50, expert: 60, master: 62, extreme: 64 };
         const diff = difficulty || this.getDifficultyForDateKey(key);
         removeSymUnique(cellsToRemove[diff] || 40);
         this.initialBoard = this.board.map(r => [...r]);
         this.updateDisplay();
+        // Reset timer and undo/redo when loading a daily
+        this.startTime = null;
+        this.isPaused = false;
+        this._pauseStartedAt = null;
+        this._elapsedBeforePause = 0;
+        // Reset undo/redo when loading a daily
+        this.history = [];
+        this.redoStack = [];
         this.setDailyUiState(true, diff);
         this.renderHealthBar();
         try { localStorage.setItem(storeKey, JSON.stringify({ board: this.board, solution: this.solution, difficulty: diff })); } catch {}
@@ -464,12 +511,13 @@ class SudokuGame {
 
     buildWeeklyPattern(weekSeed) {
         const rng = this.createSeededRng('W:' + weekSeed);
-        // Choose one of a few mixes to vary counts weekly
+        // Choose one of a few mixes to vary counts weekly (sum to 7). Include Master/Extreme sparingly.
         const mixes = [
-            { easy: 2, medium: 3, hard: 1, expert: 1 },
-            { easy: 2, medium: 2, hard: 2, expert: 1 },
-            { easy: 1, medium: 3, hard: 2, expert: 1 },
-            { easy: 2, medium: 1, hard: 3, expert: 1 },
+            { easy: 2, medium: 2, hard: 1, expert: 1, master: 1 },
+            { easy: 1, medium: 3, hard: 1, expert: 1, master: 1 },
+            { easy: 1, medium: 2, hard: 2, expert: 1, master: 1 },
+            { easy: 1, medium: 2, hard: 2, expert: 1, extreme: 1 },
+            { easy: 2, medium: 1, hard: 2, expert: 1, master: 1 },
         ];
         const mix = mixes[Math.floor(rng() * mixes.length)];
         const bag = [];
@@ -497,6 +545,8 @@ class SudokuGame {
             case 'medium': return 1;
             case 'hard': return 2;
             case 'expert': return 3;
+            case 'master': return 4;
+            case 'extreme': return 5;
             default: return 1;
         }
     }
@@ -678,16 +728,40 @@ class SudokuGame {
             cell.setAttribute('aria-selected', 'true');
         } catch {}
         
+        // In lock mode: selecting a cell that already contains a number should
+        // auto-select the same number on the number pad (update lockedNumber/UI)
+        try {
+            const lockToggle = document.getElementById('pad-lock-toggle');
+            const lockEnabled = !lockToggle || lockToggle.getAttribute('aria-pressed') === 'true';
+            const currentVal = parseInt(cell.value || '0');
+            if (lockEnabled && currentVal >= 1 && currentVal <= 9) {
+                this.lockedNumber = currentVal;
+                document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
+                const activeBtn = document.querySelector(`.number-btn[data-number="${currentVal}"]`);
+                if (activeBtn) activeBtn.classList.add('active');
+                this.syncNotesBadgeState();
+                // Highlight grid to reflect the locked number
+                this.highlightSameNumbers();
+            }
+        } catch {}
+
         // If a number is locked, placing it on click (or erase if 0)
         if (this.lockedNumber !== null && !cell.readOnly) {
             const r = parseInt(cell.dataset.row);
             const c = parseInt(cell.dataset.col);
             const v = this.lockedNumber;
-            if (this.isNotesMode && v > 0) {
-                this.toggleNote(r, c, v);
-            } else {
-                this.setCellValue(r, c, v, 'locked-number');
-                this.checkGameComplete();
+            const lockToggle = document.getElementById('pad-lock-toggle');
+            const lockEnabled = !lockToggle || lockToggle.getAttribute('aria-pressed') === 'true';
+            const currentVal = parseInt(cell.value || '0');
+            // In lock mode, if we just synced the lock to the cell's own value, skip placing
+            const shouldSkipPlace = lockEnabled && currentVal === v && currentVal !== 0;
+            if (!shouldSkipPlace) {
+                if (this.isNotesMode && v > 0) {
+                    this.toggleNote(r, c, v);
+                } else {
+                    this.setCellValue(r, c, v, 'locked-number');
+                    this.checkGameComplete();
+                }
             }
         }
 
@@ -823,6 +897,8 @@ class SudokuGame {
         if (this.mistakesEnabled && this.isGameOver) return;
         const oldValue = this.board[row][col];
         if (oldValue === value) return;
+        // Capture notes before changing value so undo can restore them
+        const prevNotes = Array.from(this.notes[row][col]);
         this.board[row][col] = value;
         // Clear notes on set
         if (value !== 0) this.notes[row][col].clear();
@@ -834,8 +910,8 @@ class SudokuGame {
                 navigator.vibrate(10);
             }
         } catch {}
-        // record history
-        this.history.push({ type: 'value', row, col, oldValue, newValue: value });
+        // record history including previous notes so undo can restore them
+        this.history.push({ type: 'value', row, col, oldValue, newValue: value, prevNotes });
         this.redoStack = [];
 
         // Mistakes handling
@@ -867,9 +943,18 @@ class SudokuGame {
         const last = this.history.pop();
         if (!last) return;
         if (last.type === 'value') {
-            const { row, col, oldValue, newValue } = last;
+            const { row, col, oldValue, newValue, prevNotes } = last;
             this.board[row][col] = oldValue;
+            // Restore notes that were present before the value change
+            if (Array.isArray(prevNotes)) {
+                this.notes[row][col] = new Set(prevNotes);
+            }
             this.updateCellDisplay(row, col);
+            this.updateNotesDisplay(row, col);
+            // Recompute candidates for peers if auto-candidates are enabled
+            if (typeof this.recomputeCandidatesForPeers === 'function' && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                this.recomputeCandidatesForPeers(row, col);
+            }
         } else if (last.type === 'note') {
             const { row, col, note, added } = last;
             if (added) this.notes[row][col].delete(note); else this.notes[row][col].add(note);
@@ -880,6 +965,8 @@ class SudokuGame {
             this.updateNotesDisplay(row, col);
         }
         this.redoStack.push(last);
+        // Ensure number pad reflects current counts after undo
+        this.updateNumberPadAvailability();
     }
 
     redo() {
@@ -888,7 +975,14 @@ class SudokuGame {
         if (next.type === 'value') {
             const { row, col, oldValue, newValue } = next;
             this.board[row][col] = newValue;
+            // Clearing notes again if placing a value
+            if (newValue !== 0) this.notes[row][col].clear();
             this.updateCellDisplay(row, col);
+            this.updateNotesDisplay(row, col);
+            // Recompute candidates for peers if auto-candidates are enabled
+            if (typeof this.recomputeCandidatesForPeers === 'function' && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                this.recomputeCandidatesForPeers(row, col);
+            }
         } else if (next.type === 'note') {
             const { row, col, note, added } = next;
             if (added) this.notes[row][col].add(note); else this.notes[row][col].delete(note);
@@ -899,6 +993,8 @@ class SudokuGame {
             this.updateNotesDisplay(row, col);
         }
         this.history.push(next);
+        // Ensure number pad reflects current counts after redo
+        this.updateNumberPadAvailability();
     }
 
     toggleNote(row, col, value) {
@@ -979,6 +1075,23 @@ class SudokuGame {
         }
     }
 
+    // Highlight all cells that contain a specific number value (1..9), independent of selection
+    highlightNumber(value) {
+        // Clear existing same-number highlights
+        document.querySelectorAll('.cell.same-number').forEach(c => c.classList.remove('same-number'));
+        const v = parseInt(value);
+        if (!(v >= 1 && v <= 9)) return;
+        const target = String(v);
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                if (cell && cell.value === target) {
+                    cell.classList.add('same-number');
+                }
+            }
+        }
+    }
+
     updateNumberPadAvailability() {
         // Compute remaining counts for digits 1..9
         const remaining = Array(10).fill(9);
@@ -1039,10 +1152,20 @@ class SudokuGame {
     }
 
     startTimer() {
-        this.startTime = Date.now();
+        // If resuming after pause, shift startTime forward by paused duration so elapsed excludes pause time
+        if (this.isPaused && this._pauseStartedAt) {
+            const pausedFor = Date.now() - this._pauseStartedAt;
+            this._elapsedBeforePause += Math.max(0, Math.floor(pausedFor / 1000));
+            this.isPaused = false;
+            this._pauseStartedAt = null;
+        }
+        if (!this.startTime) this.startTime = Date.now();
+        if (this.timer) clearInterval(this.timer);
         this.timer = setInterval(() => {
             this.updateTimer();
         }, 1000);
+        // Update immediately on start
+        this.updateTimer();
     }
 
     stopTimer() {
@@ -1060,11 +1183,18 @@ class SudokuGame {
 
     getTimeSpent() {
         if (!this.startTime) return '00:00';
-        
-        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const now = Date.now();
+        let elapsed = Math.floor((now - this.startTime) / 1000);
+        // Subtract accumulated paused time
+        elapsed -= (this._elapsedBeforePause || 0);
+        if (this.isPaused && this._pauseStartedAt) {
+            // While paused, exclude current paused duration
+            const pausedDelta = Math.floor((now - this._pauseStartedAt) / 1000);
+            elapsed -= pausedDelta;
+        }
+        if (elapsed < 0) elapsed = 0;
         const minutes = Math.floor(elapsed / 60);
         const seconds = elapsed % 60;
-        
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
@@ -1092,6 +1222,14 @@ class SudokuGame {
         this.lockedNumber = null;
         document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
         this.stopTimer();
+        // Reset timer state
+        this.startTime = null;
+        this.isPaused = false;
+        this._pauseStartedAt = null;
+        this._elapsedBeforePause = 0;
+        // Reset undo/redo history on new game
+        this.history = [];
+        this.redoStack = [];
         this.generatePuzzle(difficulty);
         this.startTimer();
         this.updateDisplay();
@@ -1142,6 +1280,11 @@ class SudokuGame {
     }
 
     rerollDailyOnce(fromModal = false) {
+        if (this.isGameInProgress && this.isGameInProgress()) {
+            const proceed = confirm('Reroll Daily? Current game will end and count as a loss.');
+            if (!proceed) return;
+            this.recordLoss();
+        }
         const key = this.getUtcDateKey();
         const rerollFlagKey = `sudoku-daily-reroll-${key}`;
         if (localStorage.getItem(rerollFlagKey)) {
@@ -1155,6 +1298,13 @@ class SudokuGame {
         // Use an alternate seed suffix for a different but deterministic reroll
         this._rerollSuffix = '-R';
         const diff = this.getDailyDifficulty();
+        // Reset timer and undo/redo when rerolling
+        this.startTime = null;
+        this.isPaused = false;
+        this._pauseStartedAt = null;
+        this._elapsedBeforePause = 0;
+        this.history = [];
+        this.redoStack = [];
         this.generateDaily(diff);
         delete this._rerollSuffix;
 
@@ -1305,7 +1455,14 @@ class SudokuGame {
 
     setupEventListeners() {
         // Game control buttons
-        document.getElementById('new-game-btn').addEventListener('click', () => this.newGame());
+        document.getElementById('new-game-btn').addEventListener('click', () => {
+            if (this.isGameInProgress && this.isGameInProgress()) {
+                const proceed = confirm('Start a new game? Current game will end and count as a loss.');
+                if (!proceed) return;
+                this.recordLoss();
+            }
+            this.newGame();
+        });
         const solveBtn = document.getElementById('solve-btn'); if (solveBtn) solveBtn.addEventListener('click', () => this.solvePuzzle());
         const checkBtn = document.getElementById('check-btn'); if (checkBtn) checkBtn.addEventListener('click', () => this.checkPuzzle());
         const clearBtn = document.getElementById('clear-btn'); if (clearBtn) clearBtn.addEventListener('click', () => this.clearBoard());
@@ -1382,7 +1539,6 @@ class SudokuGame {
             ['menu-check', () => this.checkPuzzle()],
             ['menu-solve', () => this.solvePuzzle()],
             ['menu-clear', () => this.clearBoard()],
-            ['menu-archive', () => this.openArchive()],
             ['menu-stats', () => this.showStats && this.showStats()],
             ['menu-settings', () => { const m = document.getElementById('settings-modal'); if (m) m.style.display = 'block'; }],
             ['menu-help', () => { const m = document.getElementById('help-modal'); if (m) m.style.display = 'block'; }],
@@ -1424,11 +1580,25 @@ class SudokuGame {
         const dailyClose = document.getElementById('daily-close');
         if (dailyClose) dailyClose.addEventListener('click', () => { const m = document.getElementById('daily-modal'); if (m) m.style.display = 'none'; if (this._dailyModalTimer) clearInterval(this._dailyModalTimer); });
         const dailyStart = document.getElementById('daily-start');
-        if (dailyStart) dailyStart.addEventListener('click', () => { const diff = this.getDailyDifficulty(); this.generateDaily(diff); const m = document.getElementById('daily-modal'); if (m) m.style.display = 'none'; if (this._dailyModalTimer) clearInterval(this._dailyModalTimer); });
+        if (dailyStart) dailyStart.addEventListener('click', () => {
+            if (this.isGameInProgress && this.isGameInProgress()) {
+                const proceed = confirm('Start Daily? Current game will end and count as a loss.');
+                if (!proceed) return;
+                this.recordLoss();
+            }
+            const diff = this.getDailyDifficulty();
+            // Reset timer and undo/redo when starting daily
+            this.startTime = null;
+            this.isPaused = false;
+            this._pauseStartedAt = null;
+            this._elapsedBeforePause = 0;
+            this.history = [];
+            this.redoStack = [];
+            this.generateDaily(diff);
+            const m = document.getElementById('daily-modal'); if (m) m.style.display = 'none'; if (this._dailyModalTimer) clearInterval(this._dailyModalTimer);
+        });
         const dailyReroll = document.getElementById('daily-reroll');
         if (dailyReroll) dailyReroll.addEventListener('click', () => this.rerollDailyOnce(true));
-        const archiveClose = document.getElementById('archive-close');
-        if (archiveClose) archiveClose.addEventListener('click', () => { const m = document.getElementById('archive-modal'); if (m) m.style.display = 'none'; });
         const dailyIcon = document.getElementById('daily-icon-btn');
         if (dailyIcon) dailyIcon.addEventListener('click', () => { hideMenu(); this.openCalendar(); });
         // Difficulty picker persistence
@@ -1547,32 +1717,41 @@ class SudokuGame {
         document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const number = parseInt(btn.dataset.number);
-                if (this.selectedCell && !this.selectedCell.readOnly) {
-                    const r = parseInt(this.selectedCell.dataset.row);
-                    const c = parseInt(this.selectedCell.dataset.col);
-                    const v = number === 0 ? 0 : number;
-                    if (this.isNotesMode && v > 0) {
-                        this.toggleNote(r, c, v);
-                    } else {
-                        this.setCellValue(r, c, v, 'numpad');
-                        this.checkGameComplete();
-                    }
-                }
                 // Lock number mode depending on toggle
                 const lockToggle = document.getElementById('pad-lock-toggle');
                 const lockEnabled = !lockToggle || lockToggle.getAttribute('aria-pressed') === 'true';
+
                 if (lockEnabled) {
-                    // locking behavior (sticky)
+                    // In lock mode, switching numbers should NOT enter into the current cell
                     const isAlreadyActive = btn.classList.contains('active');
                     document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
                     if (isAlreadyActive) {
                         this.lockedNumber = null;
+                        // Clear number highlights when unlocking
+                        this.highlightSameNumbers();
                     } else {
-                        if (number > 0) { this.lockedNumber = number; btn.classList.add('active'); }
-                        else { this.lockedNumber = 0; btn.classList.add('active'); }
+                        this.lockedNumber = number > 0 ? number : 0;
+                        btn.classList.add('active');
+                        // Highlight same number across the grid for the locked number
+                        if (number > 0) {
+                            this.highlightNumber(number);
+                        } else {
+                            this.highlightSameNumbers();
+                        }
                     }
                 } else {
-                    // single-shot behavior (no sticky lock)
+                    // Single-shot behavior (no sticky lock): place immediately if a cell is selected
+                    if (this.selectedCell && !this.selectedCell.readOnly) {
+                        const r = parseInt(this.selectedCell.dataset.row);
+                        const c = parseInt(this.selectedCell.dataset.col);
+                        const v = number === 0 ? 0 : number;
+                        if (this.isNotesMode && v > 0) {
+                            this.toggleNote(r, c, v);
+                        } else {
+                            this.setCellValue(r, c, v, 'numpad');
+                            this.checkGameComplete();
+                        }
+                    }
                     this.lockedNumber = null;
                     document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
                 }
@@ -1688,6 +1867,11 @@ class SudokuGame {
             newPopover.addEventListener('click', (e) => { e.stopPropagation(); });
             newPopover.querySelectorAll('[data-diff]').forEach(item => {
                 item.addEventListener('click', () => {
+                    if (this.isGameInProgress && this.isGameInProgress()) {
+                        const proceed = confirm('Start a new game? Current game will end and count as a loss.');
+                        if (!proceed) { return; }
+                        this.recordLoss();
+                    }
                     const diff = item.getAttribute('data-diff');
                     try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
                     this.updateModeIndicator({ type: 'normal', difficulty: diff });
@@ -1707,6 +1891,14 @@ class SudokuGame {
                     document.querySelectorAll('.cell.highlighted').forEach(cell => cell.classList.remove('highlighted'));
                     this.setDailyUiState && this.setDailyUiState(false);
                     this.stopTimer();
+                    // Reset timer state for new difficulty game
+                    this.startTime = null;
+                    this.isPaused = false;
+                    this._pauseStartedAt = null;
+                    this._elapsedBeforePause = 0;
+                    // Reset undo/redo on difficulty start
+                    this.history = [];
+                    this.redoStack = [];
                     this.generatePuzzle(diff);
                     this.startTimer();
                     this.updateDisplay();
@@ -1888,7 +2080,7 @@ class SudokuGame {
             const chip = document.createElement('span');
             chip.className = `diff-chip diff-${diff}`;
             chip.title = diff[0].toUpperCase() + diff.slice(1);
-            chip.textContent = this.getDifficultyIcon(diff);
+            chip.innerHTML = this.getDifficultyIcon(diff);
 
             // Flags
             const thisUtcMidnight = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -1939,13 +2131,24 @@ class SudokuGame {
     }
 
     getDifficultyIcon(diff) {
-        // Use glyphs consistent with dropdown icons
+        // Inline SVG for crisp, scalable icons; color inherited via currentColor
         switch (diff) {
-            case 'easy': return '●'; // circle
-            case 'medium': return '▲'; // triangle
-            case 'hard': return '■'; // square
-            case 'expert': return '⬢'; // hexagon
-            default: return '●';
+            case 'easy':
+                return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>';
+            case 'medium':
+                return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><polygon points="8,3 14,13 2,13" fill="currentColor"/></svg>';
+            case 'hard':
+                return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><rect x="3" y="3" width="10" height="10" fill="currentColor"/></svg>';
+            case 'expert':
+                return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><polygon points="8,2 13,5 13,11 8,14 3,11 3,5" fill="currentColor"/></svg>';
+            case 'master':
+                // Octagon to increase complexity over hexagon
+                return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><polygon points="6,1 10,1 15,6 15,10 10,15 6,15 1,10 1,6" fill="currentColor"/></svg>';
+            case 'extreme':
+                // 5-point star for highest difficulty
+                return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><polygon points="8,2 9.76,6.3 14,6.5 10.5,9.2 11.9,13.5 8,11.2 4.1,13.5 5.5,9.2 2,6.5 6.24,6.3" fill="currentColor"/></svg>';
+            default:
+                return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>';
         }
     }
 
@@ -1961,6 +2164,8 @@ class SudokuGame {
         const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
         results[activeKey] = { completed: true, elapsed, difficulty: diff, mistakes: this.mistakesCount };
         try { localStorage.setItem('sudoku-daily-results', JSON.stringify(results)); } catch {}
+        // Update header notification
+        this.updateDailyIconBadge && this.updateDailyIconBadge();
 
         // Update streak if completing today’s daily
         const todayKey = this.getUtcDateKey();
@@ -2004,14 +2209,29 @@ class SudokuGame {
         if (!overlay) return;
         const show = overlay.style.display === 'none' || overlay.style.display === '';
         overlay.style.display = show ? 'flex' : 'none';
-        if (show) { this.stopTimer(); } else { this.startTimer(); }
+        if (show) {
+            // Entering pause
+            this.isPaused = true;
+            this._pauseStartedAt = Date.now();
+            this.stopTimer();
+            this.updateTimer();
+        } else {
+            // Resuming
+            this.startTimer();
+        }
     }
 
     autoPauseOnBlur() {
         const overlay = document.getElementById('pause-overlay');
         if (!overlay) return;
         overlay.style.display = 'flex';
+        // Enter pause state if not already
+        if (!this.isPaused) {
+            this.isPaused = true;
+            this._pauseStartedAt = Date.now();
+        }
         this.stopTimer();
+        this.updateTimer();
     }
 
     // Auto-candidates toggles
@@ -2123,12 +2343,17 @@ class SudokuGame {
         } catch {}
     }
     recordWin() {
-        const diff = document.getElementById('difficulty')?.value || 'medium';
+        const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
         const elapsed = this.getElapsedSeconds();
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
         stats.totalWins = (stats.totalWins || 0) + 1;
         stats.totalCompleted = (stats.totalCompleted || 0) + 1; // includes wins and losses
         stats.bestTimes = stats.bestTimes || {};
+        // per-difficulty counters
+        stats.byDifficulty = stats.byDifficulty || {};
+        const slot = stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 };
+        slot.played += 1;
+        slot.wins += 1;
         const best = stats.bestTimes[diff];
         if (!best || elapsed < best) stats.bestTimes[diff] = elapsed;
         try { localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
@@ -2136,8 +2361,13 @@ class SudokuGame {
 
     recordLoss() {
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
+        // attribute loss to current mode/difficulty
+        const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
         stats.totalLosses = (stats.totalLosses || 0) + 1;
         stats.totalCompleted = (stats.totalCompleted || 0) + 1; // includes wins and losses
+        stats.byDifficulty = stats.byDifficulty || {};
+        const slot = stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 };
+        slot.played += 1;
         try { localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
     }
     showStats() {
@@ -2149,6 +2379,8 @@ class SudokuGame {
         const totalLosses = stats.totalLosses || 0;
         const totalCompleted = stats.totalCompleted || (totalWins + totalLosses);
         const best = stats.bestTimes || {};
+        // Ensure keys for all difficulties exist for display
+        ['easy','medium','hard','expert','master','extreme'].forEach(k => { if (!(k in best)) best[k] = null; });
         const winRatio = totalCompleted > 0 ? Math.round((totalWins / totalCompleted) * 100) : 0;
         const fmt = (s) => typeof s === 'number' ? `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}` : '-';
         const dailyResults = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
@@ -2169,6 +2401,7 @@ class SudokuGame {
                 <span class="diff-chip diff-${diff}">${icon}</span>
                 <span>${time}</span>
                 <span>${mistakes}</span>
+                <span></span>
             </button>`;
         }).join('');
 
@@ -2202,6 +2435,8 @@ class SudokuGame {
                 <div class="best-row"><span class="diff-chip diff-medium">${this.getDifficultyIcon('medium')}</span><span>Medium</span><span class="time">${fmt(best.medium)}</span></div>
                 <div class="best-row"><span class="diff-chip diff-hard">${this.getDifficultyIcon('hard')}</span><span>Hard</span><span class="time">${fmt(best.hard)}</span></div>
                 <div class="best-row"><span class="diff-chip diff-expert">${this.getDifficultyIcon('expert')}</span><span>Expert</span><span class="time">${fmt(best.expert)}</span></div>
+                <div class="best-row"><span class="diff-chip diff-master">${this.getDifficultyIcon('master')}</span><span>Master</span><span class="time">${fmt(best.master)}</span></div>
+                <div class="best-row"><span class="diff-chip diff-extreme">${this.getDifficultyIcon('extreme')}</span><span>Extreme</span><span class="time">${fmt(best.extreme)}</span></div>
             </div>
 
             <div class="streak-card stat-card ${streak > 0 ? 'streak-hot' : ''}" style="margin-bottom: 0.6rem">
@@ -2220,8 +2455,23 @@ class SudokuGame {
             </div>
 
             <div class="stats-table" aria-label="Recent daily results">
-                <div class="table-head"><span>Date</span><span>Diff</span><span>Time</span><span>Mist.</span></div>
+                <div class="table-head"><span>Date</span><span>Diff</span><span>Time</span><span>Mist.</span><span></span></div>
                 ${recentRows || `<div class="empty">No daily results yet. Play today’s Daily to get started!</div>`}
+            </div>
+
+            <div class="stats-table" aria-label="In-depth stats by difficulty" style="margin-top:0.75rem">
+                <div class="table-head"><span>Difficulty</span><span>Played</span><span>Wins</span><span>Win %</span><span>Best</span></div>
+                ${['easy','medium','hard','expert','master','extreme'].map(d => {
+                    const bd = (stats.byDifficulty && stats.byDifficulty[d]) || { played: 0, wins: 0 };
+                    const played = bd.played || 0; const wins = bd.wins || 0; const rate = played ? Math.round((wins/played)*100) : 0;
+                    return `<div class="table-row" aria-label="${d} stats">
+                        <span class="diff-chip diff-${d}">${this.getDifficultyIcon(d)}</span>
+                        <span>${played}</span>
+                        <span>${wins}</span>
+                        <span>${rate}%</span>
+                        <span>${fmt(best[d])}</span>
+                    </div>`;
+                }).join('')}
             </div>
 
             <div class="stats-actions"></div>
@@ -2279,37 +2529,13 @@ class SudokuGame {
                 localStorage.removeItem('sudoku-daily-streak');
             } catch {}
             this.showStats();
+            this.updateDailyIconBadge && this.updateDailyIconBadge();
         });
 
         modal.style.display = 'block';
     }
 
-    openArchive() {
-        const modal = document.getElementById('archive-modal');
-        const list = document.getElementById('archive-list');
-        if (!modal || !list) return;
-        const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
-        const keys = Object.keys(results).sort().reverse();
-        list.innerHTML = keys.slice(0, 50).map(k => {
-            const r = results[k];
-            const label = `${k.slice(0,4)}-${k.slice(4,6)}-${k.slice(6)} (${r.difficulty})`;
-            return `<div class="archive-item"><span>${label}</span><button data-date="${k}">Load</button></div>`;
-        }).join('') || '<div>No dailies yet. Play today\'s to start building your archive!</div>';
-        list.querySelectorAll('button[data-date]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const k = btn.getAttribute('data-date');
-                const cacheKey = `sudoku-daily-${k}`;
-                const cached = localStorage.getItem(cacheKey);
-                if (cached) {
-                    try { const data = JSON.parse(cached); this.board = data.board; this.solution = data.solution; this.initialBoard = data.board.map(row => [...row]); this.updateDisplay(); this._activeDailyKey = k; this.setDailyUiState(true, data.difficulty || this.getDifficultyForDateKey(k)); } catch {}
-                } else {
-                    this.showStatus('Cached board not found for that date', 'error');
-                }
-                modal.style.display = 'none';
-            });
-        });
-        modal.style.display = 'block';
-    }
+    // Archive feature removed
 }
 
 // Initialize the game when the page loads (only in browser)

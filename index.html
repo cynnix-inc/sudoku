@@ -46,11 +46,13 @@
                             <button class="popover-item" data-diff="easy"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg></span><span>Easy</span></button>
                             <button class="popover-item" data-diff="medium"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,3 14,13 2,13" fill="currentColor"/></svg></span><span>Medium</span></button>
                             <button class="popover-item" data-diff="hard"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><rect x="3" y="3" width="10" height="10" fill="currentColor"/></svg></span><span>Hard</span></button>
-                            <button class="popover-item" data-diff="expert"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,2 14,6 14,10 8,14 2,10 2,6" fill="currentColor"/></svg></span><span>Expert</span></button>
+                             <button class="popover-item" data-diff="expert"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,2 13,5 13,11 8,14 3,11 3,5" fill="currentColor"/></svg></span><span>Expert</span></button>
+                             <button class="popover-item" data-diff="master"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="6,1 10,1 15,6 15,10 10,15 6,15 1,10 1,6" fill="currentColor"/></svg></span><span>Master</span></button>
+                             <button class="popover-item" data-diff="extreme"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,2 9.76,6.3 14,6.5 10.5,9.2 11.9,13.5 8,11.2 4.1,13.5 5.5,9.2 2,6.5 6.24,6.3" fill="currentColor"/></svg></span><span>Extreme</span></button>
                           </div>
                         </div>
                     </div>
-                    <button id="daily-icon-btn" class="icon-btn badged" title="Daily">📅<span id="daily-badge" class="badge-mini">Daily</span></button>
+                    <button id="daily-icon-btn" class="icon-btn badged" title="Daily">📅<span id="daily-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
                     <div class="menu-wrap">
                         <button id="menu-btn" class="icon-btn" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
                         <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
@@ -58,7 +60,6 @@
                           <button id="menu-solve" class="popover-item" role="menuitem"><span class="menu-icon">🧩</span><span>Solve</span></button>
                           <button id="menu-clear" class="popover-item" role="menuitem"><span class="menu-icon">🧹</span><span>Clear All</span></button>
                     <hr/>
-                          <button id="menu-archive" class="popover-item" role="menuitem"><span class="menu-icon">🗂️</span><span>Archive</span></button>
                           <button id="menu-stats" class="popover-item" role="menuitem"><span class="menu-icon">📊</span><span>Stats</span></button>
                     <hr/>
                           <button id="menu-settings" class="popover-item" role="menuitem"><span class="menu-icon">⚙️</span><span>Settings</span></button>
@@ -283,15 +284,7 @@
          </div>
      </div>
 
-    <div id="archive-modal" class="modal">
-        <div class="modal-content">
-            <h2>Daily Archive</h2>
-            <div class="archive-list" id="archive-list"></div>
-            <div class="modal-buttons">
-                <button id="archive-close" class="btn btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
+
 
     <script src="script.js"></script>
 </body>
