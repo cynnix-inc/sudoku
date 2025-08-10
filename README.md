@@ -1,4 +1,4 @@
-# Sudoku Game
+# Ultimate Sudoku
 ## Testing
 
 - Unit tests: Jest (JSDOM)
@@ -100,3 +100,13 @@ See `SUPABASE_SETUP.md` for a complete step‑by‑step guide.
 ## License
 
 This project is open source and available under the MIT License.
+
+## Changelog
+
+- The project changelog is maintained in `CHANGELOG.md`.
+- Update it any time with:
+
+```
+npm run changelog
+```
+
