@@ -84,6 +84,10 @@ sudoku/
 2. Open `index.html` in your web browser
 3. Start playing!
 
+## Supabase SSO + Cloud Stats (optional)
+
+See `SUPABASE_SETUP.md` for a complete step‑by‑step guide.
+
 ## Future Enhancements
 
 - Save/load game progress

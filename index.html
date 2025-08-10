@@ -52,15 +52,18 @@
                           </div>
                         </div>
                     </div>
-                    <button id="daily-icon-btn" class="icon-btn badged" title="Daily">📅<span id="daily-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
+                        <button id="daily-icon-btn" class="icon-btn badged" title="Daily" aria-label="Daily">📅<span id="daily-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
                     <div class="menu-wrap">
-                        <button id="menu-btn" class="icon-btn" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+                          <button id="menu-btn" class="icon-btn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
                         <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
                           <button id="menu-check" class="popover-item" role="menuitem"><span class="menu-icon">🔎</span><span>Check</span></button>
                           <button id="menu-solve" class="popover-item" role="menuitem"><span class="menu-icon">🧩</span><span>Solve</span></button>
                           <button id="menu-clear" class="popover-item" role="menuitem"><span class="menu-icon">🧹</span><span>Clear All</span></button>
                     <hr/>
                           <button id="menu-stats" class="popover-item" role="menuitem"><span class="menu-icon">📊</span><span>Stats</span></button>
+                    <hr/>
+                          <button id="menu-login" class="popover-item" role="menuitem"><span class="menu-icon">🔐</span><span>Sign in with Google</span></button>
+                          <button id="menu-logout" class="popover-item" role="menuitem" style="display:none"><span class="menu-icon">🚪</span><span>Sign out</span></button>
                     <hr/>
                           <button id="menu-settings" class="popover-item" role="menuitem"><span class="menu-icon">⚙️</span><span>Settings</span></button>
                           <button id="menu-help" class="popover-item" role="menuitem"><span class="menu-icon">❓</span><span>Help</span></button>
@@ -71,19 +74,72 @@
         </header>
 
         <main>
+            <div id="landing-overlay" class="landing-overlay" style="display:none;">
+                <div class="landing-card">
+                    <div id="landing-result" class="landing-result" hidden></div>
+                    <div class="landing-hero">
+                        <h2 id="landing-greeting" class="landing-title">Welcome!</h2>
+                        <p class="landing-subtitle">Sharpen your mind with a clean, fast Sudoku.</p>
+                    </div>
+
+                    <div class="cta-row">
+                        <button id="landing-continue-btn" class="btn btn-secondary btn-large" style="display:none">Continue</button>
+                        <div class="landing-daily" id="landing-daily-section">
+                            <div class="landing-daily-actions">
+                                <div class="daily-tile-wrap">
+                                    <button id="landing-daily-btn" class="btn btn-secondary diff-btn diff-card daily-card" aria-live="polite">
+                                        <span class="diff-icon" id="landing-daily-icon"></span>
+                                        <span class="diff-text">Daily</span>
+                                        <span class="diff-hint" id="landing-daily-hint"></span>
+                                        <span class="daily-complete-badge" id="landing-daily-complete" hidden>✓ Completed</span>
+                                    </button>
+                                    <button id="landing-calendar-btn" class="calendar-overlay" title="Daily calendar" aria-label="Open Daily calendar">
+                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                            <path fill="currentColor" d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Zm12 7H5v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9ZM6 7h12V6a1 1 0 0 0-1-1h-1v1a1 1 0 1 1-2 0V5H8v1a1 1 0 1 1-2 0V5H5a1 1 0 0 0-1 1v1Z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="landing-divider">or choose a difficulty</div>
+
+                    <div class="landing-diff-grid">
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="easy"><span class="diff-icon"></span><span class="diff-text">Easy</span><span class="diff-hint">Relaxed</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="medium"><span class="diff-icon"></span><span class="diff-text">Medium</span><span class="diff-hint">Balanced</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="hard"><span class="diff-icon"></span><span class="diff-text">Hard</span><span class="diff-hint">Tricky</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="expert"><span class="diff-icon"></span><span class="diff-text">Expert</span><span class="diff-hint">Advanced</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="master"><span class="diff-icon"></span><span class="diff-text">Master</span><span class="diff-hint">Elite</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="extreme"><span class="diff-icon"></span><span class="diff-text">Extreme</span><span class="diff-hint">Insane</span></button>
+                    </div>
+
+                    <div class="landing-quick">
+                        <button id="landing-settings" class="btn btn-tertiary btn-small">Settings</button>
+                        <button id="landing-stats" class="btn btn-tertiary btn-small">Stats</button>
+                    </div>
+                    <div class="landing-quick signin-row">
+                        <button id="landing-signin" class="google-btn">
+                          <span class="g-logo" aria-hidden="true"></span>
+                          <span class="g-text">Sign in with Google</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div class="rail controls-strip">
                 <div class="controls-left">
                     <div class="difficulty-display"><div id="mode-indicator" class="mode-indicator" aria-live="polite"></div></div>
                 </div>
                 <div class="controls-center">
-                    <div id="health-bar" class="health-bar-stack" aria-label="Mistakes" aria-live="polite"></div>
-                    <button id="timer-toggle" class="timer timer-btn" title="Pause/Resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
+                    <div id="toast-container" class="toast-container inline" aria-live="polite" aria-atomic="true"></div>
+                    <div id="health-bar" class="health-bar-stack" aria-label="Lives" aria-live="polite"></div>
+                    <button id="timer-toggle" class="timer timer-btn" title="Pause/Resume" aria-label="Pause or resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
                 </div>
                 <div class="controls-right">
-                    <button id="hint-btn" class="icon-btn" title="Hint">💡</button>
-                    <button id="notes-toggle" class="icon-btn" title="Notes">✎</button>
-                    <button id="undo-btn" class="icon-btn" title="Undo">↶</button>
-                    <button id="redo-btn" class="icon-btn" title="Redo">↷</button>
+                    <button id="hint-btn" class="icon-btn badged" title="Hint" aria-label="Hint"><span class="icon-emoji" aria-hidden="true">💡</span><span class="badge-mini" id="hint-badge" style="display:none"></span></button>
+                    <button id="notes-toggle" class="icon-btn" title="Notes" aria-label="Notes">✎</button>
+                    <button id="undo-btn" class="icon-btn" title="Undo" aria-label="Undo">↶</button>
+                    <button id="redo-btn" class="icon-btn" title="Redo" aria-label="Redo">↷</button>
                 </div>
             </div>
 
@@ -106,7 +162,7 @@
                     <button type="button" class="number-btn" data-number="9">9</button>
                 </div>
                 <div class="pad-actions">
-                    <button type="button" id="pad-lock-toggle" class="pad-action-btn icon-btn" title="Toggle number lock" aria-pressed="true">🔒</button>
+                    <button type="button" id="pad-lock-toggle" class="pad-action-btn icon-btn" title="Toggle number lock" aria-label="Toggle number lock" aria-pressed="true">🔒</button>
                     <button type="button" class="pad-action-btn icon-btn clear-cell" data-number="0" title="Erase" aria-label="Erase" id="pad-erase-btn">
                         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
                             <path fill="currentColor" d="M3.5 14.5l6.5-6.5a3 3 0 0 1 4.24 0l4.76 4.76a1.5 1.5 0 0 1 0 2.12l-3.18 3.18a1.5 1.5 0 0 1-1.06.44H9.41a1.5 1.5 0 0 1-1.06-.44L3.5 16.62a1.5 1.5 0 0 1 0-2.12Zm2.12.71l2.48 2.48c.19.19.45.3.71.3h5.35c.27 0 .52-.11.71-.3l2.47-2.47-4.95-4.95a1 1 0 0 0-1.41 0l-5.36 5.36Z"/>
@@ -153,49 +209,56 @@
                 <div class="settings-section">
                     <h3 class="section-title">Gameplay</h3>
                     <div class="control-row">
-                        <span class="control-label">Auto Candidates</span>
+                        <span class="control-label">Auto Candidates <span class="help-tip" data-tooltip="Candidates are small pencil‑mark notes listing the possible numbers for a cell. Auto Candidates automatically shows them for empty cells and keeps them updated as the board changes.">ⓘ</span></span>
                         <label class="switch"><input type="checkbox" id="auto-candidates-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
                     </div>
                     <div class="control-row">
-                        <span class="control-label">Auto‑advance after keyboard entry</span>
+                        <span class="control-label">Auto‑advance after keyboard entry <span class="help-tip" data-tooltip="After typing a number, moves to the next cell automatically. Hold Shift to move backward.">ⓘ</span></span>
                         <label class="switch"><input type="checkbox" id="auto-advance-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
                     </div>
+                    <div class="control-row">
+                        <span class="control-label">Zen mode <span class="help-tip" data-tooltip="A calmer experience: hides timer and Lives and won’t count runs toward stats or best times. Daily puzzles keep their fixed Lives.">ⓘ</span></span>
+                        <label class="switch"><input type="checkbox" id="zen-mode-toggle" aria-label="Zen mode"><span class="switch-slider" aria-hidden="true"></span></label>
+                    </div>
                     <div class="control-col">
-                        <div class="control-label">Max mistakes <span class="value-pill" id="mistakes-limit-pill">3</span><span id="mistakes-limit-value" style="display:none">3</span></div>
-                        <input type="range" id="mistakes-limit" min="0" max="11" step="1" value="3" />
+                        <div class="control-label">Lives <span class="help-tip" data-tooltip="Lives are the number of wrong entries you can make before the game ends. Set to 11 for Unlimited. Note: Daily puzzles use fixed lives by difficulty; this setting won’t override Daily. Drag to 11 for Unlimited (turns the limit off)." aria-label="About Lives">ⓘ</span> <span class="value-pill" id="lives-limit-pill">3</span><span id="lives-limit-value" style="display:none">3</span></div>
+                        <input type="range" id="lives-limit" min="0" max="11" step="1" value="3" />
                         <div class="control-hints">
-                            <small class="hint">Drag to 11 for Unlimited (turns the limit off)</small>
-                            <small id="mistakes-daily-note" class="hint" style="display:none">Daily uses fixed mistake limits based on difficulty.</small>
-                            <small class="hint" id="mistakes-preview">Hearts: ×3</small>
+                            <small class="hint" id="lives-preview">Hearts: ×3</small>
                         </div>
                     </div>
                 </div>
                 <div class="settings-section">
                     <h3 class="section-title">Appearance</h3>
                     <div class="control-row">
-                        <span class="control-label">Dark mode</span>
+                        <span class="control-label">Dark mode <span class="help-tip" data-tooltip="Switches the UI to a dark theme for low‑light environments.">ⓘ</span></span>
                         <label class="switch"><input type="checkbox" id="theme-dark-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
                     </div>
                     <div class="control-col">
-                        <div class="control-label">Accent color</div>
+                        <div class="control-label">Accent color <span class="help-tip" data-tooltip="Used for highlights and primary buttons.">ⓘ</span></div>
                         <div id="accent-swatches" class="swatch-row" role="radiogroup" aria-label="Accent color">
                             <button type="button" class="swatch swatch-indigo" data-accent="indigo" role="radio" aria-checked="true" aria-label="Indigo"></button>
+                            <button type="button" class="swatch swatch-blue" data-accent="blue" role="radio" aria-checked="false" aria-label="Blue"></button>
+                            <button type="button" class="swatch swatch-sky" data-accent="sky" role="radio" aria-checked="false" aria-label="Sky"></button>
                             <button type="button" class="swatch swatch-teal" data-accent="teal" role="radio" aria-checked="false" aria-label="Teal"></button>
+                            <button type="button" class="swatch swatch-emerald" data-accent="emerald" role="radio" aria-checked="false" aria-label="Emerald"></button>
+                            <button type="button" class="swatch swatch-lime" data-accent="lime" role="radio" aria-checked="false" aria-label="Lime"></button>
+                            <button type="button" class="swatch swatch-amber" data-accent="amber" role="radio" aria-checked="false" aria-label="Amber"></button>
+                            <button type="button" class="swatch swatch-orange" data-accent="orange" role="radio" aria-checked="false" aria-label="Orange"></button>
                             <button type="button" class="swatch swatch-rose" data-accent="rose" role="radio" aria-checked="false" aria-label="Rose"></button>
+                            <button type="button" class="swatch swatch-violet" data-accent="violet" role="radio" aria-checked="false" aria-label="Violet"></button>
                         </div>
-                        <small class="hint">Used for highlights and primary buttons.</small>
                     </div>
                 </div>
                 <div class="settings-section">
                     <h3 class="section-title">Calendar</h3>
                     <div class="control-col">
-                        <div class="control-label">Week starts on</div>
+                                <div class="control-label">Week starts on <span class="help-tip" data-tooltip="Applies to the Daily calendar.">ⓘ</span></div>
                         <div id="weekstart-toggle" class="toggle-slider" role="switch" aria-checked="false" aria-label="Week start">
                             <span class="toggle-label left">Sun</span>
                             <span class="toggle-thumb" aria-hidden="true"></span>
                             <span class="toggle-label right">Mon</span>
                         </div>
-                        <small id="weekstart-hint" class="hint">Applies to the Daily calendar.</small>
                     </div>
                 </div>
             </div>
@@ -215,6 +278,25 @@
                 <p>Goal: Fill the grid so each row, column, and 3×3 box contains 1–9 with no repeats.</p>
                 <div class="help-grid">
                     <div class="help-card">
+                        <h4>❤️ Lives</h4>
+                        <p>Lives are the number of wrong entries allowed. Each unique incorrect number placed in a cell uses one life. When you run out of lives, the game ends.</p>
+                        <p>You can change Lives in Settings. Set to 11 for Unlimited. Daily puzzles use fixed Lives based on difficulty, so your setting won’t override Daily.</p>
+                    </div>
+                    <div class="help-card">
+                        <h4>💡 Hints</h4>
+                        <p>Hints fill one correct cell. They’re limited by difficulty: Easy 5, Medium 3, Hard 2, Expert 1, Master/Extreme 0.</p>
+                        <p>Each hint adds +30 seconds to your timer. Using any hint marks the run as assisted, so it won’t update your personal best time.</p>
+                    </div>
+                    <div class="help-card">
+                        <h4>🧘 Zen mode</h4>
+                        <ul class="help-list">
+                            <li><span class="key">Focus</span><span class="desc">Hides the on‑screen timer, Lives, difficulty chip, and status messages.</span></li>
+                            <li><span class="key">Lives</span><span class="desc">Normal games use Unlimited Lives in Zen. Daily puzzles keep their fixed Lives.</span></li>
+                            <li><span class="key">Stats</span><span class="desc">Zen runs don’t update wins/losses or best times.</span></li>
+                            <li><span class="key">Toggle</span><span class="desc">Turn on/off in Settings. It takes effect immediately without interrupting your game.</span></li>
+                        </ul>
+                    </div>
+                    <div class="help-card">
                         <h4>📱 Mobile / Touch</h4>
                         <ul class="help-list">
                             <li><span class="key">1–9</span><span class="desc">Enter number (on‑screen pad)</span></li>
@@ -224,8 +306,8 @@
                             <li><span class="key">✎ (press‑and‑hold)</span><span class="desc">Temporary Notes while held</span></li>
                             <li><span class="key">Pad 1–9 (tap)</span><span class="desc">Lock/unlock number; drag to paint</span></li>
                             <li><span class="key">📌 Long‑press cell</span><span class="desc">Add note for locked number</span></li>
-                            <li><span class="key">⏱</span><span class="desc">Pause/Resume (tap timer)</span></li>
-                            <li><span class="key">💡</span><span class="desc">Hint: fill one correct cell</span></li>
+                             <li><span class="key">⏱</span><span class="desc">Pause/Resume (tap timer)</span></li>
+                            <li><span class="key">💡</span><span class="desc">Hint: fills one correct cell</span></li>
                         </ul>
                     </div>
                     <div class="help-card">
@@ -241,7 +323,7 @@
                             <li><span class="key"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span><span class="desc">Undo</span></li>
                             <li><span class="key"><kbd>Ctrl</kbd>+<kbd>Y</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span><span class="desc">Redo</span></li>
                             <li><span class="key">⏱</span><span class="desc">Pause/Resume (click timer)</span></li>
-                            <li><span class="key">💡</span><span class="desc">Hint: fill one correct cell</span></li>
+                            <li><span class="key">💡</span><span class="desc">Hint: fills one correct cell</span></li>
                         </ul>
                     </div>
                 </div>
@@ -255,9 +337,9 @@
     <div id="daily-modal" class="modal">
         <div class="modal-content">
             <h2>Daily Puzzle</h2>
-            <div class="daily-meta">
+                 <div class="daily-meta">
                 <div>Date: <span id="daily-date"></span></div>
-                <div>Difficulty: <span id="daily-diff" class="badge"></span></div>
+                 <div>Difficulty: <span id="daily-diff" class="badge"></span></div>
                 <div>Next in: <span id="daily-modal-countdown"></span></div>
             </div>
             <div class="modal-buttons">
@@ -298,6 +380,22 @@
 
 
 
+    <!-- Supabase: set your project URL and anon key (replace placeholders). You can also provide these via inline env in hosting. -->
+    <script>
+      window.SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR_SUPABASE_PROJECT_ID.supabase.co';
+      window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+    </script>
+
+    <script type="module">
+      import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+      const supaUrl = (typeof window !== 'undefined' && window.SUPABASE_URL) ? window.SUPABASE_URL : '';
+      const supaKey = (typeof window !== 'undefined' && window.SUPABASE_ANON_KEY) ? window.SUPABASE_ANON_KEY : '';
+      if (supaUrl && supaKey && !/YOUR_SUPABASE/i.test(supaUrl) && !/YOUR_SUPABASE/i.test(supaKey)) {
+        window.supabase = createClient(supaUrl, supaKey);
+      } else {
+        window.supabase = undefined;
+      }
+    </script>
     <script src="script.js"></script>
-</body>
-</html>
+  </body>
+  </html>

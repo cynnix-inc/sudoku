@@ -4,6 +4,16 @@ test.describe('Sudoku smoke regress', () => {
   test('opening page renders board and allows a move', async ({ page }) => {
     await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('domcontentloaded');
+    // Hide landing overlay across browsers and ensure game is initialized
+    await page.evaluate(() => {
+      const landing = document.getElementById('landing-overlay');
+      if (landing) landing.style.display = 'none';
+      // @ts-ignore
+      if (!window.__sudokuGame && window.SudokuGame) {
+        // @ts-ignore
+        window.__sudokuGame = new window.SudokuGame();
+      }
+    });
     await page.evaluate(() => {
       // Ensure game instance exists
       // @ts-ignore
@@ -36,6 +46,8 @@ test.describe('Sudoku smoke regress', () => {
         // @ts-ignore
         window.__sudokuGame = new window.SudokuGame();
       }
+      const landing = document.getElementById('landing-overlay');
+      if (landing) landing.style.display = 'none';
     });
     if (!(await page.evaluate(() => !!(window as any).__sudokuGame))) {
       await page.addScriptTag({ path: 'script.js' });
