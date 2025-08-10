@@ -8,6 +8,10 @@ class SudokuGame {
         this.selectedCell = null;
         this.timer = null;
         this.startTime = null;
+        // Defer starting the game/timer until the first puzzle interaction
+        this._hasStarted = false;
+        this._pendingStart = false;
+        this._preStartElapsed = 0;
         this.isGameComplete = false;
 
         // History for undo/redo
@@ -64,10 +68,11 @@ class SudokuGame {
 
     // Determine if there is an active, non-finished game that should trigger confirmation
     isGameInProgress() {
-        // In progress if not complete/over and any move has been made or timer has started
+        if (this.isGameComplete || this.isGameOver) return false;
         const anyMoves = (this.history && this.history.length > 0);
-        const hasElapsed = this.getElapsedSeconds && this.getElapsedSeconds() > 0;
-        return !this.isGameComplete && !this.isGameOver && (anyMoves || hasElapsed);
+        // Only consider elapsed time once the game has actually started via interaction
+        const hasStartedElapsed = !!this._hasStarted && this.getElapsedSeconds && this.getElapsedSeconds() > 0;
+        return anyMoves || hasStartedElapsed;
     }
     
     updateModeIndicator({ type, difficulty, dateKey }) {
@@ -137,10 +142,12 @@ class SudokuGame {
             this.generatePuzzle('medium');
             this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
         }
-        this.startTimer();
+        // Do not start the timer on load; wait until first puzzle interaction
         this.updateDisplay();
         // Ensure health bar is visible according to current settings
         this.renderHealthBar();
+        // Ensure timer display is initialized
+        if (typeof this.updateTimer === 'function') this.updateTimer();
     }
 
     // Compute pixel-perfect cell size to avoid subpixel gaps on mobile
@@ -360,7 +367,11 @@ class SudokuGame {
             delete this._userMistakeRestoreValue;
         }
 
-        this.resetMistakes();
+        // When leaving Daily or changing limits outside of an active game
+        const inProgress = this.isGameInProgress && this.isGameInProgress();
+        if (!inProgress) {
+            this.resetMistakes();
+        }
         this.renderHealthBar();
     }
 
@@ -962,6 +973,8 @@ class SudokuGame {
     setCellValue(row, col, value, source = 'api') {
         if (this.initialBoard[row][col] !== 0) return; // Don't change givens
         if (this.mistakesEnabled && this.isGameOver) return;
+        // First real interaction should start the game/timer
+        this.ensureGameStarted && this.ensureGameStarted();
         const oldValue = this.board[row][col];
         if (oldValue === value) return;
         // Capture notes before changing value so undo can restore them
@@ -1067,6 +1080,8 @@ class SudokuGame {
     toggleNote(row, col, value) {
         if (this.initialBoard[row][col] !== 0) return;
         if (this.board[row][col] !== 0) return;
+        // First real interaction should start the game/timer
+        this.ensureGameStarted && this.ensureGameStarted();
         const set = this.notes[row][col];
         let added = false;
         if (set.has(value)) {
@@ -1083,6 +1098,8 @@ class SudokuGame {
     }
 
     clearNotes(row, col) {
+        // First real interaction should start the game/timer
+        this.ensureGameStarted && this.ensureGameStarted();
         const prev = Array.from(this.notes[row][col]);
         this.notes[row][col].clear();
         this.updateNotesDisplay(row, col);
@@ -1200,8 +1217,20 @@ class SudokuGame {
     }
 
     showGameOver() {
+        // Hide legacy overlay if present
         const overlay = document.getElementById('gameover-overlay');
-        if (overlay) overlay.style.display = 'flex';
+        if (overlay) overlay.style.display = 'none';
+
+        // Reuse the same modal UI as win flow for consistency
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        if (modal && modalTitle && modalMessage) {
+            const timeSpent = this.getTimeSpent();
+            modalTitle.textContent = 'Game Over';
+            modalMessage.textContent = `Out of lives. Time: ${timeSpent}.`;
+            modal.style.display = 'block';
+        }
     }
 
     showGameCompleteModal() {
@@ -1226,13 +1255,28 @@ class SudokuGame {
             this.isPaused = false;
             this._pauseStartedAt = null;
         }
-        if (!this.startTime) this.startTime = Date.now();
+        // Do not start timer unless the game has actually started via interaction
+        if (!this._hasStarted) return;
         if (this.timer) clearInterval(this.timer);
         this.timer = setInterval(() => {
             this.updateTimer();
         }, 1000);
         // Update immediately on start
         this.updateTimer();
+    }
+
+    // Mark the game as started by the user and initialize the timer
+    ensureGameStarted() {
+        if (this._hasStarted) return;
+        this._hasStarted = true;
+        if (this._pendingStart) {
+            this.startTime = Date.now() - (this._preStartElapsed * 1000);
+        } else if (!this.startTime) {
+            this.startTime = Date.now();
+        }
+        this._pendingStart = false;
+        this._preStartElapsed = 0;
+        this.startTimer();
     }
 
     stopTimer() {
@@ -1249,6 +1293,11 @@ class SudokuGame {
     }
 
     getTimeSpent() {
+        if (!this._hasStarted && this._pendingStart && Number.isFinite(this._preStartElapsed)) {
+            const minutes = Math.floor(this._preStartElapsed / 60);
+            const seconds = this._preStartElapsed % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
         if (!this.startTime) return '00:00';
         const now = Date.now();
         let elapsed = Math.floor((now - this.startTime) / 1000);
@@ -1289,16 +1338,32 @@ class SudokuGame {
         this.lockedNumber = null;
         document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
         this.stopTimer();
-        // Reset timer state
+        // Reset timer state and defer start until interaction
         this.startTime = null;
         this.isPaused = false;
         this._pauseStartedAt = null;
         this._elapsedBeforePause = 0;
+        this._hasStarted = false;
+        this._pendingStart = false;
+        this._preStartElapsed = 0;
         // Reset undo/redo history on new game
         this.history = [];
         this.redoStack = [];
+        // If a pending mistakes setting was chosen during an active game, apply it now
+        if (typeof this._pendingMistakeLimitValue === 'number') {
+            const v = this._pendingMistakeLimitValue;
+            if (v >= 11) {
+                this.mistakesEnabled = false;
+                this.mistakeLimit = Infinity;
+            } else {
+                this.mistakesEnabled = true;
+                this.mistakeLimit = v;
+            }
+            // Clear the pending flag
+            delete this._pendingMistakeLimitValue;
+        }
         this.generatePuzzle(difficulty);
-        this.startTimer();
+        // Defer timer until first interaction
         this.updateDisplay();
         // Ensure candidates/notes reflect current settings on fresh board
         if (this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
@@ -1619,7 +1684,7 @@ class SudokuGame {
             ['menu-solve', () => this.solvePuzzle()],
             ['menu-clear', () => this.clearBoard()],
             ['menu-stats', () => this.showStats && this.showStats()],
-            ['menu-settings', () => { const m = document.getElementById('settings-modal'); if (m) m.style.display = 'block'; }],
+            ['menu-settings', () => { this.autoPauseOnBlur && this.autoPauseOnBlur(); const m = document.getElementById('settings-modal'); if (m) m.style.display = 'block'; }],
             ['menu-help', () => { const m = document.getElementById('help-modal'); if (m) m.style.display = 'block'; }],
         ];
         const hideMenu = () => {
@@ -1635,7 +1700,16 @@ class SudokuGame {
         });
 
         const settingsClose = document.getElementById('settings-close');
-        if (settingsClose) settingsClose.addEventListener('click', () => { document.getElementById('settings-modal').style.display = 'none'; });
+        if (settingsClose) settingsClose.addEventListener('click', () => {
+            const modal = document.getElementById('settings-modal');
+            if (modal) modal.style.display = 'none';
+            // If user changed Max mistakes during an active game, notify that it will apply next game
+            if (this.isGameInProgress && this.isGameInProgress() && this._mistakesSettingChangedDuringActiveGame) {
+                this.showStatus && this.showStatus('Max mistakes change will apply to your next game', 'info');
+                // Keep pending value for next game; just clear the notification flag
+                this._mistakesSettingChangedDuringActiveGame = false;
+            }
+        });
         const settingsReset = document.getElementById('settings-reset');
             if (settingsReset) settingsReset.addEventListener('click', async () => {
             if (!(await this.showConfirm('Reset all settings to defaults?'))) return;
@@ -1712,22 +1786,46 @@ class SudokuGame {
         if (mistakesSlider) {
             const sync = () => {
                 const v = parseInt(mistakesSlider.value);
+                const inProgress = this.isGameInProgress && this.isGameInProgress();
                 if (v >= 11) { // unlimited/off
                     if (mistakesValue) mistakesValue.textContent = 'Unlimited';
                     if (mistakesPill) mistakesPill.textContent = '∞';
                     if (mistakesPreview) mistakesPreview.textContent = 'Hearts: ∞';
-                    this.mistakesEnabled = false;
-                    this.mistakeLimit = Infinity;
+                    if (!inProgress) {
+                        this.mistakesEnabled = false;
+                        this.mistakeLimit = Infinity;
+                    } else {
+                        // Defer applying to the next game
+                        this._pendingMistakeLimitValue = v;
+                        this._mistakesSettingChangedDuringActiveGame = true;
+                    }
                 } else {
                     if (mistakesValue) mistakesValue.textContent = String(v);
                     if (mistakesPill) mistakesPill.textContent = String(v);
                     if (mistakesPreview) mistakesPreview.textContent = `Hearts: ×${v}`;
-                    this.mistakesEnabled = true;
-                    this.mistakeLimit = v;
+                    if (!inProgress) {
+                        this.mistakesEnabled = true;
+                        this.mistakeLimit = v;
+                    } else {
+                        // Defer applying to the next game
+                        this._pendingMistakeLimitValue = v;
+                        this._mistakesSettingChangedDuringActiveGame = true;
+                    }
                 }
             };
             mistakesSlider.addEventListener('input', () => { sync(); this._showSavedToast && this._showSavedToast(); });
-            mistakesSlider.addEventListener('change', () => { this.resetMistakes(); this.persistSettings && this.persistSettings(); });
+            mistakesSlider.addEventListener('change', () => {
+                // Persist the chosen setting immediately so it survives reloads
+                this.persistSettings && this.persistSettings();
+                // If no active game, apply immediately; if in progress, defer until next game
+                const inProgress = this.isGameInProgress && this.isGameInProgress();
+                if (!inProgress) {
+                    this.resetMistakes();
+                    this.renderHealthBar && this.renderHealthBar();
+                } else {
+                    this._mistakesSettingChangedDuringActiveGame = true;
+                }
+            });
             // initialize display
             sync();
         }
@@ -1795,6 +1893,8 @@ class SudokuGame {
         // Number pad (include erase button which has data-number="0")
         document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                // First real interaction via numpad should start the game
+                this.ensureGameStarted && this.ensureGameStarted();
                 const number = parseInt(btn.dataset.number);
                 // Lock number mode depending on toggle
                 const lockToggle = document.getElementById('pad-lock-toggle');
@@ -1975,11 +2075,14 @@ class SudokuGame {
                     this.isPaused = false;
                     this._pauseStartedAt = null;
                     this._elapsedBeforePause = 0;
+                    this._hasStarted = false;
+                    this._pendingStart = false;
+                    this._preStartElapsed = 0;
                     // Reset undo/redo on difficulty start
                     this.history = [];
                     this.redoStack = [];
                     this.generatePuzzle(diff);
-                    this.startTimer();
+                    // Defer timer until first interaction
                     this.updateDisplay();
                     if (this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
                         this.recomputeAllCandidates();
@@ -2335,6 +2438,8 @@ class SudokuGame {
     // ----- Optional helpers wired by UI buttons -----
     giveHint() {
         if (this.isGameComplete || this.isGameOver) return;
+        // First real interaction should start the game/timer
+        this.ensureGameStarted && this.ensureGameStarted();
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
                 if (this.board[r][c] === 0) {
@@ -2416,17 +2521,34 @@ class SudokuGame {
     }
 
     // Persistence & stats
-    getElapsedSeconds() { if (!this.startTime) return 0; return Math.floor((Date.now() - this.startTime) / 1000); }
+    getElapsedSeconds() {
+        if (!this._hasStarted) return 0;
+        if (!this.startTime) return 0;
+        return Math.floor((Date.now() - this.startTime) / 1000);
+    }
     persistToStorage() {
-        const data = { board: this.board, solution: this.solution, initialBoard: this.initialBoard, elapsed: this.getElapsedSeconds(), difficulty: document.getElementById('difficulty').value };
+        const elapsed = this._hasStarted ? this.getElapsedSeconds() : (this._pendingStart ? this._preStartElapsed : 0);
+        const data = { board: this.board, solution: this.solution, initialBoard: this.initialBoard, elapsed, difficulty: document.getElementById('difficulty').value };
         try { localStorage.setItem('sudoku-progress', JSON.stringify(data)); } catch {}
     }
     persistSettings() {
+        // Persist slider-chosen mistake limit even if we defer applying it mid-game
+        const mlEl = document.getElementById('mistakes-limit');
+        let storedMistakeLimit;
+        if (mlEl) {
+            if (mlEl.disabled && typeof this._userMistakeRestoreValue === 'number') {
+                storedMistakeLimit = this._userMistakeRestoreValue;
+            } else {
+                storedMistakeLimit = parseInt(mlEl.value);
+            }
+        } else {
+            storedMistakeLimit = (this.mistakeLimit === Infinity ? 11 : this.mistakeLimit);
+        }
         const settings = {
             autoCandidates: !!(document.getElementById('auto-candidates-toggle')?.checked),
             autoAdvance: !!(document.getElementById('auto-advance-toggle')?.checked),
-            mistakesEnabled: this.mistakesEnabled,
-            mistakeLimit: this.mistakeLimit === Infinity ? 11 : this.mistakeLimit,
+            mistakesEnabled: !(storedMistakeLimit >= 11),
+            mistakeLimit: storedMistakeLimit,
             themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
             weekstart: ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || 'sunday',
             accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
@@ -2441,8 +2563,12 @@ class SudokuGame {
             if (!data || !Array.isArray(data.board)) return;
             this.board = data.board; this.solution = data.solution; this.initialBoard = data.initialBoard;
             if (data.difficulty) document.getElementById('difficulty').value = data.difficulty;
-            this.startTime = Date.now() - (data.elapsed || 0) * 1000;
-            this.updateDisplay(); this.startTimer();
+            // Resume elapsed time but defer actual game start until first interaction
+            this._preStartElapsed = Math.max(0, parseInt(data.elapsed || 0, 10));
+            this._pendingStart = true;
+            this._hasStarted = false;
+            this.startTime = null;
+            this.updateDisplay();
         } catch {}
     }
     resumeSettings() {
@@ -2457,8 +2583,14 @@ class SudokuGame {
             if (ml && typeof s.mistakeLimit === 'number') {
                 ml.value = s.mistakeLimit;
                 if (mlv) mlv.textContent = s.mistakeLimit >= 11 ? 'Unlimited' : String(s.mistakeLimit);
-                this.mistakeLimit = s.mistakeLimit >= 11 ? Infinity : s.mistakeLimit;
-                this.mistakesEnabled = !(s.mistakeLimit >= 11);
+                const inProgress = this.isGameInProgress && this.isGameInProgress();
+                if (!inProgress) {
+                    this.mistakeLimit = s.mistakeLimit >= 11 ? Infinity : s.mistakeLimit;
+                    this.mistakesEnabled = !(s.mistakeLimit >= 11);
+                } else {
+                    // Defer applying storage-restored limit if game is in progress
+                    this._pendingMistakeLimitValue = s.mistakeLimit;
+                }
             }
             const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = !!s.themeDark;
             const weekToggle = document.getElementById('weekstart-toggle');
@@ -2503,6 +2635,8 @@ class SudokuGame {
     }
 
     recordLoss() {
+        // Ignore loss if the game hasn't actually started via interaction
+        if (!this._hasStarted) return;
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
         // attribute loss to current mode/difficulty
         const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
@@ -2514,6 +2648,8 @@ class SudokuGame {
         try { localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
     }
     showStats() {
+        // Auto-pause when opening stats
+        this.autoPauseOnBlur && this.autoPauseOnBlur();
         const modal = document.getElementById('stats-modal');
         const content = document.getElementById('stats-content');
         if (!modal || !content) return;
