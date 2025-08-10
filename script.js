@@ -299,22 +299,67 @@ class SudokuGame {
     }
 
     setDailyUiState(isDaily, difficulty) {
-        // Enforce fixed mistake limits in Daily; enable slider otherwise
+        // Enforce fixed mistake limits in Daily; restore user setting otherwise
         const slider = document.getElementById('mistakes-limit');
         const label = document.getElementById('mistakes-limit-value');
         const note = document.getElementById('mistakes-daily-note');
+        const pill = document.getElementById('mistakes-limit-pill');
+        const preview = document.getElementById('mistakes-preview');
         const map = { easy: 6, medium: 5, hard: 4, expert: 3, master: 2, extreme: 1 };
+
         if (isDaily) {
+            // Save the user's pre-daily slider value once so we can restore it later
+            if (typeof this._userMistakeRestoreValue !== 'number') {
+                let currentValue = 3;
+                if (slider && slider.value) {
+                    currentValue = parseInt(slider.value);
+                } else {
+                    // Derive from current in-memory setting if slider unavailable
+                    currentValue = (!this.mistakesEnabled || !Number.isFinite(this.mistakeLimit)) ? 11 : (Number.isFinite(this.mistakeLimit) ? this.mistakeLimit : 3);
+                }
+                this._userMistakeRestoreValue = currentValue;
+            }
+
             const lim = map[difficulty] ?? 3;
             this.mistakesEnabled = true;
             this.mistakeLimit = lim;
             if (slider) { slider.value = String(lim); slider.disabled = true; }
             if (label) label.textContent = String(lim);
+            if (pill) pill.textContent = String(lim);
+            if (preview) preview.textContent = `Hearts: ×${lim}`;
             if (note) note.style.display = 'block';
         } else {
             if (slider) slider.disabled = false;
             if (note) note.style.display = 'none';
+
+            // Restore the user's slider value and in-memory rule from before Daily
+            let v;
+            if (typeof this._userMistakeRestoreValue === 'number') {
+                v = this._userMistakeRestoreValue;
+            } else {
+                try {
+                    const s = JSON.parse(localStorage.getItem('sudoku-settings') || '{}');
+                    v = (typeof s.mistakeLimit === 'number') ? s.mistakeLimit : 3;
+                } catch { v = 3; }
+            }
+            if (slider) slider.value = String(v);
+            if (v >= 11) {
+                this.mistakesEnabled = false;
+                this.mistakeLimit = Infinity;
+                if (label) label.textContent = 'Unlimited';
+                if (pill) pill.textContent = '∞';
+                if (preview) preview.textContent = 'Hearts: ∞';
+            } else {
+                this.mistakesEnabled = true;
+                this.mistakeLimit = v;
+                if (label) label.textContent = String(v);
+                if (pill) pill.textContent = String(v);
+                if (preview) preview.textContent = `Hearts: ×${v}`;
+            }
+            // Clear saved value after restore so re-entering Daily can snapshot again
+            delete this._userMistakeRestoreValue;
         }
+
         this.resetMistakes();
         this.renderHealthBar();
     }
