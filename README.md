@@ -1,4 +1,17 @@
 # Sudoku Game
+## Testing
+
+- Unit tests: Jest (JSDOM)
+- E2E tests: Playwright
+
+Scripts:
+
+```
+npm run test:unit
+npm run e2e:install
+npm run e2e
+```
+
 
 A modern, interactive Sudoku game built with HTML, CSS, and JavaScript. Features a clean, responsive design with smooth animations and intuitive gameplay.
 

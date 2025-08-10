@@ -369,7 +369,9 @@ h1 {
 
 .number-pad { display: grid; gap: 0.4rem; margin-bottom: 1.1rem; width: min(92vw, calc(var(--cell-size) * 9 + 8px)); margin-left: auto; margin-right: auto; }
 .pad-numbers { display: grid; grid-template-columns: repeat(9, 1fr); gap: 0.4rem; }
-.pad-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; margin-top: 0.35rem; }
+.pad-actions { display: grid; grid-template-columns: repeat(9, 1fr); gap: 0.4rem; margin-top: 0.35rem; }
+#pad-lock-toggle { grid-column: 5 / span 1; width: 100%; }
+#pad-erase-btn { grid-column: 6 / span 1; width: 100%; }
 
 .number-btn {
     padding: 1rem;
@@ -405,18 +407,9 @@ h1 {
     to { transform: scale(1); background: white; }
 }
 
-.pad-action-btn {
-    background: #fed7d7;
-    color: #c53030;
-    border-color: #feb2b2;
-}
-
-.pad-action-btn:hover {
-    background: #feb2b2;
-}
-
-#pad-lock-toggle { background: var(--surface); color: var(--text); border-color: var(--border); }
-#pad-lock-toggle[aria-pressed="true"] { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-600) 100%); color: #fff; border-color: var(--accent); }
+#pad-lock-toggle, #pad-erase-btn { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px; }
+#pad-lock-toggle:hover, #pad-erase-btn:hover { background: var(--surface-muted); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
+#pad-lock-toggle[aria-pressed="true"], #pad-erase-btn.active { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-600) 100%); color: #fff; border-color: var(--accent); }
 
 .game-status {
     text-align: center;
