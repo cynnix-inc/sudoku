@@ -7,7 +7,7 @@
     <title>Sudoku Game</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
       if('serviceWorker' in navigator){
         window.addEventListener('load',()=>{
@@ -283,6 +283,18 @@
              </div>
          </div>
      </div>
+
+    <!-- Reusable confirm modal (replaces native confirm dialogs) -->
+    <div id="confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message" style="display:none;">
+        <div class="modal-content" tabindex="-1">
+            <h2 id="confirm-title">Confirm</h2>
+            <p id="confirm-message">Are you sure?</p>
+            <div class="modal-buttons">
+                <button id="confirm-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="confirm-ok" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
 
 
 
