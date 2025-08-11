@@ -62,6 +62,18 @@ class SudokuGame {
             this.initializeGame();
             this.setupEventListeners();
         }
+        // Install iOS-friendly viewport height fix
+        if (!this._headless) {
+            try {
+                const setAppVh = () => {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--app-vh', `${vh}px`);
+                };
+                setAppVh();
+                window.addEventListener('resize', setAppVh, { passive: true });
+                window.addEventListener('orientationchange', setAppVh, { passive: true });
+            } catch {}
+        }
         // Initialize Supabase-related auth listeners and UI state
         if (!this._headless) {
             this._initSupabaseAuth && this._initSupabaseAuth();
@@ -654,11 +666,14 @@ class SudokuGame {
             if (!boardElement) return;
             // available width (in px)
             const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
-            // Container paddings/margins are inside .container; give the board some side breathing room
-            const maxBoardWidth = Math.min(520, Math.max(300, vw - 28));
+            // Account for container horizontal margins + paddings
+            // Desktop/tablet ≈ 64px (1rem margin + 1rem padding on both sides)
+            // Small screens (<=768px) ≈ 48px (0.5rem margin + 1rem padding on both sides)
+            const overhead = vw <= 768 ? 48 : 64;
+            const maxBoardWidth = Math.min(520, Math.max(240, vw - overhead));
             // Choose the largest integer cell size that fits (account for 8 gaps of 1px)
             const raw = Math.floor((maxBoardWidth - 8) / 9);
-            const cellSize = Math.max(34, Math.min(60, raw));
+            const cellSize = Math.max(30, Math.min(60, raw));
             // Compute exact board width for these integer tracks
             const boardWidth = cellSize * 9 + 8; // add 8px for 1px gaps between 9 columns
             boardElement.style.width = boardWidth + 'px';

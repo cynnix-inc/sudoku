@@ -29,6 +29,7 @@ beforeEach(() => {
           <button id="timer-toggle" class="timer"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
           <div id="health-bar"></div>
           <div id="mode-indicator"></div>
+          <button id="notes-toggle" class="icon-btn" aria-label="Notes">✎</button>
         </div>
         <div id="status-message"></div>
       </main>
@@ -47,6 +48,28 @@ beforeEach(() => {
       removeEventListener: () => {},
       dispatchEvent: () => false,
     });
+  }
+  // Minimal PointerEvent polyfill for tests that synthesize pointer events
+  if (!window.PointerEvent) {
+    class PointerEventPolyfill extends Event {
+      constructor(type, params = {}) {
+        super(type, params);
+        // Assign only additional, writable pointer props used by code/tests
+        this.clientX = params.clientX || 0;
+        this.clientY = params.clientY || 0;
+        this.pointerId = params.pointerId || 1;
+        this.pointerType = params.pointerType || 'mouse';
+        this.buttons = params.buttons || 0;
+        this.button = params.button || 0;
+        this.ctrlKey = !!params.ctrlKey;
+        this.shiftKey = !!params.shiftKey;
+        this.altKey = !!params.altKey;
+        this.metaKey = !!params.metaKey;
+        this.preventDefault = params.preventDefault || (() => {});
+      }
+    }
+    window.PointerEvent = PointerEventPolyfill;
+    global.PointerEvent = PointerEventPolyfill;
   }
   try {
     Object.defineProperty(window.navigator, 'maxTouchPoints', { value: 0, configurable: true });

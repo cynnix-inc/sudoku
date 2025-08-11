@@ -31,6 +31,23 @@ High-level acceptance criteria for Ultimate Sudoku
 - Accessibility/UI
   - 81 cells render with role grid and gridcell attributes; ARIA attributes update selection and health bar announces remaining lives; number pad visible on mobile; keyboard input supported on desktop.
 
+Mobile usability
+
+- Touch detection and input
+  - When a touch-capable device is detected (navigator.maxTouchPoints > 0), board inputs set inputmode="none" to suppress the OS keyboard and rely on the on-screen number pad.
+  - Subtle haptic feedback fires on direct user actions (place/erase/paint/notes) when navigator.vibrate is supported.
+
+- Gestures
+  - Double‑tap the focused cell erases it (if not a given).
+  - Long‑press on a cell with a locked number toggles a note for that number (quick‑note affordance).
+  - Press‑and‑hold the Notes button enables Notes only while held; releasing restores the previous notes state.
+
+- Layout and ergonomics
+  - Number pad is visible and sticky at the bottom on small screens, respecting safe‑area insets (uses env(safe-area-inset-bottom)).
+  - Tap targets for primary controls are at least 44×44 px.
+  - Board width and cell sizes are computed to avoid sub‑pixel gaps and prevent horizontal scrolling on narrow screens.
+  - Touch drag painting does not trigger page scroll (board uses touch-action: none).
+
 Regression test coverage (baseline)
 
 - Unit core logic
@@ -41,5 +58,13 @@ Regression test coverage (baseline)
 - E2E smoke
   - Page renders 81 cells; entering a number updates a cell.
   - Toggling the timer shows/hides pause overlay.
+
+Mobile unit coverage
+
+- Touch mode sets inputmode="none" on cells and disables OS keyboard.
+- Board sets touch-action: none and binds pointer handlers.
+- Double‑tap erase clears a non‑given cell.
+- Notes button press‑and‑hold temporarily enables Notes and restores state on release.
+- Haptics: when in touch mode and supported, navigator.vibrate is called on user actions.
 
 

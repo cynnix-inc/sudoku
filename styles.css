@@ -7,13 +7,16 @@
 body {
     font-family: 'Inter', sans-serif;
     background: linear-gradient(145deg, #6a85ff 0%, #8d67ff 100%);
-    min-height: 100vh;
+    min-height: calc(var(--app-vh, 1vh) * 100);
     display: flex;
     align-items: flex-start;
     justify-content: center;
     color: #1f2937;
     /* Slight breathing room from the top edge */
     padding-top: 8px;
+    /* Respect device safe areas */
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
 }
 [data-theme="dark"] body {
     background:
@@ -21,7 +24,14 @@ body {
       linear-gradient(160deg, #04060a 0%, #080c14 100%);
 }
 
+/* Prefer dynamic viewport units when supported */
+@supports (height: 100dvh) {
+  body { min-height: 100dvh; }
+}
+
 :root {
+    /* JS will set --app-vh to 1% of window.innerHeight for iOS Safari */
+    --app-vh: 1vh;
     --cell-size: 50px; /* overridden by JS for perfect pixel fit */
     --icon-size: 40px;
 
@@ -435,6 +445,13 @@ body {
     justify-content: center;
     gap: 0.8rem;
     margin-bottom: 1.2rem;
+}
+/* Narrow screens: reduce columns to prevent overflow */
+@media (max-width: 520px) {
+  .landing-diff-grid { grid-template-columns: repeat(2, var(--diff-tile-size)); }
+}
+@media (max-width: 380px) {
+  .landing-diff-grid { grid-template-columns: repeat(1, var(--diff-tile-size)); }
 }
 .landing-bottom { display: flex; gap: 0.5rem; justify-content: center; }
 /* New landing sections */
@@ -980,7 +997,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 /* Global toast container and toasts */
 .toast-container {
     position: fixed;
-    top: 16px;
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 1200;
@@ -1343,7 +1360,11 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
         padding: 0.75rem;
         font-size: 1rem;
     }
-    .number-pad { position: sticky; bottom: 0; background: var(--surface); padding: 0.5rem 0 0.75rem; box-shadow: 0 -6px 30px rgba(0,0,0,0.06); }
+    .number-pad { position: sticky; bottom: 0; background: var(--surface); padding: 0.5rem 0 calc(0.75rem + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -6px 30px rgba(0,0,0,0.06); }
+    /* Avoid horizontal scrolling on ultra-narrow devices */
+    .container { max-width: 100%; border-radius: var(--radius-xl); }
+    .rail { max-width: 100%; padding-left: 0; padding-right: 0; }
+    .sudoku-board { overflow-x: hidden; }
     /* Larger digits for readability on phones; still tied to cell size */
     .cell { font-size: calc(var(--cell-size) * 0.52); }
     /* 3x3 separators handled by .board::before */
@@ -1353,6 +1374,9 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
     :root { --icon-size: 32px; }
     .controls-strip { grid-template-columns: 1fr auto 1fr; }
     .controls-right { gap: 0.2rem; }
+    /* Reduce overall spacing to fit tiny screens */
+    .container { margin: 8px; padding: 0.75rem; }
+    .controls-strip .timer { font-size: 1.35rem; padding: 0.35rem 0.6rem; }
 }
 
 /* Compact mode: tighter paddings for small screens or user preference */
