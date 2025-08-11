@@ -47,6 +47,8 @@ describe('Mobile usability behaviors', () => {
 
   test('notes press‑and‑hold temporarily enables notes', () => {
     const game = new SudokuGame({ headless: false });
+    // Stub badge sync called by handlers
+    game.syncNotesBadgeState = jest.fn();
     const notesBtn = document.getElementById('notes-toggle');
     expect(notesBtn).toBeTruthy();
     // Ensure initial is off
