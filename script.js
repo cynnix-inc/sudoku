@@ -231,7 +231,7 @@ class SudokuGame {
         // Seed calendar and daily state
         this._calendarRefMonth = new Date();
         this._activeDailyKey = null;
-        // Initialize daily notification dot
+        // Initialize daily notification dot (moved to hamburger menu + menu item)
         this.updateDailyIconBadge && this.updateDailyIconBadge();
         // Seasonal themes + rainbow digits (if flagged) on load
         if (!this._headless) { this._applySeasonalThemes(); this._applyRainbowDigitsIfFlag(); }
@@ -420,17 +420,23 @@ class SudokuGame {
         this.updateDailyIconBadge && this.updateDailyIconBadge();
     }
 
-    // Show a notification dot on the calendar icon if today's daily is not completed
+    // Show a notification dot on the hamburger and Dailys menu item if today's daily is not completed
     updateDailyIconBadge() {
-        const dot = document.getElementById('daily-dot');
-        if (!dot) return;
+        const headerDot = document.getElementById('daily-dot'); // legacy (removed)
+        const menuDot = document.getElementById('menu-daily-dot');
+        const dailysDot = document.getElementById('menu-dailys-dot');
         try {
             const key = this.getUtcDateKey();
             const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
             const completed = !!(results && results[key] && results[key].completed);
-            dot.style.display = completed ? 'none' : 'inline-block';
+            const display = completed ? 'none' : 'inline-block';
+            if (headerDot) headerDot.style.display = display;
+            if (menuDot) menuDot.style.display = display;
+            if (dailysDot) dailysDot.style.display = display;
         } catch {
-            dot.style.display = 'inline-block';
+            if (headerDot) headerDot.style.display = 'inline-block';
+            if (menuDot) menuDot.style.display = 'inline-block';
+            if (dailysDot) dailysDot.style.display = 'inline-block';
         }
     }
 
@@ -2241,15 +2247,7 @@ class SudokuGame {
     }
 
     setupEventListeners() {
-        // Game control buttons
-        document.getElementById('new-game-btn').addEventListener('click', async () => {
-            if (this.isGameInProgress && this.isGameInProgress()) {
-                const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
-                if (!proceed) return;
-                this.recordLoss();
-            }
-            this.newGame();
-        });
+        // Game control buttons (header new game removed; handled via menu)
         const solveBtn = document.getElementById('solve-btn'); if (solveBtn) solveBtn.addEventListener('click', () => this.solvePuzzle());
         const checkBtn = document.getElementById('check-btn'); if (checkBtn) checkBtn.addEventListener('click', () => this.checkPuzzle());
         const clearBtn = document.getElementById('clear-btn'); if (clearBtn) clearBtn.addEventListener('click', () => this.clearBoard());
@@ -2327,6 +2325,15 @@ class SudokuGame {
 
         // Popover actions
         const map = [
+            ['menu-newgame', async () => {
+                if (this.isGameInProgress && this.isGameInProgress()) {
+                    const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
+                    if (!proceed) return;
+                    this.recordLoss();
+                }
+                this.newGame();
+            }],
+            ['menu-dailys', () => { this.openCalendar && this.openCalendar(); }],
             ['menu-check', () => this.checkPuzzle()],
             ['menu-solve', () => this.solvePuzzle()],
             ['menu-clear', () => this.clearBoard()],
@@ -2884,58 +2891,7 @@ class SudokuGame {
             });
         }
 
-        // Alt+Click New Game: show seed input for special puzzles
-        const ngBtn = document.getElementById('new-game-btn');
-        if (ngBtn) {
-            ngBtn.addEventListener('click', async (ev) => {
-                if (!ev.altKey) return; // normal flow handled above
-                ev.preventDefault(); ev.stopPropagation();
-                const existing = document.getElementById('seed-popover'); if (existing) existing.remove();
-                const pop = document.createElement('div');
-                pop.id = 'seed-popover';
-                pop.style.position = 'fixed';
-                const rect = ngBtn.getBoundingClientRect();
-                pop.style.left = `${rect.left}px`;
-                pop.style.top = `${rect.bottom + 6}px`;
-                pop.style.background = 'var(--surface)';
-                pop.style.border = '1px solid var(--border)';
-                pop.style.borderRadius = '8px';
-                pop.style.padding = '6px';
-                pop.style.zIndex = '1100';
-                pop.innerHTML = `<input id="seed-input" aria-label="Seed" placeholder="Enter seed" style="padding:4px 6px;border:1px solid var(--border);border-radius:6px;min-width:180px;background:var(--surface);color:var(--text)">`;
-                document.body.appendChild(pop);
-                const input = document.getElementById('seed-input');
-                input.focus();
-                const close = () => { pop.remove(); document.removeEventListener('click', onDoc); };
-                const onDoc = (e) => { if (!pop.contains(e.target) && e.target !== ngBtn) close(); };
-                document.addEventListener('click', onDoc);
-                input.addEventListener('keydown', async (e) => {
-                    if (e.key === 'Enter') {
-                        const seed = String(input.value || '').trim();
-                        if (!seed) { close(); return; }
-                        if (this.isGameInProgress && this.isGameInProgress()) {
-                            const proceed = await this.showConfirm('Start seeded game? Current game will end and count as a loss.');
-                            if (!proceed) return;
-                            this.recordLoss();
-                        }
-                        const diff = (localStorage.getItem('sudoku-last-difficulty') || 'medium');
-                        this.isGameComplete = false; this.isGameOver = false;
-                        const go = document.getElementById('gameover-overlay'); if (go) go.style.display = 'none';
-                        const po = document.getElementById('pause-overlay'); if (po) po.style.display = 'none';
-                        this.lockedNumber = null;
-                        document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
-                        this.stopTimer(); this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = false; this._pendingStart = false; this._preStartElapsed = 0; this._hasMadeMove = false;
-                        this.history = []; this.redoStack = [];
-                        this.updateModeIndicator && this.updateModeIndicator({ type: 'normal', difficulty: diff });
-                        this.generateSeeded && this.generateSeeded(seed, diff);
-                        this.updateDisplay && this.updateDisplay();
-                        close();
-                    } else if (e.key === 'Escape') {
-                        close();
-                    }
-                });
-            });
-        }
+        // Alt+Click seeded input removed with header New Game
 
         // Dev panel toggle implementation (build lazily)
         this._toggleDevPanel = () => {

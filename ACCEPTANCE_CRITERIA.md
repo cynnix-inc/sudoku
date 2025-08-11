@@ -1,4 +1,4 @@
-High-level acceptance criteria for Sudoku
+High-level acceptance criteria for Ultimate Sudoku
 
 - New Game
   - Clicking `#new-game-btn` creates a fresh puzzle with 81 cells. Givens vary by difficulty and may be below 20 for higher levels (approximate givens: Easy≈51, Medium≈41, Hard≈31, Expert≈21, Master≈19, Extreme≈17).

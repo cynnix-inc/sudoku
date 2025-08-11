@@ -138,18 +138,7 @@ body {
 /* New difficulties */
 .mode-master .icon { color: var(--diff-master-fg); border-color: var(--diff-master-border); background: var(--diff-master-bg); }
 .mode-extreme .icon { color: var(--diff-extreme-fg); border-color: var(--diff-extreme-border); background: var(--diff-extreme-bg); }
-.newgame-group { position: relative; display: flex; gap: 0.25rem; align-items: center; }
-/* Visually attach difficulty dropdown to New Game as a split control */
-.header-right .newgame-group { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; gap: 0; }
-.header-right #new-game-btn { border: 0; border-right: 1px solid var(--border); border-radius: 0; }
-.header-right #newgame-dropdown { border: 0; border-radius: 0; }
-/* Smaller dropdown width for difficulty picker */
-.newgame-group .popover-menu { min-width: 160px; display: none; }
-.caret-btn { width: 32px; height: 32px; --icon-size: 32px; font-size: 0.9rem; }
-/* Visually attach difficulty dropdown to New Game as a split control */
-.header-right .newgame-group { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; gap: 0; }
-.header-right #new-game-btn { border: 0; border-right: 1px solid var(--border); border-radius: 0; }
-.header-right #newgame-dropdown { border: 0; border-radius: 0; }
+.newgame-group, #new-game-btn, #newgame-dropdown, #newgame-popover { display: none !important; }
 
 /* Controls strip just above the grid */
 .controls-strip { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 0.5rem; margin-bottom: 0.5rem; }
@@ -221,6 +210,14 @@ body {
 /* Specific widths */
 #newgame-popover { width: max-content !important; min-width: unset !important; }
 #menu-popover { width: max-content; }
+.popover-item { min-width: 180px; min-height: 44px; }
+.popover-item.badged { position: relative; }
+.icon-btn#menu-btn { min-width: 44px; min-height: 44px; }
+@media (pointer: coarse) {
+  .popover-item { min-height: 48px; }
+  .icon-btn#menu-btn { width: 48px; height: 48px; }
+}
+.popover-item .menu-icon { font-size: 1rem; }
 .popover-item {
     display: block;
     width: 100%;
@@ -538,11 +535,36 @@ header {
     margin-bottom: 2rem;
 }
 
-h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 1rem;
+h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1rem; }
+
+/* Ultimate Sudoku logo */
+.app-logo { position: relative; display: inline-block; margin: 0; line-height: 1; }
+.app-logo .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,1,1); white-space: nowrap; border: 0; }
+.logo-svg { width: clamp(108px, 13.2vw, 228px); height: auto; max-height: 9.6vh; display: block; }
+/* Subtle text-applied flares */
+.logo-svg .ultimate { filter: drop-shadow(0 1px 0 rgba(255,255,255,0.3)) drop-shadow(0 6px 12px rgba(245,158,11,0.16)); paint-order: stroke; stroke: rgba(0,0,0,0.12); stroke-width: 6px; }
+.logo-svg .ultimate-shimmer { mix-blend-mode: screen; }
+.logo-svg .sudoku { filter: drop-shadow(0 1px 0 rgba(255,255,255,0.24)) drop-shadow(0 8px 16px rgba(99,102,241,0.16)); paint-order: stroke; stroke: rgba(0,0,0,0.10); stroke-width: 10px; }
+
+/* Animated specular sweep across the text using SVG gradients (already defined in markup) */
+.logo-svg .logo-text text { letter-spacing: 0.5px; font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+/* Ensure stacking: Sudoku over Ultimate where overlapping */
+.logo-svg .logo-text .ultimate { isolation: isolate; }
+.logo-svg .logo-text .sudoku { isolation: isolate; }
+
+/* Daily-inspired flair: gradient glow, radial highlight, animated sweep */
+.app-logo::after, .app-logo::before { display: none !important; content: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-logo::before { display: none; animation: none; }
+}
+
+/* Tighter logo on narrow screens to avoid overlapping controls */
+@media (max-width: 920px) {
+  .logo-svg { width: clamp(108px, 16.8vw, 204px); max-height: 8.4vh; }
+}
+@media (max-width: 700px) {
+  .logo-svg { width: clamp(102px, 24vw, 180px); }
 }
 
 /* remove added logo mark/glint styles */

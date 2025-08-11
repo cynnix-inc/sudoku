@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#667eea">
-    <title>Sudoku Game</title>
+    <title>Ultimate Sudoku</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -35,36 +35,55 @@
         <header>
             <div class="rail app-header">
                 <div class="header-left">
-                    <h1>Sudoku</h1>
+                    <h1 class="app-logo" aria-label="Ultimate Sudoku">
+                      <span class="sr-only">Ultimate Sudoku</span>
+                      <svg class="logo-svg" viewBox="0 0 1000 400" role="img" aria-hidden="true" focusable="false">
+                        <defs>
+                          <linearGradient id="logoGradUltimate" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#f59e0b"/>
+                            <stop offset="100%" stop-color="#fbbf24"/>
+                            <animate attributeName="x1" values="-40%;0%;-40%" dur="8s" repeatCount="indefinite"/>
+                            <animate attributeName="x2" values="60%;100%;60%" dur="8s" repeatCount="indefinite"/>
+                          </linearGradient>
+                          <linearGradient id="logoGradSudoku" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#5b6eea"/>
+                            <stop offset="100%" stop-color="#8aa2ff"/>
+                            <animate attributeName="x1" values="-30%;0%;-30%" dur="10s" repeatCount="indefinite"/>
+                            <animate attributeName="x2" values="70%;100%;70%" dur="10s" repeatCount="indefinite"/>
+                          </linearGradient>
+                          <!-- Occasional shimmer for "Ultimate": long idle, brief sweep -->
+                          <linearGradient id="logoShimmer" x1="-60%" y1="0%" x2="-30%" y2="0%">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+                            <stop offset="16%" stop-color="#ffffff" stop-opacity="0.85"/>
+                            <stop offset="32%" stop-color="#ffffff" stop-opacity="0"/>
+                            <animate attributeName="x1" values="-60%;-60%;120%;120%" keyTimes="0;0.88;0.96;1" dur="30s" repeatCount="indefinite"/>
+                            <animate attributeName="x2" values="-30%;-30%;150%;150%" keyTimes="0;0.88;0.96;1" dur="30s" repeatCount="indefinite"/>
+                          </linearGradient>
+                        </defs>
+                        <g class="logo-text">
+                          <text class="ultimate" x="0" y="135" font-size="130" font-weight="800" textLength="1000" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradUltimate)">Ultimate</text>
+                          <text class="ultimate-shimmer" x="0" y="135" font-size="130" font-weight="800" textLength="1000" lengthAdjust="spacingAndGlyphs" fill="url(#logoShimmer)" opacity="0.55">Ultimate</text>
+                          <text class="sudoku" x="0" y="355" font-size="300" font-weight="800" textLength="1000" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradSudoku)">Sudoku</text>
+                        </g>
+                      </svg>
+                    </h1>
                 </div>
                 <div class="header-right">
-                    <div class="newgame-group">
-                        <button id="new-game-btn" class="icon-btn" title="New Game">🔄</button>
-                        <div class="menu-wrap">
-                          <button id="newgame-dropdown" class="icon-btn caret-btn" title="Change difficulty">▾</button>
-                          <div id="newgame-popover" class="popover-menu" role="menu" hidden>
-                            <button class="popover-item" data-diff="easy"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg></span><span>Easy</span></button>
-                            <button class="popover-item" data-diff="medium"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,3 14,13 2,13" fill="currentColor"/></svg></span><span>Medium</span></button>
-                            <button class="popover-item" data-diff="hard"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><rect x="3" y="3" width="10" height="10" fill="currentColor"/></svg></span><span>Hard</span></button>
-                             <button class="popover-item" data-diff="expert"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,2 13,5 13,11 8,14 3,11 3,5" fill="currentColor"/></svg></span><span>Expert</span></button>
-                             <button class="popover-item" data-diff="master"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="6,1 10,1 15,6 15,10 10,15 6,15 1,10 1,6" fill="currentColor"/></svg></span><span>Master</span></button>
-                             <button class="popover-item" data-diff="extreme"><span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><polygon points="8,2 9.76,6.3 14,6.5 10.5,9.2 11.9,13.5 8,11.2 4.1,13.5 5.5,9.2 2,6.5 6.24,6.3" fill="currentColor"/></svg></span><span>Extreme</span></button>
-                          </div>
-                        </div>
-                    </div>
-                        <button id="daily-icon-btn" class="icon-btn badged" title="Daily" aria-label="Daily">📅<span id="daily-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
                     <div class="menu-wrap">
-                          <button id="menu-btn" class="icon-btn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+                          <button id="menu-btn" class="icon-btn badged" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">☰<span id="menu-daily-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
                         <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
+                          <button id="menu-newgame" class="popover-item" role="menuitem"><span class="menu-icon">🔄</span><span>New game</span></button>
+                          <button id="menu-dailys" class="popover-item badged" role="menuitem"><span class="menu-icon">📅</span><span>Dailys</span><span id="menu-dailys-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
+                          <hr/>
                           <button id="menu-check" class="popover-item" role="menuitem"><span class="menu-icon">🔎</span><span>Check</span></button>
                           <button id="menu-solve" class="popover-item" role="menuitem"><span class="menu-icon">🧩</span><span>Solve</span></button>
                           <button id="menu-clear" class="popover-item" role="menuitem"><span class="menu-icon">🧹</span><span>Clear All</span></button>
-                    <hr/>
+                          <hr/>
                           <button id="menu-stats" class="popover-item" role="menuitem"><span class="menu-icon">📊</span><span>Stats</span></button>
-                    <hr/>
+                          <hr/>
                           <button id="menu-login" class="popover-item" role="menuitem"><span class="menu-icon">🔐</span><span>Sign in with Google</span></button>
                           <button id="menu-logout" class="popover-item" role="menuitem" style="display:none"><span class="menu-icon">🚪</span><span>Sign out</span></button>
-                    <hr/>
+                          <hr/>
                           <button id="menu-settings" class="popover-item" role="menuitem"><span class="menu-icon">⚙️</span><span>Settings</span></button>
                           <button id="menu-help" class="popover-item" role="menuitem"><span class="menu-icon">❓</span><span>Help</span></button>
                         </div>

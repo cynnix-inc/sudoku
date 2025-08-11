@@ -1,6 +1,6 @@
 ## Easter Eggs Guide
 
-A quick reference for hidden treats in the Sudoku app: how to trigger each and what they do.
+A quick reference for hidden treats in the Ultimate Sudoku app: how to trigger each and what they do.
 
 ### Konami Retro Mode
 - **Trigger**: Press Up, Up, Down, Down, Left, Right, Left, Right, B, A (keyboard).
@@ -8,7 +8,7 @@ A quick reference for hidden treats in the Sudoku app: how to trigger each and w
 - **Notes**: One-way enable; reload to clear.
 
 ### Triple‑click Logo Surprise
-- **Trigger**: Triple‑click the `Sudoku` title in the header.
+- **Trigger**: Triple‑click the `Ultimate Sudoku` title in the header.
 - **Effect**: Pixel confetti burst near the logo and a random accent color is applied.
 
 ### Seeded Puzzle Loader

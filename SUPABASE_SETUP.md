@@ -1,4 +1,4 @@
-## Supabase setup for Sudoku (Google Sign‑In + Cloud Stats)
+## Supabase setup for Ultimate Sudoku (Google Sign‑In + Cloud Stats)
 
 This guide configures Supabase authentication (Google OAuth) and a `stats` table with Row Level Security so player stats sync across devices when signed in. If Supabase is not configured, the app falls back to local storage automatically.
 

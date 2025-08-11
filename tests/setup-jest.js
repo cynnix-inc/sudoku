@@ -5,7 +5,6 @@ beforeEach(() => {
       <header>
         <div class="rail app-header">
           <div class="header-right">
-            <button id="new-game-btn"></button>
             <button id="menu-btn"></button>
             <div id="menu-popover"></div>
           </div>
@@ -52,6 +51,11 @@ beforeEach(() => {
   try {
     Object.defineProperty(window.navigator, 'maxTouchPoints', { value: 0, configurable: true });
   } catch {}
+});
+
+afterEach(() => {
+  // Cleanup DOM
+  document.body.innerHTML = '';
 });
 
 
