@@ -268,6 +268,32 @@ describe('Sudoku feature logic (headless)', () => {
     expect(secondStatus.toLowerCase()).toContain('no hints');
   });
 
+  test('recordWin does not update best time when hints are used (assisted run)', () => {
+    // Reset storage and seed a prior best time for medium
+    try { localStorage.clear(); } catch {}
+    localStorage.setItem('sudoku-last-difficulty', 'medium');
+    localStorage.setItem('sudoku-stats', JSON.stringify({ bestTimes: { medium: 200 }, byDifficulty: { medium: { played: 0, wins: 0 } } }));
+
+    const game = new SudokuGame({ headless: true });
+    // Simulate an active run elapsed of 100s
+    game._hasStarted = true;
+    game.startTime = Date.now() - 100 * 1000;
+    // Mark as assisted
+    game.hintsUsed = 1;
+
+    const newBest = game.recordWin();
+    const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
+
+    // Best time should remain unchanged because hints were used
+    expect(stats.bestTimes.medium).toBe(200);
+    expect(newBest).toBe(false);
+    // Wins/played should still increment
+    expect(stats.totalWins).toBe(1);
+    expect(stats.totalCompleted).toBe(1);
+    expect(stats.byDifficulty.medium.played).toBe(1);
+    expect(stats.byDifficulty.medium.wins).toBe(1);
+  });
+
   test('checkPuzzle marks errors and success', () => {
     document.body.innerHTML = '';
     const boardHost = document.createElement('div'); boardHost.id = 'board'; document.body.appendChild(boardHost);

@@ -2149,7 +2149,7 @@ class SudokuGame {
         const overlayShowing = !!(overlay && overlay.style.display !== 'none' && overlay.style.display !== '');
         const isRunning = !!this.timer && !this.isPaused && !overlayShowing && this._hasStarted;
         if (icon) icon.textContent = isRunning ? '⏸' : '▶';
-        timerBtn.setAttribute('title', isRunning ? 'Pause' : (this._hasStarted ? 'Resume' : 'Start'));
+        timerBtn.setAttribute('title', isRunning ? 'Pause timer' : (this._hasStarted ? 'Resume timer' : 'Start timer'));
     }
 
     // Update hint button state and tooltip
@@ -2160,7 +2160,7 @@ class SudokuGame {
         const left = finite ? Math.max(0, this.hintsLimit - (this.hintsUsed || 0)) : '∞';
         const isOut = finite && (this.hintsUsed || 0) >= this.hintsLimit;
         btn.disabled = isOut;
-        // Update bubble counter (no tooltip reliance)
+        // Update bubble counter and tooltip
         const badge = document.getElementById('hint-badge');
         if (badge) {
             if (!finite) {
@@ -2171,7 +2171,14 @@ class SudokuGame {
                 badge.classList.toggle('badge-danger', String(left) === '0');
             }
         }
-        btn.removeAttribute('title');
+        let titleText = 'Get a hint: fills one correct cell (+30s).';
+        if (finite) {
+            const remaining = Number(left);
+            titleText = remaining > 0
+                ? `Get a hint: fills one correct cell (+30s). ${remaining} left.`
+                : 'No hints left.';
+        }
+        btn.setAttribute('title', titleText);
     }
 
     getTimeSpent() {
@@ -2906,7 +2913,8 @@ class SudokuGame {
             document.getElementById('auto-advance-toggle'),
             document.getElementById('theme-dark-toggle'),
             document.getElementById('lives-limit') || document.getElementById('mistakes-limit'),
-            document.getElementById('zen-mode-toggle')
+            document.getElementById('zen-mode-toggle'),
+            document.getElementById('hint-mode-select')
         ];
         savedHooks.forEach(el => { if (el) el.addEventListener('change', () => this._showSavedToast()); });
         swatches.forEach(b => b.addEventListener('click', () => this._showSavedToast()));
@@ -3206,7 +3214,7 @@ class SudokuGame {
                     restore = document.createElement('button');
                     restore.id = 'dev-restore';
                     restore.className = 'dev-restore';
-                    restore.title = 'Restore Dev Tools';
+                    restore.title = 'Restore dev tools';
                     restore.setAttribute('aria-label', 'Restore Dev Tools');
                     restore.textContent = '🛠️';
                     document.body.appendChild(restore);
@@ -3299,8 +3307,8 @@ class SudokuGame {
               <div class="dev-head">
                 <div class="title">Dev Tools</div>
                 <div class="window-actions">
-                  <button id="dev-minimize" class="win-btn" title="Minimize" aria-label="Minimize">_</button>
-                  <button id="dev-close" class="win-btn" title="Close" aria-label="Close">✕</button>
+                  <button id="dev-minimize" class="win-btn" title="Minimize dev tools" aria-label="Minimize">_</button>
+                  <button id="dev-close" class="win-btn" title="Close dev tools" aria-label="Close">✕</button>
                 </div>
               </div>
               <div class="dev-content">
@@ -3337,7 +3345,7 @@ class SudokuGame {
                   <select id="dev-seed-diff" class="dev-input">
                     <option>easy</option><option selected>medium</option><option>hard</option><option>expert</option><option>master</option><option>extreme</option>
                   </select>
-                  <button id="dev-seed-go" class="btn btn-secondary btn-small" title="Start seeded" aria-label="Start seeded">▶ Go</button>
+                  <button id="dev-seed-go" class="btn btn-secondary btn-small" title="Start seeded game" aria-label="Start seeded">▶ Go</button>
                 </div>
               </div>
             `;
@@ -4150,27 +4158,141 @@ class SudokuGame {
             this.updateHintUi && this.updateHintUi();
             return;
         }
-        for (let r = 0; r < 9; r++) {
-            for (let c = 0; c < 9; c++) {
-                if (this.board[r][c] === 0) {
-                    this.setCellValue(r, c, this.solution[r][c], 'hint');
-                    this.hintsUsed = (this.hintsUsed || 0) + 1;
-                    if (this.hintPenaltySeconds) {
-                        // Apply time penalty by shifting start time backward
-                        if (this.startTime) {
-                            this.startTime -= this.hintPenaltySeconds * 1000;
-                        }
-                        this.updateTimer && this.updateTimer();
-                        this.showStatus(`Hint used (+${this.hintPenaltySeconds}s)`, 'info');
-                    } else {
-                        this.showStatus('Hint used', 'info');
-                    }
-                    this.updateHintUi && this.updateHintUi();
-                    return;
+        const hintMode = (document.getElementById('hint-mode-select')?.value) || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').hintMode) || 'direct';
+        // Escalation stage memory
+        if (!this._escalateStage) this._escalateStage = 1;
+
+        const pickFirstEmpty = () => {
+            for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (this.board[r][c] === 0) return [r,c];
+            return null;
+        };
+
+        const applyHintPenaltyAndUi = (message) => {
+            this.hintsUsed = (this.hintsUsed || 0) + 1;
+            if (this.hintPenaltySeconds) {
+                if (this.startTime) this.startTime -= this.hintPenaltySeconds * 1000;
+                this.updateTimer && this.updateTimer();
+                this.showStatus(`${message} (+${this.hintPenaltySeconds}s)`, 'info');
+            } else {
+                this.showStatus(message, 'info');
+            }
+            this.updateHintUi && this.updateHintUi();
+        };
+
+        const highlightCell = (r, c, reasonText) => {
+            const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+            if (cell) {
+                cell.classList.add('hint-highlight');
+                setTimeout(() => cell.classList.remove('hint-highlight'), 1800);
+                this.selectCell(cell, r, c);
+            }
+            if (reasonText) this.showStatus(reasonText, 'info');
+        };
+
+        // Logic to find a deducible cell by singles
+        const findSingleCandidateCell = () => {
+            // Ensure candidates
+            this.recomputeAllCandidates();
+            // Naked single: any cell with exactly one candidate
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] !== 0) continue;
+                    const cand = Array.from(this.notes[r][c] || []);
+                    if (cand.length === 1) return { r, c, value: cand[0], rule: 'Naked single' };
                 }
             }
+            // Hidden single in row/col/box
+            const getBoxIndex = (r, c) => Math.floor(r/3)*3 + Math.floor(c/3);
+            const areas = [];
+            for (let i = 0; i < 9; i++) areas.push({ type:'row', idx:i });
+            for (let i = 0; i < 9; i++) areas.push({ type:'col', idx:i });
+            for (let i = 0; i < 9; i++) areas.push({ type:'box', idx:i });
+            for (const area of areas) {
+                const cells = [];
+                for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] !== 0) continue;
+                    if (area.type==='row' && r===area.idx) cells.push({r,c});
+                    if (area.type==='col' && c===area.idx) cells.push({r,c});
+                    if (area.type==='box' && getBoxIndex(r,c)===area.idx) cells.push({r,c});
+                }
+                for (let n = 1; n <= 9; n++) {
+                    const spots = cells.filter(({r,c}) => (this.notes[r][c] || new Set()).has(n));
+                    if (spots.length === 1) return { r: spots[0].r, c: spots[0].c, value: n, rule: `Hidden single in ${area.type} ${area.idx+1}` };
+                }
+            }
+            return null;
+        };
+
+        const mode = hintMode;
+        if (mode === 'direct') {
+            const pos = pickFirstEmpty();
+            if (!pos) { this.showStatus('No empty cells to hint', 'info'); return; }
+            const [r,c] = pos;
+            this.setCellValue(r, c, this.solution[r][c], 'hint');
+            applyHintPenaltyAndUi('Hint used');
+            return;
         }
-        this.showStatus('No empty cells to hint', 'info');
+
+        if (mode === 'logic') {
+            const res = findSingleCandidateCell() || (() => { const p=pickFirstEmpty(); if(!p) return null; return { r:p[0], c:p[1], value:this.solution[p[0]][p[1]], rule:'Direct reveal (no simple logic found)' }; })();
+            if (!res) { this.showStatus('No empty cells to hint', 'info'); return; }
+            // Show candidates for this cell and explain
+            const { r, c, value, rule } = res;
+            // Ensure candidates visible for this cell
+            this.recomputeAllCandidates();
+            highlightCell(r, c, `${rule}: this cell is ${value}`);
+            // Do not place the number automatically
+            applyHintPenaltyAndUi('Guidance shown');
+            return;
+        }
+
+        if (mode === 'assist') {
+            // Toggle candidate visibility for all empties and highlight conflicts/safe numbers
+            this.recomputeAllCandidates();
+            // Optionally highlight any errors already present
+            for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) this.updateCellDisplay(r,c);
+            // Optionally, select a cell with fewest candidates to steer the user
+            let best = null;
+            for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (this.board[r][c] === 0) {
+                const k = (this.notes[r][c]||new Set()).size;
+                if (k > 0 && (!best || k < best.k)) best = { r,c,k };
+            }
+            if (best) highlightCell(best.r, best.c, 'Candidates updated — try one of these');
+            applyHintPenaltyAndUi('Assist shown');
+            return;
+        }
+
+        if (mode === 'escalate') {
+            // Stage 1: highlight next solvable cell (logic if possible)
+            // Stage 2: show candidates for that cell
+            // Stage 3: reveal value
+            const target = findSingleCandidateCell() || (() => { const p=pickFirstEmpty(); if(!p) return null; return { r:p[0], c:p[1], value:this.solution[p[0]][p[1]], rule:'Next cell' }; })();
+            if (!target) { this.showStatus('No empty cells to hint', 'info'); return; }
+            const { r, c, value, rule } = target;
+            if (this._escalateStage === 1) {
+                highlightCell(r, c, `Next: ${rule}`);
+                this._escalateStage = 2;
+                applyHintPenaltyAndUi('Guidance shown');
+                return;
+            } else if (this._escalateStage === 2) {
+                this.recomputeAllCandidates();
+                highlightCell(r, c, 'Candidates narrowed');
+                this._escalateStage = 3;
+                applyHintPenaltyAndUi('Assist shown');
+                return;
+            } else {
+                this.setCellValue(r, c, value, 'hint');
+                this._escalateStage = 1;
+                applyHintPenaltyAndUi('Hint used');
+                return;
+            }
+        }
+
+        // Fallback: direct
+        const pos = pickFirstEmpty();
+        if (!pos) { this.showStatus('No empty cells to hint', 'info'); return; }
+        this.setCellValue(pos[0], pos[1], this.solution[pos[0]][pos[1]], 'hint');
+        applyHintPenaltyAndUi('Hint used');
     }
 
     togglePause() {
@@ -4289,6 +4411,7 @@ class SudokuGame {
             themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
             weekstart: ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || 'sunday',
             accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
+            hintMode: (document.getElementById('hint-mode-select')?.value) || 'direct',
         };
         try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
     }
@@ -4341,6 +4464,7 @@ class SudokuGame {
             if (swatches && s.accent) {
                 swatches.forEach(b => b.setAttribute('aria-checked', b.dataset.accent === s.accent ? 'true' : 'false'));
             }
+            const hintModeSel = document.getElementById('hint-mode-select'); if (hintModeSel && s.hintMode) hintModeSel.value = s.hintMode;
             // Apply values to document
             const isDark = !!s.themeDark;
             document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
