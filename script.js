@@ -73,64 +73,199 @@ class SudokuGame {
             this.resumeFromStorage && this.resumeFromStorage();
         }
 
-        // Lightweight confetti helper
+        // Confetti helper: stronger "cannon" burst with smart fallback anchors (prefer logo origin)
         this._burstConfetti = () => {
             try {
-                const host = document.querySelector('.landing-card');
-                if (!host) return;
+                const logoEl = document.querySelector('header h1');
+                const landingCard = document.querySelector('.landing-card');
+                const boardEl = document.getElementById('board');
+                const isVisible = (el) => {
+                    if (!el) return false;
+                    const style = getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+                    const r = el.getBoundingClientRect();
+                    return r.width > 2 && r.height > 2;
+                };
+                // Prefer the logo if it's visible, else landing card, else board, else viewport
+                const host = isVisible(logoEl) ? document.body : (isVisible(landingCard) ? landingCard : (isVisible(boardEl) ? boardEl : document.body));
+
+                // Create a transient overlay layer to avoid clipping and anchor particles
+                const layer = document.createElement('div');
+                const onBody = host === document.body;
+                layer.style.position = onBody ? 'fixed' : 'absolute';
+                layer.style.inset = onBody ? '0' : '0';
+                layer.style.pointerEvents = 'none';
+                layer.style.overflow = 'visible';
+                layer.style.zIndex = '3000';
+                host.appendChild(layer);
+
                 const colors = ['#6366f1','#14b8a6','#f59e0b','#ef4444','#22c55e','#3b82f6'];
-                for (let i=0;i<28;i++) {
-                    const s = document.createElement('span');
-                    s.className = 'confetti-bit';
-                    const size = Math.random()*6 + 4;
-                    s.style.width = `${size}px`;
-                    s.style.height = `${size}px`;
-                    s.style.background = colors[Math.floor(Math.random()*colors.length)];
-                    s.style.position = 'absolute';
-                    s.style.top = '8px';
-                    s.style.left = `${(host.clientWidth/2) + (Math.random()*30 - 15)}px`;
-                    s.style.borderRadius = '2px';
-                    s.style.opacity = '0.95';
-                    s.style.transform = `translateY(0) rotate(${Math.random()*180}deg)`;
-                    host.appendChild(s);
-                    const dy = 80 + Math.random()*60;
-                    const dx = (Math.random()*120 - 60);
-                    s.animate([
-                      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
-                      { transform: `translate(${dx}px, ${dy}px) rotate(240deg)`, opacity: 0 }
-                    ], { duration: 900 + Math.random()*500, easing: 'cubic-bezier(.25,.8,.25,1)', fill: 'forwards' });
-                    setTimeout(()=> s.remove(), 1600);
-                }
+                const total = 110; // intensity
+                // If we can read a logo rect, blast from it; otherwise use container center
+                const logoRect = isVisible(logoEl) ? logoEl.getBoundingClientRect() : null;
+                const originX = logoRect ? (logoRect.left + logoRect.width / 2) : (onBody ? (window.innerWidth / 2) : (host.clientWidth / 2));
+                const originY = logoRect ? (logoRect.top + logoRect.height * 0.4) : (onBody ? Math.max(60, window.innerHeight * 0.18) : Math.min(40, host.clientHeight * 0.2));
+
+                const makePiece = () => {
+                    const el = document.createElement('span');
+                    el.className = 'confetti-bit';
+                    // Variety: rectangles, circles, triangles, and number glyphs
+                    const shape = Math.random();
+                    const useNumber = shape < 0.28; // ~28% are digits
+                    const size = 6 + Math.random() * 8;
+                    el.style.position = 'absolute';
+                    el.style.top = `${originY}px`;
+                    el.style.left = `${originX}px`;
+                    el.style.transform = 'translate3d(0,0,0)';
+                    el.style.opacity = '0.98';
+
+                    if (useNumber) {
+                        const digit = String(((Math.random() * 9) | 0) + 1);
+                        el.textContent = digit;
+                        el.classList.add('confetti-num');
+                        el.style.fontSize = `${12 + Math.random() * 8}px`;
+                        el.style.fontWeight = '900';
+                        el.style.lineHeight = '1';
+                        el.style.color = colors[(Math.random() * colors.length) | 0];
+                        el.style.background = 'transparent';
+                    } else {
+                        el.style.width = `${size}px`;
+                        el.style.height = `${size * (shape < 0.15 ? 1.8 : 1)}px`;
+                        el.style.background = colors[(Math.random() * colors.length) | 0];
+                        el.style.borderRadius = shape < 0.35 ? '50%' : '2px';
+                        if (shape > 0.8) {
+                            // triangle using clip-path
+                            el.style.width = `${size + 2}px`;
+                            el.style.height = `${size + 2}px`;
+                            el.style.background = 'transparent';
+                            el.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+                            el.style.backgroundImage = `linear-gradient(${(Math.random()*360)|0}deg, ${colors[(Math.random()*colors.length)|0]}, ${colors[(Math.random()*colors.length)|0]})`;
+                        }
+                        el.style.boxShadow = '0 0 0.5px rgba(0,0,0,0.2)';
+                    }
+                    return el;
+                };
+
+                const burst = (spread = 1) => {
+                    for (let i = 0; i < total; i++) {
+                        const s = makePiece();
+                        layer.appendChild(s);
+
+                        // Angle and speed for blast; spread widens the cone
+                        const angle = (Math.random() * Math.PI * 2);
+                        const speed = 160 + Math.random() * 220; // px
+                        const drift = (Math.random() * 80 - 40); // slight sideways drift
+
+                        const dx = Math.cos(angle) * speed * 0.7 * spread;
+                        const up = Math.sin(angle) * speed * 0.5 * spread; // upward component
+                        const dyUp = -Math.abs(up);
+                        const dyDown = Math.abs(speed) * (0.8 + Math.random() * 0.6);
+
+                        const rotStart = (Math.random() * 180) | 0;
+                        const rotEnd = rotStart + (Math.random() * 720 + 360) * (Math.random() < 0.5 ? -1 : 1);
+                        const duration = 1200 + Math.random() * 900;
+
+                        s.animate([
+                            { transform: `translate3d(0,0,0) rotate(${rotStart}deg)`, opacity: 1, offset: 0 },
+                            { transform: `translate3d(${dx * 0.6 + drift}px, ${dyUp}px, 0) rotate(${(rotStart + rotEnd) / 2}deg)`, opacity: 1, offset: 0.35 },
+                            { transform: `translate3d(${dx}px, ${dyDown}px, 0) rotate(${rotEnd}deg)`, opacity: 0, offset: 1 }
+                        ], {
+                            duration,
+                            easing: 'cubic-bezier(.16,.8,.2,1)',
+                            fill: 'forwards'
+                        });
+                        setTimeout(() => s.remove(), duration + 200);
+                    }
+                };
+
+                // Double-pop for impact
+                burst(1);
+                setTimeout(() => burst(1.2), 90);
+                // Clean up the overlay after the effects
+                setTimeout(() => layer.remove(), 2600);
             } catch {}
         };
 
-        // Confetti burst at a specific host element
+        // Confetti burst anchored to a specific element (e.g., triple-click logo)
         this._burstConfettiAt = (host) => {
             try {
                 if (!host) return;
-                const colors = ['#6366f1','#14b8a6','#f59e0b','#ef4444','#22c55e','#3b82f6'];
                 const rect = host.getBoundingClientRect();
-                for (let i=0;i<22;i++) {
+                const tiny = rect.width < 4 || rect.height < 4;
+                const useBody = tiny;
+                const layer = document.createElement('div');
+                if (useBody) {
+                    // Fallback to viewport overlay anchored at the element's screen position
+                    layer.style.position = 'fixed';
+                    layer.style.inset = '0';
+                } else {
+                    // Create local overlay inside host to ensure correct positioning
+                    layer.style.position = 'absolute';
+                    layer.style.top = '0';
+                    layer.style.left = '0';
+                    layer.style.width = `${rect.width}px`;
+                    layer.style.height = `${rect.height}px`;
+                }
+                layer.style.pointerEvents = 'none';
+                layer.style.overflow = 'visible';
+                layer.style.zIndex = '3000';
+                if (useBody) {
+                    document.body.appendChild(layer);
+                } else {
+                    // Ensure host can anchor absolute children
+                    const prevPos = getComputedStyle(host).position;
+                    if (prevPos === 'static' || !prevPos) host.style.position = 'relative';
+                    host.appendChild(layer);
+                }
+
+                const colors = ['#6366f1','#14b8a6','#f59e0b','#ef4444','#22c55e','#3b82f6'];
+                const total = 60;
+                const originX = useBody ? (rect.left + rect.width / 2) : (rect.width / 2);
+                const originY = useBody ? (rect.top + rect.height / 2) : (rect.height / 2);
+
+                for (let i = 0; i < total; i++) {
                     const s = document.createElement('span');
                     s.className = 'confetti-bit';
-                    const size = Math.random()*5 + 3;
-                    s.style.width = `${size}px`;
-                    s.style.height = `${size}px`;
-                    s.style.background = colors[Math.floor(Math.random()*colors.length)];
+                    const useNumber = Math.random() < 0.28;
+                    if (useNumber) {
+                        s.textContent = String(((Math.random() * 9) | 0) + 1);
+                        s.classList.add('confetti-num');
+                        s.style.fontSize = `${12 + Math.random() * 8}px`;
+                        s.style.fontWeight = '900';
+                        s.style.lineHeight = '1';
+                        s.style.color = colors[(Math.random() * colors.length) | 0];
+                    } else {
+                        const size = 5 + Math.random() * 7;
+                        s.style.width = `${size}px`;
+                        s.style.height = `${size}px`;
+                        s.style.background = colors[(Math.random() * colors.length) | 0];
+                        s.style.borderRadius = Math.random() < 0.4 ? '50%' : '2px';
+                    }
                     s.style.position = 'absolute';
-                    s.style.top = `${(rect.height/2) - 10}px`;
-                    s.style.left = `${(rect.width/2) - 10 + (Math.random()*24 - 12)}px`;
-                    s.style.borderRadius = '2px';
-                    s.style.opacity = '0.95';
-                    host.appendChild(s);
-                    const dy = 70 + Math.random()*50;
-                    const dx = (Math.random()*100 - 50);
+                    s.style.top = `${originY}px`;
+                    s.style.left = `${originX}px`;
+                    s.style.opacity = '0.98';
+                    s.style.transform = 'translate3d(0,0,0)';
+                    layer.appendChild(s);
+
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 140 + Math.random() * 180;
+                    const dx = Math.cos(angle) * speed;
+                    const dyUp = -Math.abs(Math.sin(angle) * speed * 0.7);
+                    const dyDown = Math.abs(speed) * (0.8 + Math.random() * 0.6);
+                    const rotStart = (Math.random() * 180) | 0;
+                    const rotEnd = rotStart + (Math.random() * 540 + 360) * (Math.random() < 0.5 ? -1 : 1);
+                    const duration = 1100 + Math.random() * 800;
+
                     s.animate([
-                      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
-                      { transform: `translate(${dx}px, ${dy}px) rotate(220deg)`, opacity: 0 }
-                    ], { duration: 850 + Math.random()*450, easing: 'cubic-bezier(.25,.8,.25,1)', fill: 'forwards' });
-                    setTimeout(()=> s.remove(), 1500);
+                        { transform: `translate3d(0,0,0) rotate(${rotStart}deg)`, opacity: 1, offset: 0 },
+                        { transform: `translate3d(${dx * 0.55}px, ${dyUp}px, 0) rotate(${(rotStart + rotEnd)/2}deg)`, opacity: 1, offset: 0.35 },
+                        { transform: `translate3d(${dx}px, ${dyDown}px, 0) rotate(${rotEnd}deg)`, opacity: 0, offset: 1 }
+                    ], { duration, easing: 'cubic-bezier(.16,.8,.2,1)', fill: 'forwards' });
+                    setTimeout(() => s.remove(), duration + 200);
                 }
+
+                setTimeout(() => layer.remove(), 2400);
             } catch {}
         };
 
@@ -646,6 +781,112 @@ class SudokuGame {
         // Auto-candidates on start
         if (this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
             this.recomputeAllCandidates();
+        }
+    }
+
+    // ---- Seeded puzzle generation (deterministic by seed) ----
+    generateSeeded(seed, difficulty = 'medium') {
+        try {
+            const rng = this.createSeededRng(String(seed))
+            // 1) Build solved board deterministically
+            this.generateSolvedBoardSeeded(rng);
+            // 2) Copy solution snapshot
+            this.solution = this.board.map(row => [...row]);
+            // 3) Remove numbers with seeded symmetry, enforcing uniqueness
+            const cellsToRemove = { easy: 30, medium: 40, hard: 50, expert: 60, master: 62, extreme: 64 };
+            const cellsToRemoveCount = cellsToRemove[difficulty] || 40;
+            this.removeNumbersSymmetricUniqueSeeded(cellsToRemoveCount, rng);
+            let attempts = 0;
+            while (!this.hasUniqueSolution() && attempts < 3) {
+                this.generateSolvedBoardSeeded(rng);
+                this.solution = this.board.map(row => [...row]);
+                this.removeNumbersSymmetricUniqueSeeded(cellsToRemoveCount, rng);
+                attempts++;
+            }
+            // 4) Initialize gameplay state as in generatePuzzle
+            this.initialBoard = this.board.map(row => [...row]);
+            this.notes = Array(9).fill().map(() => Array(9).fill(null).map(() => new Set()));
+            const hintCaps = { easy: 5, medium: 3, hard: 2, expert: 1, master: 0, extreme: 0 };
+            this.hintsUsed = 0;
+            this.hintsLimit = hintCaps[difficulty] ?? 3;
+            this.updateHintUi && this.updateHintUi();
+            if (this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                this.recomputeAllCandidates();
+            }
+            // Update mode pill/state to normal mode with selected difficulty
+            this._activeDailyKey = null;
+            this.setDailyUiState && this.setDailyUiState(false);
+            this.updateModeIndicator && this.updateModeIndicator({ type: 'normal', difficulty });
+            try { localStorage.setItem('sudoku-last-difficulty', difficulty); } catch {}
+            this.clearStatus && this.clearStatus();
+            this.renderHealthBar && this.renderHealthBar();
+            // Reset timer and state similar to newGame()
+            this.stopTimer && this.stopTimer();
+            this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = false; this._pendingStart = false; this._preStartElapsed = 0; this._hasMadeMove = false; this.updateTimerButton && this.updateTimerButton();
+            this.history = []; this.redoStack = [];
+            // Clear pad state
+            this.lockedNumber = null; document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('active'));
+            // Refresh display
+            this.updateDisplay && this.updateDisplay();
+            // Apply rainbow pad style for next game if flagged
+            this._applyRainbowDigitsIfFlag && this._applyRainbowDigitsIfFlag();
+        } catch {}
+    }
+
+    generateSolvedBoardSeeded(rng) {
+        // Start clean
+        this.board = Array(9).fill().map(() => Array(9).fill(0));
+        // Fill diagonal boxes deterministically
+        this.fillBoxSeeded(0, 0, rng);
+        this.fillBoxSeeded(3, 3, rng);
+        this.fillBoxSeeded(6, 6, rng);
+        // Solve rest using backtracking (deterministic without randomness)
+        if (!this.solveBoard()) {
+            this.board = Array(9).fill().map(() => Array(9).fill(0));
+            this.fillBoxSeeded(0, 0, rng);
+            this.fillBoxSeeded(3, 3, rng);
+            this.fillBoxSeeded(6, 6, rng);
+            this.solveBoard();
+        }
+    }
+
+    fillBoxSeeded(row, col, rng) {
+        const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                const idx = Math.floor(rng() * numbers.length);
+                this.board[row + i][col + j] = numbers[idx];
+                numbers.splice(idx, 1);
+            }
+        }
+    }
+
+    removeNumbersSymmetricUniqueSeeded(count, rng) {
+        const positions = [];
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (r < 4 || (r === 4 && c <= 4)) positions.push([r, c]);
+            }
+        }
+        for (let i = positions.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            [positions[i], positions[j]] = [positions[j], positions[i]];
+        }
+        let removed = 0;
+        for (const [r, c] of positions) {
+            if (removed >= count) break;
+            const sr = 8 - r, sc = 8 - c;
+            if (this.board[r][c] === 0) continue;
+            const v1 = this.board[r][c];
+            const v2 = this.board[sr][sc];
+            this.board[r][c] = 0;
+            if (r !== sr || c !== sc) this.board[sr][sc] = 0;
+            if (this.hasUniqueSolution()) {
+                removed += (r === sr && c === sc) ? 1 : 2;
+            } else {
+                this.board[r][c] = v1;
+                if (r !== sr || c !== sc) this.board[sr][sc] = v2;
+            }
         }
     }
 
@@ -1406,6 +1647,25 @@ class SudokuGame {
         }
     }
 
+    // Rapid Navigation Glow: if ≥10 directional moves in 2s, briefly glow the board
+    _trackRapidNav() {
+        try {
+            const now = Date.now();
+            // Keep only events within the last 2000ms
+            this._navKeyTimestamps = (this._navKeyTimestamps || []).filter(t => now - t <= 2000);
+            this._navKeyTimestamps.push(now);
+            if (this._navKeyTimestamps.length >= 10) {
+                const b = document.getElementById('board');
+                if (b) {
+                    b.classList.add('board-glow');
+                    setTimeout(() => b.classList.remove('board-glow'), 5000);
+                }
+                // Reset to avoid re-triggering immediately
+                this._navKeyTimestamps = [];
+            }
+        } catch {}
+    }
+
     updateCellDisplay(row, col) {
         const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
         if (cell) {
@@ -1780,6 +2040,8 @@ class SudokuGame {
                 <div class="chips">${chips.join('')}</div>
             `;
             box.hidden = false;
+            // Ensure overlay is visible before running any visual effects anchored to it
+            landing.style.display = 'flex';
 
             // Trigger glint; confetti only on unassisted wins; plus time/next-game flair
             if (isWin) {
@@ -1801,6 +2063,9 @@ class SudokuGame {
                         localStorage.setItem('sudoku-rainbow-next','1');
                     }
                 } catch {}
+                // Subtle celebratory wiggle on win
+                const boardEl = document.getElementById('board');
+                if (boardEl) { boardEl.classList.add('board-wiggle'); setTimeout(()=> boardEl.classList.remove('board-wiggle'), 500); }
             } else {
                 landing.classList.add('loss-shake');
                 setTimeout(()=> landing.classList.remove('loss-shake'), 700);
@@ -1808,7 +2073,7 @@ class SudokuGame {
 
             // Ensure any pause or overlays are not visible
             const pause = document.getElementById('pause-overlay'); if (pause) pause.style.display = 'none';
-            landing.style.display = 'flex';
+            // landing overlay display already set above
         } catch {}
     }
 
@@ -2325,12 +2590,19 @@ class SudokuGame {
 
         // Popover actions
         const map = [
-            ['menu-newgame', async () => {
+            ['menu-newgame', async (ev) => {
                 if (this.isGameInProgress && this.isGameInProgress()) {
                     const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
                     if (!proceed) return;
                     this.recordLoss();
                 }
+                // Easter: Alt+Click opens prompt for a seed and starts a seeded game
+                try {
+                    if (ev && (ev.altKey || ev.metaKey)) {
+                        const seed = window.prompt('Enter seed for deterministic puzzle:');
+                        if (seed && seed.trim()) { this.generateSeeded && this.generateSeeded(seed.trim(), (localStorage.getItem('sudoku-last-difficulty') || 'medium')); return; }
+                    }
+                } catch {}
                 this.newGame();
             }],
             ['menu-dailys', () => { this.openCalendar && this.openCalendar(); }],
@@ -2870,6 +3142,21 @@ class SudokuGame {
                 const match = konami.every((k, i) => k === this._konamiProgress[i]);
                 if (match) {
                     document.documentElement.classList.add('theme-retro');
+                    // Force dark theme variables for proper contrast during Retro
+                    document.documentElement.dataset.theme = 'dark';
+                    const themeToggle = document.getElementById('theme-dark-toggle');
+                    if (themeToggle) {
+                        try {
+                            themeToggle.checked = true;
+                            themeToggle.disabled = true;
+                        } catch {}
+                    }
+                    // Update browser theme-color to a dark-friendly accent
+                    try {
+                        let meta = document.querySelector('meta[name="theme-color"]');
+                        if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'theme-color'); document.head.appendChild(meta); }
+                        meta.setAttribute('content', '#0a0a0a');
+                    } catch {}
                     this.showStatus && this.showStatus('Retro mode on.', 'info');
                 }
             } catch {}
@@ -2886,54 +3173,328 @@ class SudokuGame {
                 if (clicks >= 3) {
                     clicks = 0;
                     this._applyAccent();
-                    this._burstConfettiAt && this._burstConfettiAt(logo.parentElement || logo);
+                    // Anchor confetti to the logo element itself for proper positioning
+                    this._burstConfettiAt && this._burstConfettiAt(logo);
                 }
             });
         }
 
         // Alt+Click seeded input removed with header New Game
 
-        // Dev panel toggle implementation (build lazily)
+        // Dev tools window (tiles) with minimize/restore
         this._toggleDevPanel = () => {
             let panel = document.getElementById('dev-panel');
-            if (panel) { panel.classList.toggle('open'); return; }
+            let restore = document.getElementById('dev-restore');
+
+            const ensureRestore = () => {
+                if (!restore) {
+                    restore = document.createElement('button');
+                    restore.id = 'dev-restore';
+                    restore.className = 'dev-restore';
+                    restore.title = 'Restore Dev Tools';
+                    restore.setAttribute('aria-label', 'Restore Dev Tools');
+                    restore.textContent = '🛠️';
+                    document.body.appendChild(restore);
+                    restore.addEventListener('click', () => {
+                        const p = document.getElementById('dev-panel');
+                        if (p) {
+                            // animate restore
+                            p.style.display = 'block';
+                            p.classList.add('is-restoring');
+                            requestAnimationFrame(() => { p.classList.remove('is-restoring'); });
+                            hideRestore();
+                            focusFirst();
+                        }
+                    });
+                }
+                return restore;
+            };
+
+            const showRestore = () => {
+                const r = ensureRestore();
+                r.style.display = 'inline-flex';
+                requestAnimationFrame(() => { r.classList.add('show'); });
+            };
+            const hideRestore = () => {
+                if (!restore) return;
+                restore.classList.remove('show');
+                const onEnd = (e) => {
+                    if (e.target !== restore) return;
+                    restore.removeEventListener('transitionend', onEnd);
+                    restore.style.display = 'none';
+                };
+                restore.addEventListener('transitionend', onEnd, { once: true });
+            };
+
+            const minimize = (afterHidden) => {
+                if (!panel) { if (typeof afterHidden === 'function') afterHidden(); return; }
+                // animate hide
+                panel.classList.add('is-exiting');
+                const onEnd = (e) => {
+                    if (e.target !== panel) return;
+                    panel.removeEventListener('transitionend', onEnd);
+                    panel.style.display = 'none';
+                    panel.classList.remove('is-exiting');
+                    showRestore();
+                    if (typeof afterHidden === 'function') {
+                        try { afterHidden(); } catch {}
+                    }
+                };
+                panel.addEventListener('transitionend', onEnd, { once: true });
+            };
+            const focusFirst = () => { const f = panel && panel.querySelector('.dev-tile, .dev-form input, .dev-form select, .dev-form button'); f && f.focus && f.focus(); };
+
+            const panelObstructs = (targetEl) => {
+                try {
+                    if (!panel || panel.style.display === 'none') return false;
+                    const p = panel.getBoundingClientRect();
+                    if (!targetEl) {
+                        const cx = window.innerWidth / 2;
+                        const cy = window.innerHeight / 2;
+                        return (cx >= p.left && cx <= p.right && cy >= p.top && cy <= p.bottom);
+                    }
+                    const t = targetEl.getBoundingClientRect();
+                    return !(p.right < t.left || p.left > t.right || p.bottom < t.top || p.top > t.bottom);
+                } catch { return false; }
+            };
+
+            const runEffectWithOptionalMinimize = (targetEl, effectFn) => {
+                const trigger = () => { try { effectFn && effectFn(); } catch {} };
+                if (panelObstructs(targetEl)) minimize(trigger); else trigger();
+            };
+
+            if (panel) {
+                const isHidden = panel.style.display === 'none';
+                if (isHidden) {
+                    panel.style.display = 'block';
+                    panel.classList.add('is-restoring');
+                    hideRestore();
+                    requestAnimationFrame(() => { panel.classList.remove('is-restoring'); focusFirst(); });
+                }
+                else {
+                    minimize();
+                }
+                return;
+            }
+
             panel = document.createElement('div');
             panel.id = 'dev-panel';
-            panel.className = 'dev-panel';
+            panel.className = 'dev-panel-window';
             panel.innerHTML = `
-                <div class="dev-head">Dev Tools <button id="dev-close" title="Close">✕</button></div>
+              <div class="dev-head">
+                <div class="title">Dev Tools</div>
+                <div class="window-actions">
+                  <button id="dev-minimize" class="win-btn" title="Minimize" aria-label="Minimize">_</button>
+                  <button id="dev-close" class="win-btn" title="Close" aria-label="Close">✕</button>
+                </div>
+              </div>
+              <div class="dev-content">
                 <div class="dev-section">
-                  <div class="dev-row"><button id="dev-retro" class="btn">Retro On</button><button id="dev-retro-off" class="btn">Retro Off</button></div>
-                  <div class="dev-row"><button id="dev-confetti" class="btn">Confetti</button><button id="dev-accent" class="btn">Random Accent</button></div>
-                  <div class="dev-row"><button id="dev-pi" class="btn">Pi Day</button><button id="dev-saber" class="btn">May 4</button><button id="dev-season-clear" class="btn">Season Off</button></div>
-                  <div class="dev-row"><button id="dev-neon" class="btn">Neon Trail (10s)</button></div>
-                  <div class="dev-row"><button id="dev-palin" class="btn">Palindrome Toast</button></div>
-                  <div class="dev-row"><button id="dev-glow" class="btn">Rapid Glow (5s)</button><button id="dev-wiggle" class="btn">Wiggle</button></div>
-                  <div class="dev-row"><button id="dev-rainbow" class="btn">Flag Rainbow Next</button></div>
-                  <div class="dev-row">
-                    <input id="dev-seed" placeholder="seed" class="dev-input" />
-                    <select id="dev-seed-diff" class="dev-input">
-                      <option>easy</option><option selected>medium</option><option>hard</option><option>expert</option><option>master</option><option>extreme</option>
-                    </select>
-                    <button id="dev-seed-go" class="btn">Start Seed</button>
+                  <div class="dev-section-title">Themes</div>
+                  <div class="dev-grid">
+                    <button id="dev-retro-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🕹️</span><span class="label">Retro: Off</span></button>
+                    <button id="dev-pi-toggle" class="dev-tile" aria-pressed="false"><span class="icon">π</span><span class="label">Pi Day: Off</span></button>
+                    <button id="dev-saber-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🔦</span><span class="label">May 4: Off</span></button>
                   </div>
                 </div>
+                <div class="dev-section">
+                  <div class="dev-section-title">Appearance</div>
+                  <div class="dev-grid">
+                    <button id="dev-accent" class="dev-tile"><span class="icon">🎨</span><span class="label">Random accent</span></button>
+                    <button id="dev-rainbow-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🎯</span><span class="label">Rainbow next: Off</span></button>
+                  </div>
+                </div>
+                <div class="dev-section">
+                  <div class="dev-section-title">Effects</div>
+                  <div class="dev-grid">
+                    <button id="dev-confetti" class="dev-tile"><span class="icon">🎉</span><span class="label">Confetti</span></button>
+                    <button id="dev-neon" class="dev-tile"><span class="icon">✨</span><span class="label">Neon trail</span></button>
+                    <button id="dev-glow" class="dev-tile"><span class="icon">🌟</span><span class="label">Rapid glow</span></button>
+                    <button id="dev-wiggle" class="dev-tile"><span class="icon">〰️</span><span class="label">Wiggle</span></button>
+                    <button id="dev-palin" class="dev-tile"><span class="icon">💬</span><span class="label">Palindrome toast</span></button>
+                  </div>
+                </div>
+                <div class="dev-form">
+                  <select id="dev-seed-presets" class="dev-input">
+                    <option value="">Presets…</option>
+                  </select>
+                  <input id="dev-seed" placeholder="seed" class="dev-input" />
+                  <select id="dev-seed-diff" class="dev-input">
+                    <option>easy</option><option selected>medium</option><option>hard</option><option>expert</option><option>master</option><option>extreme</option>
+                  </select>
+                  <button id="dev-seed-go" class="btn btn-secondary btn-small" title="Start seeded" aria-label="Start seeded">▶ Go</button>
+                </div>
+              </div>
             `;
             document.body.appendChild(panel);
-            const close = panel.querySelector('#dev-close'); if (close) close.addEventListener('click', () => panel.classList.remove('open'));
-            // Wire actions
-            panel.querySelector('#dev-retro')?.addEventListener('click', () => document.documentElement.classList.add('theme-retro'));
-            panel.querySelector('#dev-retro-off')?.addEventListener('click', () => document.documentElement.classList.remove('theme-retro'));
-            panel.querySelector('#dev-confetti')?.addEventListener('click', () => this._burstConfetti && this._burstConfetti());
-            panel.querySelector('#dev-accent')?.addEventListener('click', () => this._applyAccent && this._applyAccent());
-            panel.querySelector('#dev-pi')?.addEventListener('click', () => { document.documentElement.classList.add('theme-pi'); document.documentElement.classList.remove('theme-saber'); });
-            panel.querySelector('#dev-saber')?.addEventListener('click', () => { document.documentElement.classList.add('theme-saber'); document.documentElement.classList.remove('theme-pi'); });
-            panel.querySelector('#dev-season-clear')?.addEventListener('click', () => { document.documentElement.classList.remove('theme-pi','theme-saber'); });
-            panel.querySelector('#dev-neon')?.addEventListener('click', () => { const board = document.getElementById('board'); if (board) { board.classList.add('neon-trail'); setTimeout(()=> board.classList.remove('neon-trail'), 10000); } });
-            panel.querySelector('#dev-palin')?.addEventListener('click', () => this.showStatus && this.showStatus('Nice ordering.', 'info'));
-            panel.querySelector('#dev-glow')?.addEventListener('click', () => { const b = document.getElementById('board'); if (b) { b.classList.add('board-glow'); setTimeout(()=> b.classList.remove('board-glow'), 5000); } });
-            panel.querySelector('#dev-wiggle')?.addEventListener('click', () => { const b = document.getElementById('board'); if (b) { b.classList.add('board-wiggle'); setTimeout(()=> b.classList.remove('board-wiggle'), 600); } });
-            panel.querySelector('#dev-rainbow')?.addEventListener('click', () => { try { localStorage.setItem('sudoku-rainbow-next','1'); this._applyRainbowDigitsIfFlag && this._applyRainbowDigitsIfFlag(); } catch {} });
+
+            // Header actions
+            panel.querySelector('#dev-minimize')?.addEventListener('click', minimize);
+            panel.querySelector('#dev-close')?.addEventListener('click', () => {
+                // animate close but do not show restore
+                panel.classList.add('is-exiting');
+                const onEnd = (e) => {
+                    if (e.target !== panel) return;
+                    panel.removeEventListener('transitionend', onEnd);
+                    panel.style.display = 'none';
+                    panel.classList.remove('is-exiting');
+                    hideRestore();
+                };
+                panel.addEventListener('transitionend', onEnd, { once: true });
+            });
+
+            // Retro toggle tile UI sync
+            const retroBtn = panel.querySelector('#dev-retro-toggle');
+            const syncRetroUi = () => {
+                const on = document.documentElement.classList.contains('theme-retro');
+                retroBtn?.setAttribute('aria-pressed', on ? 'true' : 'false');
+                const label = retroBtn?.querySelector('.label');
+                if (label) label.textContent = on ? 'Retro: On' : 'Retro: Off';
+            };
+            syncRetroUi();
+            retroBtn?.addEventListener('click', () => {
+                const nowOn = document.documentElement.classList.toggle('theme-retro');
+                // Manage theme toggle constraints while Retro is active
+                const themeToggle = document.getElementById('theme-dark-toggle');
+                if (nowOn) {
+                    document.documentElement.dataset.theme = 'dark';
+                    if (themeToggle) { try { themeToggle.checked = true; themeToggle.disabled = true; } catch {} }
+                    try {
+                        let meta = document.querySelector('meta[name="theme-color"]');
+                        if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'theme-color'); document.head.appendChild(meta); }
+                        meta.setAttribute('content', '#0a0a0a');
+                    } catch {}
+                } else {
+                    if (themeToggle) { try { themeToggle.disabled = false; } catch {} }
+                }
+                syncRetroUi();
+                this.showStatus && this.showStatus(nowOn ? 'Retro mode on.' : 'Retro mode off.', 'info');
+            });
+
+            // Tile actions (no auto-minimize unless obstructing one-shot effects)
+            const boardEl = document.getElementById('board');
+            panel.querySelector('#dev-confetti')?.addEventListener('click', () => {
+                runEffectWithOptionalMinimize(boardEl, () => this._burstConfetti && this._burstConfetti());
+            });
+            panel.querySelector('#dev-accent')?.addEventListener('click', () => {
+                // Pure state change; do not minimize
+                this._applyAccent && this._applyAccent();
+            });
+            panel.querySelector('#dev-neon')?.addEventListener('click', () => {
+                runEffectWithOptionalMinimize(boardEl, () => { const b = document.getElementById('board'); if (b) { b.classList.add('neon-trail'); setTimeout(()=> b.classList.remove('neon-trail'), 10000); } });
+            });
+            panel.querySelector('#dev-glow')?.addEventListener('click', () => {
+                runEffectWithOptionalMinimize(boardEl, () => { const b = document.getElementById('board'); if (b) { b.classList.add('board-glow'); setTimeout(()=> b.classList.remove('board-glow'), 5000); } });
+            });
+            panel.querySelector('#dev-wiggle')?.addEventListener('click', () => {
+                runEffectWithOptionalMinimize(boardEl, () => { const b = document.getElementById('board'); if (b) { b.classList.add('board-wiggle'); setTimeout(()=> b.classList.remove('board-wiggle'), 600); } });
+            });
+            panel.querySelector('#dev-palin')?.addEventListener('click', () => {
+                const toastTarget = document.getElementById('toast-container') || document.querySelector('.controls-center') || boardEl;
+                runEffectWithOptionalMinimize(toastTarget, () => this.showStatus && this.showStatus('Nice ordering.', 'info'));
+            });
+
+            // Pi Day toggle
+            const piBtn = panel.querySelector('#dev-pi-toggle');
+            const syncPiUi = () => {
+                const on = document.documentElement.classList.contains('theme-pi');
+                piBtn?.setAttribute('aria-pressed', on ? 'true' : 'false');
+                const label = piBtn?.querySelector('.label');
+                if (label) label.textContent = on ? 'Pi Day: On' : 'Pi Day: Off';
+            };
+            syncPiUi();
+            piBtn?.addEventListener('click', () => {
+                const wasOn = document.documentElement.classList.contains('theme-pi');
+                if (wasOn) { document.documentElement.classList.remove('theme-pi'); }
+                else { document.documentElement.classList.add('theme-pi'); document.documentElement.classList.remove('theme-saber'); }
+                syncPiUi();
+                // also sync saber visual if it was affected
+                syncSaberUi();
+            });
+
+            // May 4 toggle
+            const saberBtn = panel.querySelector('#dev-saber-toggle');
+            const syncSaberUi = () => {
+                const on = document.documentElement.classList.contains('theme-saber');
+                saberBtn?.setAttribute('aria-pressed', on ? 'true' : 'false');
+                const label = saberBtn?.querySelector('.label');
+                if (label) label.textContent = on ? 'May 4: On' : 'May 4: Off';
+            };
+            syncSaberUi();
+            saberBtn?.addEventListener('click', () => {
+                const wasOn = document.documentElement.classList.contains('theme-saber');
+                if (wasOn) { document.documentElement.classList.remove('theme-saber'); }
+                else { document.documentElement.classList.add('theme-saber'); document.documentElement.classList.remove('theme-pi'); }
+                syncSaberUi();
+                // also sync pi visual if it was affected
+                syncPiUi();
+            });
+
+            // Rainbow next toggle
+            const rainbowBtn = panel.querySelector('#dev-rainbow-toggle');
+            const syncRainbowUi = () => {
+                let on = false;
+                try { on = localStorage.getItem('sudoku-rainbow-next') === '1'; } catch {}
+                rainbowBtn?.setAttribute('aria-pressed', on ? 'true' : 'false');
+                const label = rainbowBtn?.querySelector('.label');
+                if (label) label.textContent = on ? 'Rainbow next: On' : 'Rainbow next: Off';
+            };
+            syncRainbowUi();
+            rainbowBtn?.addEventListener('click', () => {
+                try {
+                    const on = localStorage.getItem('sudoku-rainbow-next') === '1';
+                    if (on) localStorage.removeItem('sudoku-rainbow-next'); else localStorage.setItem('sudoku-rainbow-next', '1');
+                } catch {}
+                syncRainbowUi();
+            });
+
+            // Seed presets (top 25 useful for testing)
+            const presets = [
+                { label: 'Smoke Easy #1', seed: 'smoke-easy-1', diff: 'easy' },
+                { label: 'Smoke Medium #1', seed: 'smoke-medium-1', diff: 'medium' },
+                { label: 'Smoke Hard #1', seed: 'smoke-hard-1', diff: 'hard' },
+                { label: 'Expert Techniques', seed: 'expert-techniques', diff: 'expert' },
+                { label: 'Master Challenge', seed: 'master-challenge', diff: 'master' },
+                { label: 'Extreme Stress', seed: 'extreme-stress', diff: 'extreme' },
+                { label: 'Hidden Singles', seed: 'hidden-singles', diff: 'easy' },
+                { label: 'Naked Pairs', seed: 'naked-pairs', diff: 'medium' },
+                { label: 'Hidden Triples', seed: 'hidden-triples', diff: 'medium' },
+                { label: 'X-Wing', seed: 'x-wing', diff: 'hard' },
+                { label: 'Swordfish', seed: 'swordfish', diff: 'expert' },
+                { label: 'XY-Wing', seed: 'xy-wing', diff: 'hard' },
+                { label: 'Skyscraper', seed: 'skyscraper', diff: 'hard' },
+                { label: 'Unique Rectangle', seed: 'unique-rectangle', diff: 'expert' },
+                { label: 'Coloring', seed: 'coloring', diff: 'expert' },
+                { label: 'Fishy', seed: 'fisherman', diff: 'master' },
+                { label: 'Low Clues', seed: 'low-clues', diff: 'expert' },
+                { label: 'Few Givens', seed: 'few-givens', diff: 'hard' },
+                { label: 'Diagonal Theme', seed: 'diagonal', diff: 'medium' },
+                { label: 'Symmetric', seed: 'symmetric', diff: 'medium' },
+                { label: 'Anti-Backtrack', seed: 'anti-backtrack', diff: 'hard' },
+                { label: 'Speedrun', seed: 'speedrun', diff: 'easy' },
+                { label: 'No Hints', seed: 'no-hints', diff: 'hard' },
+                { label: 'Confetti Check', seed: 'confetti-check', diff: 'easy' },
+                { label: 'Regression Bag', seed: 'regression-bag', diff: 'medium' },
+            ];
+            const presetsSelect = panel.querySelector('#dev-seed-presets');
+            if (presetsSelect && !presetsSelect._filled) {
+                presets.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.seed;
+                    opt.textContent = p.label;
+                    opt.setAttribute('data-diff', p.diff || 'medium');
+                    presetsSelect.appendChild(opt);
+                });
+                presetsSelect._filled = true;
+                presetsSelect.addEventListener('change', () => {
+                    const seedInput = panel.querySelector('#dev-seed');
+                    const diffSel = panel.querySelector('#dev-seed-diff');
+                    const selected = presets.find(p => p.seed === presetsSelect.value);
+                    if (seedInput) seedInput.value = presetsSelect.value || '';
+                    if (selected && diffSel) diffSel.value = selected.diff || 'medium';
+                });
+            }
+
             panel.querySelector('#dev-seed-go')?.addEventListener('click', async () => {
                 const seed = String(panel.querySelector('#dev-seed')?.value || '').trim();
                 const diff = String(panel.querySelector('#dev-seed-diff')?.value || 'medium');
@@ -2941,16 +3502,15 @@ class SudokuGame {
                 if (this.isGameInProgress && this.isGameInProgress()) {
                     const proceed = await this.showConfirm('Start seeded game? Current game will end and count as a loss.');
                     if (!proceed) return;
-                    this.recordLoss();
+                    this.recordLoss && this.recordLoss();
                 }
-                this.isGameComplete = false; this.isGameOver = false; this.stopTimer();
-                this.history = []; this.redoStack = [];
-                this.updateModeIndicator && this.updateModeIndicator({ type: 'normal', difficulty: diff });
                 this.generateSeeded && this.generateSeeded(seed, diff);
-                this.updateDisplay && this.updateDisplay();
             });
-            // open now
-            requestAnimationFrame(()=> panel.classList.add('open'));
+
+            // Show window and focus
+            panel.style.display = 'block';
+            hideRestore();
+            focusFirst();
         };
 
         // Landing menu wiring

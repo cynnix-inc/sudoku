@@ -39,31 +39,155 @@
                       <span class="sr-only">Ultimate Sudoku</span>
                       <svg class="logo-svg" viewBox="0 0 1000 400" role="img" aria-hidden="true" focusable="false">
                         <defs>
-                          <linearGradient id="logoGradUltimate" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <!-- Enhanced Ultimate gradient with diagonal movement (slower, staggered) -->
+                          <linearGradient id="logoGradUltimate" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" stop-color="#f59e0b"/>
-                            <stop offset="100%" stop-color="#fbbf24"/>
-                            <animate attributeName="x1" values="-40%;0%;-40%" dur="8s" repeatCount="indefinite"/>
-                            <animate attributeName="x2" values="60%;100%;60%" dur="8s" repeatCount="indefinite"/>
+                            <stop offset="50%" stop-color="#fbbf24"/>
+                            <stop offset="100%" stop-color="#f59e0b"/>
+                            <animate attributeName="x1" values="0%;100%;0%" dur="18s" repeatCount="indefinite"/>
+                            <animate attributeName="y1" values="0%;100%;0%" dur="20s" repeatCount="indefinite"/>
+                            <animate attributeName="x2" values="100%;0%;100%" dur="22s" repeatCount="indefinite"/>
+                            <animate attributeName="y2" values="100%;0%;100%" dur="24s" repeatCount="indefinite"/>
                           </linearGradient>
+                          
+                          <!-- Enhanced Sudoku gradient with wave movement (slower) -->
                           <linearGradient id="logoGradSudoku" x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" stop-color="#5b6eea"/>
-                            <stop offset="100%" stop-color="#8aa2ff"/>
-                            <animate attributeName="x1" values="-30%;0%;-30%" dur="10s" repeatCount="indefinite"/>
-                            <animate attributeName="x2" values="70%;100%;70%" dur="10s" repeatCount="indefinite"/>
+                            <stop offset="25%" stop-color="#8aa2ff"/>
+                            <stop offset="50%" stop-color="#6366f1"/>
+                            <stop offset="75%" stop-color="#8aa2ff"/>
+                            <stop offset="100%" stop-color="#5b6eea"/>
+                            <animate attributeName="x1" values="-50%;0%;-50%" dur="24s" repeatCount="indefinite"/>
+                            <animate attributeName="x2" values="50%;100%;50%" dur="24s" repeatCount="indefinite"/>
                           </linearGradient>
-                          <!-- Occasional shimmer for "Ultimate": long idle, brief sweep -->
+                          
+                          <!-- Enhanced shimmer with multiple layers (slower, offset) -->
                           <linearGradient id="logoShimmer" x1="-60%" y1="0%" x2="-30%" y2="0%">
                             <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
-                            <stop offset="16%" stop-color="#ffffff" stop-opacity="0.85"/>
+                            <stop offset="16%" stop-color="#ffffff" stop-opacity="0.9"/>
                             <stop offset="32%" stop-color="#ffffff" stop-opacity="0"/>
-                            <animate attributeName="x1" values="-60%;-60%;120%;120%" keyTimes="0;0.88;0.96;1" dur="30s" repeatCount="indefinite"/>
-                            <animate attributeName="x2" values="-30%;-30%;150%;150%" keyTimes="0;0.88;0.96;1" dur="30s" repeatCount="indefinite"/>
+                            <animate attributeName="x1" values="-60%;-60%;120%;120%" keyTimes="0;0.86;0.96;1" dur="32s" repeatCount="indefinite"/>
+                            <animate attributeName="x2" values="-30%;-30%;150%;150%" keyTimes="0;0.86;0.96;1" dur="32s" repeatCount="indefinite"/>
                           </linearGradient>
+                          
+                          <!-- Secondary shimmer for Sudoku (delayed for stagger) -->
+                          <linearGradient id="logoShimmerSudoku" x1="-80%" y1="0%" x2="-50%" y2="0%">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+                            <stop offset="20%" stop-color="#ffffff" stop-opacity="0.6"/>
+                            <stop offset="40%" stop-color="#ffffff" stop-opacity="0"/>
+                            <animate attributeName="x1" values="-80%;-80%;130%;130%" keyTimes="0;0.84;0.94;1" dur="38s" repeatCount="indefinite"/>
+                            <animate attributeName="x2" values="-50%;-50%;160%;160%" keyTimes="0;0.84;0.94;1" dur="38s" repeatCount="indefinite"/>
+                          </linearGradient>
+                          
+                          <!-- Grid icon gradient (slower movement) -->
+                          <linearGradient id="gridGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6366f1"/>
+                            <stop offset="100%" stop-color="#8aa2ff"/>
+                            <animate attributeName="x1" values="0%;100%;0%" dur="28s" repeatCount="indefinite"/>
+                            <animate attributeName="y1" values="0%;100%;0%" dur="28s" repeatCount="indefinite"/>
+                          </linearGradient>
+
+                          <!-- Bridge gradient to harmonize grid with Ultimate/Sudoku colors (slower) -->
+                          <linearGradient id="bridgeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#f59e0b"/>
+                            <stop offset="100%" stop-color="#6366f1"/>
+                            <animate attributeName="x1" values="-30%;0%;130%" dur="26s" repeatCount="indefinite"/>
+                            <animate attributeName="x2" values="70%;100%;230%" dur="26s" repeatCount="indefinite"/>
+                          </linearGradient>
+                          
+                          <!-- Mini grid pattern for subtle texture inside Ultimate (slower) -->
+                          <pattern id="microGridPattern" width="6" height="6" patternUnits="userSpaceOnUse">
+                            <rect width="6" height="6" fill="transparent"/>
+                            <path d="M0 0 L6 0 6 6" stroke="#6366f1" stroke-opacity="0.32" stroke-width="0.6"/>
+                            <animate attributeName="patternTransform" values="translate(0,0);translate(3,1);translate(0,0)" dur="60s" repeatCount="indefinite"/>
+                          </pattern>
+
+                          <!-- Mask to confine effects to the Ultimate text, skewed to match -->
+                           <mask id="maskUltimate">
+                            <rect x="0" y="0" width="1000" height="400" fill="black"/>
+                             <text x="150" y="140" font-size="110" font-weight="700" fill="white" transform="translate(150,140) skewX(-14) translate(-150,-140)">Ultimate</text>
+                          </mask>
+
+                          <!-- Curved path mask to tuck grid under the U only -->
+                           <mask id="maskGridUnderUPath">
+                            <rect x="0" y="0" width="1000" height="400" fill="white"/>
+                             <path d="M158 62 C 154 120, 154 160, 162 216 L 196 216 L 196 62 Z" fill="black" transform="translate(150,140) skewX(-14) translate(-150,-140)" filter="url(#maskFeather)"/>
+                          </mask>
+
+                          <!-- Drop shadow filter for the U stroke overlay -->
+                          <filter id="uShadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="1.5" dy="2.5" stdDeviation="1.6" flood-color="#0d0e26" flood-opacity="0.25"/>
+                          </filter>
+
+                           <!-- Subtle depth shadows for layered elements -->
+                           <filter id="gridShadow" x="-20%" y="-20%" width="140%" height="140%">
+                             <feDropShadow dx="0.5" dy="1.2" stdDeviation="1.2" flood-color="#0b1025" flood-opacity="0.18"/>
+                           </filter>
+                           <filter id="sudokuShadow" x="-20%" y="-20%" width="140%" height="140%">
+                             <feDropShadow dx="0" dy="2.2" stdDeviation="2.0" flood-color="#0b1025" flood-opacity="0.22"/>
+                           </filter>
+
+                          <!-- Feathering filter for mask edges -->
+                          <filter id="maskFeather" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="1.8"/>
+                          </filter>
+
+                          <!-- Mask to tuck grid under the U -->
+                           <mask id="maskGridHideUnderU">
+                            <rect x="0" y="0" width="1000" height="400" fill="white"/>
+                             <text x="150" y="140" font-size="118" font-weight="800" fill="black" transform="translate(150,140) skewX(-14) translate(-150,-140)">U</text>
+                          </mask>
+                          
+                          <!-- Soft right-edge fade for the grid to reduce visual clash near the U -->
+                          <linearGradient id="gridSoftFade" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0" stop-color="white" stop-opacity="1"/>
+                            <stop offset="0.85" stop-color="white" stop-opacity="1"/>
+                            <stop offset="1" stop-color="white" stop-opacity="0"/>
+                          </linearGradient>
+                          <mask id="maskGridSoftEdge" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
+                            <rect x="0" y="0" width="1" height="1" fill="url(#gridSoftFade)"/>
+                          </mask>
                         </defs>
+                        
+                        <!-- Sudoku Grid Icon (overlaps with the "U" in Ultimate) -->
+                          <g mask="url(#maskGridSoftEdge)">
+                          <g class="logo-grid" transform="translate(58, 64) scale(1.94)" mask="url(#maskGridUnderUPath)" filter="url(#gridShadow)">
+                          <!-- Outer border -->
+                            <rect class="grid-border" x="0" y="0" width="80" height="80" rx="8" fill="none" stroke="url(#gridGradient)" stroke-width="3" opacity="0.9" vector-effect="non-scaling-stroke"/>
+                          <!-- Horizontal lines -->
+                            <line x1="0" y1="26.67" x2="80" y2="26.67" stroke="url(#logoGradSudoku)" stroke-width="1.6" opacity="0.52" vector-effect="non-scaling-stroke"/>
+                            <line x1="0" y1="53.33" x2="80" y2="53.33" stroke="url(#logoGradSudoku)" stroke-width="1.6" opacity="0.52" vector-effect="non-scaling-stroke"/>
+                          <!-- Vertical lines -->
+                            <line x1="26.67" y1="0" x2="26.67" y2="80" stroke="url(#logoGradSudoku)" stroke-width="1.6" opacity="0.52" vector-effect="non-scaling-stroke"/>
+                            <line x1="53.33" y1="0" x2="53.33" y2="80" stroke="url(#logoGradSudoku)" stroke-width="1.6" opacity="0.52" vector-effect="non-scaling-stroke"/>
+                          <!-- Sample numbers for visual interest -->
+                          <text x="15" y="22" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">5</text>
+                          <text x="42" y="22" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">3</text>
+                          <text x="15" y="49" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">7</text>
+                          <text x="42" y="49" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">1</text>
+                          <text x="15" y="76" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">9</text>
+                          <text x="42" y="76" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">6</text>
+                          </g>
+                          </g>
+
+                        <!-- Subtle connector path bridging grid to the U in Ultimate (renders behind text) -->
+                         <path class="logo-connector" d="M213 142 C 200 150, 192 160, 184 172" fill="none" stroke="url(#gridGradient)" stroke-width="2.2" stroke-linecap="round" opacity="0.32"/>
+                        
                         <g class="logo-text">
-                          <text class="ultimate" x="0" y="135" font-size="130" font-weight="800" textLength="1000" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradUltimate)">Ultimate</text>
-                          <text class="ultimate-shimmer" x="0" y="135" font-size="130" font-weight="800" textLength="1000" lengthAdjust="spacingAndGlyphs" fill="url(#logoShimmer)" opacity="0.55">Ultimate</text>
-                          <text class="sudoku" x="0" y="355" font-size="300" font-weight="800" textLength="1000" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradSudoku)">Sudoku</text>
+                          <!-- Sudoku behind Ultimate for clearer depth and reduced overlap -->
+                          <text class="sudoku" x="150" y="344" font-size="280" font-weight="800" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradSudoku)" filter="url(#sudokuShadow)">Sudoku</text>
+                          <text class="sudoku-shimmer" x="150" y="344" font-size="280" font-weight="800" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoShimmerSudoku)" opacity="0.4">Sudoku</text>
+
+                          <!-- Ultimate text with enhanced typography (now above Sudoku) -->
+                          <text class="ultimate" x="150" y="140" font-size="110" font-weight="700" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradUltimate)" transform="translate(150,140) skewX(-10) translate(-150,-140)" filter="url(#uShadow)">Ultimate</text>
+                          
+                          <!-- Subtle mini-grid texture clipped to Ultimate (overlay) -->
+                          <rect x="150" y="40" width="800" height="120" fill="url(#microGridPattern)" opacity="0.06" mask="url(#maskUltimate)" pointer-events="none"/>
+ 
+                          <!-- Edge highlight for U to enhance overlap depth -->
+                          <text class="ultimate-edge" x="150" y="140" font-size="110" font-weight="800" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" transform="translate(150,140) skewX(-10) translate(-150,-140)" filter="url(#uShadow)">U</text>
+ 
+                          <text class="ultimate-shimmer" x="150" y="140" font-size="110" font-weight="700" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoShimmer)" opacity="0.6" transform="translate(150,140) skewX(-10) translate(-150,-140)">Ultimate</text>
                         </g>
                       </svg>
                     </h1>
