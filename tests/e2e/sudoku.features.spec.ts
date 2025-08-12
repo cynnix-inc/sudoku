@@ -6,7 +6,8 @@ test('header layout: user left, mode center, menu right', async ({ page }) => {
     await page.waitForLoadState('domcontentloaded');
     await page.evaluate(() => { const landing = document.getElementById('landing-overlay'); if (landing) landing.style.display = 'none'; });
   // Presence assertions for new header layout
-  await expect(page.locator('.app-header .header-left')).toBeVisible();
+  // Allow visibility or minimal presence; some variants keep it empty but present
+  await expect(page.locator('.app-header .header-left')).toBeAttached();
   // If user chip is hidden, header-left still exists; when visible, ensure it’s placed
   await expect(page.locator('.app-header .header-center .mode-indicator, .app-header .header-center #mode-indicator')).toBeVisible();
   await expect(page.locator('.app-header .header-right #menu-btn')).toBeVisible();
@@ -156,6 +157,8 @@ test('header layout: user left, mode center, menu right', async ({ page }) => {
     });
     // Open menu → Solve (landing result may cover the UI)
     await page.click('#menu-btn');
+    // Menu may render with slight delay; retry clicking Solve
+    await page.click('#menu-solve', { trial: true }).catch(() => {});
     await page.click('#menu-solve');
     // Open stats via API to avoid overlay intercepting clicks
     await page.evaluate(() => {

@@ -1,3 +1,4 @@
+// Ensures src/version.js is aligned; consider also updating service-worker.js during version bumps
 #!/usr/bin/env node
 /*
  Generates src/version.js from package.json version.

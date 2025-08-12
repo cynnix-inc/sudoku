@@ -8,15 +8,14 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Changes
 
-- **Added**:
+
   - chore(security): add CSP via headers and meta; add fallback env.js to avoid 404; set no-store for env.js (e223ea4)
   - new hint types (c169401)
   - chore: add GH Action to auto-update CHANGELOG on main; add npm script and docs (54a5b8d)
   - docs: add CHANGELOG.md and script; generate initial history from git log (1651abf)
   - new health bar (af79dbc)
-  - ui overhaul and new settings (b6162b0)
+  - ui overhaul and new settings (b6162b0
 
-- **Changed**:
   - qlf (f45cd40)
   - update env config (0fa06f5)
   - kitchen sink (842c563)
@@ -47,8 +46,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - grid 3x3 fixes (6f7b03e)
   - mobile grid fixes (2e0037b)
 
-- **Tests**:
-  - mobile unit tests (b849163)
+
 
 
 ## [1.0.1] - 2025-08-09

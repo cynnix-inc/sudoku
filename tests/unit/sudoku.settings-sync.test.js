@@ -20,10 +20,15 @@ describe('Settings sync behavior (gameplay/calendar vs appearance)', () => {
           <option value="logic">logic</option>
         </select>
         <div id="weekstart-toggle" aria-checked="false"></div>
+        <input type="checkbox" id="idle-autopause-toggle" />
+        <input type="range" id="idle-timeout-slider" min="30" max="600" step="30" value="120" />
+        <span id="idle-timeout-pill"></span>
       </div>`;
     try { localStorage.clear(); } catch {}
     // Stub supabase for tests that simulate signed-in merge
     global.window.supabase = undefined;
+    // Ensure production path is used in headless tests
+    try { global.window.SudokuStats = require('../../src/game/stats.js'); } catch {}
   });
 
   test('local persist/resume carries gameplay+calendar+appearance fields', () => {
@@ -52,6 +57,25 @@ describe('Settings sync behavior (gameplay/calendar vs appearance)', () => {
     expect(s.weekstart).toBe('monday');
     expect(s.hintMode).toBe('logic');
     expect(typeof s.updatedAt).toBe('string');
+  });
+
+  test('idle auto-pause settings persist and restore with pill update', () => {
+    const g = new SudokuGame({ headless: true });
+    // set values and persist
+    document.getElementById('idle-autopause-toggle').checked = true;
+    document.getElementById('idle-timeout-slider').value = '150';
+    g.persistSettings();
+    // clear and restore
+    document.getElementById('idle-autopause-toggle').checked = false;
+    document.getElementById('idle-timeout-slider').value = '30';
+    g.resumeSettings();
+    const s = JSON.parse(localStorage.getItem('sudoku-settings'));
+    expect(s.idleAutoPause).toBe(true);
+    expect(s.idleTimeoutSec).toBe(150);
+    expect(document.getElementById('idle-autopause-toggle').checked).toBe(true);
+    expect(document.getElementById('idle-timeout-slider').value).toBe('150');
+    // pill shows m:ss formatting (2:30) when resumeSettings formats it; allow exact string
+    expect(document.getElementById('idle-timeout-pill').textContent).toBe('2:30');
   });
 
   test('signed-in pull merges only gameplay/calendar fields from remote', async () => {

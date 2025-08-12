@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - 'CHANGELOG.md'
+  pull_request:
+
+jobs:
+  build-and-test:
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:unit
+      - name: Install Playwright Browsers
+        run: npx --yes playwright install --with-deps chromium
+      - name: E2E (Chromium only)
+        run: npx --yes playwright test --project=chromium

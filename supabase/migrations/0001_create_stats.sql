@@ -13,7 +13,8 @@ create table if not exists stats (
   best_expert int,
   best_master int,
   best_extreme int,
-  by_difficulty jsonb
+  by_difficulty jsonb,
+  daily_results jsonb
 );
 
 alter table stats enable row level security;

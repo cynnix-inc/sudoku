@@ -1,13 +1,17 @@
 // Calendar UI helpers extracted from the main game class.
 
-export function openCalendar(game) {
+function openCalendar(game) {
   const modal = document.getElementById('calendar-modal');
   if (!modal) { try { console.warn('Calendar modal not found in DOM.'); } catch {} return; }
   game._calendarRefMonth = game._calendarRefMonth || new Date();
   refreshCalendarHeaders(game);
   renderCalendar(game);
   // Center using CSS grid layout
-  modal.style.display = 'grid';
+  if (window.SudokuModals?.openModal) {
+    window.SudokuModals.openModal('calendar-modal');
+  } else {
+    modal.classList.add('is-open');
+  }
   if (game && game._positionOverlayWithinGameArea) game._positionOverlayWithinGameArea(modal);
   if (game && game._bindOverlayRecalibration) game._bindOverlayRecalibration(modal);
   const closeBtn = document.getElementById('calendar-close');
@@ -15,13 +19,13 @@ export function openCalendar(game) {
   const nextBtn = document.getElementById('calendar-next');
   if (closeBtn && !closeBtn._bound) {
     closeBtn._bound = true;
-    closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+    closeBtn.addEventListener('click', () => { (window.SudokuModals?.closeModal && window.SudokuModals.closeModal('calendar-modal')) || modal.classList.remove('is-open'); });
   }
   if (prevBtn && !prevBtn._bound) { prevBtn._bound = true; prevBtn.addEventListener('click', () => { shiftCalendar(game, -1); }); }
   if (nextBtn && !nextBtn._bound) { nextBtn._bound = true; nextBtn.addEventListener('click', () => { shiftCalendar(game, 1); }); }
 }
 
-export function shiftCalendar(game, deltaMonths) {
+function shiftCalendar(game, deltaMonths) {
   const d = game._calendarRefMonth || new Date();
   const year = d.getFullYear();
   const month = d.getMonth();
@@ -30,7 +34,7 @@ export function shiftCalendar(game, deltaMonths) {
   renderCalendar(game);
 }
 
-export function renderCalendar(game) {
+function renderCalendar(game) {
   const grid = document.getElementById('calendar-grid');
   const label = document.getElementById('calendar-month-label');
   const streaksRow = document.getElementById('calendar-streaks');
@@ -50,11 +54,40 @@ export function renderCalendar(game) {
   const todayLocalYear = todayLocal.getFullYear();
   const todayLocalMonth = todayLocal.getMonth();
   const todayLocalDate = todayLocal.getDate();
+  const todayKeyLocal = game.getUtcDateKey(new Date(Date.UTC(todayLocal.getFullYear(), todayLocal.getMonth(), todayLocal.getDate())));
+  const isVisibleMonth = (todayLocal.getFullYear() === ref.getFullYear() && todayLocal.getMonth() === ref.getMonth());
+  const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
+  // Decide which day to visually highlight: normally today; if today is completed, prefer the most recent incomplete day in this month
+  let highlightKey = null;
+  let highlightToday = true;
+  if (isVisibleMonth && results && results[todayKeyLocal]?.completed) {
+    highlightToday = false;
+    // Walk backward from today to find the latest incomplete, non-future day within the visible month
+    const startDay = Math.min(todayLocalDate, daysInMonth);
+    for (let d = startDay; d >= 1; d--) {
+      const date = new Date(ref.getFullYear(), ref.getMonth(), d);
+      const key = game.getUtcDateKey(new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())));
+      const thisUtcMidnight = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const isFuture = thisUtcMidnight.getTime() > nowUtcMidnight.getTime();
+      const isCompleted = !!results[key]?.completed;
+      if (!isFuture && !isCompleted) { highlightKey = key; break; }
+    }
+    // If no incomplete day found in this month, keep highlighting today
+    if (!highlightKey) highlightToday = true;
+  }
   for (let i = 0; i < startOffset; i++) {
     const spacer = document.createElement('div'); spacer.className = 'calendar-cell empty'; spacer.setAttribute('aria-hidden', 'true'); grid.appendChild(spacer);
   }
+  // Persist the chosen highlight on the grid for tests/automation
+  try {
+    if (grid) {
+      const chosen = highlightKey || (highlightToday ? todayKeyLocal : '');
+      if (chosen) grid.setAttribute('data-highlight-key', chosen); else grid.removeAttribute('data-highlight-key');
+    }
+  } catch {}
+
   // Compute streaks from localStorage results
-  const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
+  // (results already loaded above)
   const computeStreaks = () => {
     const keys = Object.keys(results).sort();
     let current = 0, best = 0;
@@ -98,7 +131,7 @@ export function renderCalendar(game) {
         playBtn.addEventListener('click', () => {
           const dff = game.getDifficultyForDateKey(todayKeyLocal);
           game.loadDailyByKey && game.loadDailyByKey(todayKeyLocal, dff);
-          const modal = document.getElementById('calendar-modal'); if (modal) modal.style.display = 'none';
+          const modal = document.getElementById('calendar-modal'); if (modal) { (window.SudokuModals?.closeModal && window.SudokuModals.closeModal('calendar-modal')) || modal.classList.remove('is-open'); }
         });
       }
     }
@@ -125,7 +158,10 @@ export function renderCalendar(game) {
     const isFuture = thisUtcMidnight.getTime() > nowUtcMidnight.getTime();
     if (isFuture) cell.classList.add('future');
     if (results[key]?.completed) { cell.classList.add('completed'); const check = document.createElement('span'); check.className = 'check-badge'; check.textContent = '✓'; cell.appendChild(check); }
-    if (date.getFullYear() === todayLocalYear && date.getMonth() === todayLocalMonth && date.getDate() === todayLocalDate) cell.classList.add('today');
+    // Highlight rule: if a specific highlightKey was chosen, use it; else highlight today (when incomplete or when not the current month is visible)
+    if (highlightKey ? (key === highlightKey) : (highlightToday && date.getFullYear() === todayLocalYear && date.getMonth() === todayLocalMonth && date.getDate() === todayLocalDate)) {
+      cell.classList.add('today');
+    }
     // Hover/title for full cell with readable date and difficulty
     const readableDate = date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
     cell.title = `${readableDate} — ${diff[0].toUpperCase() + diff.slice(1)}`;
@@ -135,7 +171,7 @@ export function renderCalendar(game) {
       cell.addEventListener('click', () => {
         const dff = game.getDifficultyForDateKey(key);
         game.loadDailyByKey && game.loadDailyByKey(key, dff);
-        const modal = document.getElementById('calendar-modal'); if (modal) modal.style.display = 'none';
+        const modal = document.getElementById('calendar-modal'); if (modal) { (window.SudokuModals?.closeModal && window.SudokuModals.closeModal('calendar-modal')) || modal.classList.remove('is-open'); }
       });
       // Make focusable for keyboard users
       cell.setAttribute('tabindex', '0');
@@ -287,7 +323,7 @@ export function renderCalendar(game) {
   } catch {}
 }
 
-export function refreshCalendarHeaders(game) {
+function refreshCalendarHeaders(game) {
   const wrap = document.getElementById('calendar-weekdays');
   if (!wrap) return;
   const weekstart = ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
@@ -296,5 +332,6 @@ export function refreshCalendarHeaders(game) {
 }
 
 try { if (typeof window !== 'undefined') window.SudokuCalendar = { openCalendar, shiftCalendar, renderCalendar, refreshCalendarHeaders }; } catch {}
+try { if (typeof module !== 'undefined' && module.exports) module.exports = { openCalendar, shiftCalendar, renderCalendar, refreshCalendarHeaders }; } catch {}
 
 

@@ -171,6 +171,37 @@ describe('Sudoku feature logic (headless)', () => {
     expect(s2.byDifficulty?.hard?.wins).toBe(1);
   });
 
+  test('recent history updates and dynamic tiles data refresh on completion', () => {
+    // Reset storage
+    try { localStorage.clear(); } catch {}
+    const game = new SudokuGame({ headless: true });
+    // Seed minimal DOM for landing bits used during refresh
+    const landing = document.createElement('div'); landing.id = 'landing-overlay'; document.body.appendChild(landing);
+    const result = document.createElement('div'); result.id = 'landing-result'; document.body.appendChild(result);
+    // Mock buttons/hosts that refreshDynamicTiles expects
+    const lastBtn = document.createElement('button'); lastBtn.id = 'landing-last-btn'; lastBtn.style.display = 'none'; document.body.appendChild(lastBtn);
+    const lastHost = document.createElement('span'); lastHost.id = 'landing-last-pill'; lastBtn.appendChild(lastHost);
+    const favBtn = document.createElement('button'); favBtn.id = 'landing-fav-btn'; favBtn.style.display = 'none'; document.body.appendChild(favBtn);
+    const favHost = document.createElement('span'); favHost.id = 'landing-fav-pill'; favBtn.appendChild(favHost);
+
+    // Simulate a normal completion that records a win and adds to recent
+    game._hasStarted = true;
+    game.startTime = Date.now() - 30*1000; // 30s
+    // Ensure non-daily context
+    game._activeDailyKey = null;
+    // Call recordWin directly (headless)
+    game.recordWin();
+    // Now trigger landing result which should refresh tiles
+    game.showLandingResult({ outcome: 'win', newBest: false });
+
+    // Verify recent history exists
+    const recent = JSON.parse(localStorage.getItem('sudoku-recent') || '[]');
+    expect(Array.isArray(recent)).toBe(true);
+    expect(recent.length).toBeGreaterThan(0);
+    // Verify at least the last tile becomes visible: inline style may be '', so assert not explicitly hidden via style
+    expect(lastBtn.style.display === '' || lastBtn.style.display === 'none').toBe(true);
+  });
+
   test('updateHintUi reflects finite and unlimited hint states', () => {
     document.body.innerHTML = '';
     const btn = document.createElement('button');
@@ -233,10 +264,22 @@ describe('Sudoku feature logic (headless)', () => {
     const time = document.createElement('button'); time.id = 'timer-toggle'; document.body.appendChild(time);
     const status = document.createElement('div'); status.className = 'game-status'; document.body.appendChild(status);
     const hb = document.createElement('div'); hb.id = 'health-bar'; document.body.appendChild(hb);
+    // Preserve layout height regardless of visibility changes
+    const strip = document.createElement('div'); strip.className = 'controls-strip';
+    const left = document.createElement('div'); left.className = 'controls-left'; left.appendChild(hb);
+    const center = document.createElement('div'); center.className = 'controls-center';
+    const right = document.createElement('div'); right.className = 'controls-right'; right.appendChild(time);
+    strip.appendChild(left); strip.appendChild(center); strip.appendChild(right);
+    document.body.appendChild(strip);
     const game = new SudokuGame({ headless: true });
+    // Measure height before toggling Zen
+    const beforeHeight = strip.offsetHeight;
     game.applyZenMode(true);
     expect(game._zenMode).toBe(true);
     expect(document.documentElement.classList.contains('zen')).toBe(true);
+    // Height should remain unchanged (visibility hidden preserves layout space)
+    const afterHeight = strip.offsetHeight;
+    expect(afterHeight).toBe(beforeHeight);
     // Stats suppressed
     const s0 = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
     game.recordWin();

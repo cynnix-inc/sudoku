@@ -1,0 +1,121 @@
+# Page snapshot
+
+```yaml
+- banner:
+  - text: Classic Medium
+  - button "Menu": ☰
+- main:
+  - heading "Ultimate Sudoku" [level=1]
+  - heading "Welcome!" [level=2]
+  - button "Sign in with Google"
+  - paragraph: Sharpen your mind with a clean, fast Sudoku.
+  - button "Daily Hard"
+  - button "Open Daily calendar"
+  - text: or choose a difficulty
+  - button "Easy Relaxed"
+  - button "Medium Balanced"
+  - button "Hard Tricky"
+  - button "Expert Advanced"
+  - button "Master Elite"
+  - button "Extreme Insane"
+  - button "Stats": 📊
+  - button "Settings": ⚙️
+  - button "Help": ❓
+  - button "Pause or resume": 00:00 ▶
+  - textbox
+  - textbox: "1"
+  - textbox
+  - textbox
+  - textbox: "3"
+  - textbox
+  - textbox: "8"
+  - textbox: "4"
+  - textbox
+  - textbox: "3"
+  - textbox
+  - textbox
+  - textbox: "4"
+  - textbox
+  - textbox: "9"
+  - textbox: "1"
+  - textbox
+  - textbox
+  - textbox: "4"
+  - textbox: "8"
+  - textbox
+  - textbox: "6"
+  - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "3"
+  - textbox: "8"
+  - textbox: "1"
+  - textbox: "6"
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "5"
+  - textbox: "1"
+  - textbox
+  - textbox: "5"
+  - textbox: "7"
+  - textbox: "9"
+  - textbox: "2"
+  - textbox: "3"
+  - textbox
+  - textbox: "4"
+  - textbox: "9"
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "5"
+  - textbox: "3"
+  - textbox: "6"
+  - textbox: "1"
+  - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "6"
+  - textbox
+  - textbox: "2"
+  - textbox: "7"
+  - textbox
+  - textbox
+  - textbox: "6"
+  - textbox: "5"
+  - textbox
+  - textbox: "8"
+  - textbox
+  - textbox
+  - textbox: "1"
+  - textbox
+  - textbox: "2"
+  - textbox: "3"
+  - textbox
+  - textbox: "7"
+  - textbox
+  - textbox
+  - textbox: "6"
+  - textbox: "8"
+  - button "1"
+  - button "2"
+  - button "3"
+  - button "4"
+  - button "5"
+  - button "6"
+  - button "7"
+  - button "8"
+  - button "9"
+  - button "Hint": "3"
+  - button "Erase"
+  - button "Undo": ↶
+  - button "Redo": ↷
+  - button "Notes": ✎
+  - button "Toggle number lock" [pressed]: 🔒
+```
