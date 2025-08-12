@@ -136,6 +136,10 @@ body {
 .health-compact { position: relative; display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
 .health-compact .health-heart { position: relative; display: inline-block; }
 .health-badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #22c55e; color: #fff; font-size: 11px; line-height: 18px; text-align: center; font-weight: 900; box-shadow: 0 2px 6px rgb(0 0 0 / 18%); }
+/* Unlimited lives: overlap the badge with the heart by roughly one-third */
+/* Place the badge inside the heart and overlap ~30% */
+.health-compact.health-infinite .health-heart { position: relative; }
+.health-compact.health-infinite .health-heart .health-badge { top: -2px; right: -8px; }
 .health-badge.badge-danger { background: #ef4444; }
 
 /* Zen: make compact heart larger and ensure heart renders above its badge */
@@ -203,6 +207,8 @@ body.modal-open { overflow: hidden; }
 /* Health bar next to timer: inline row by default; stack for 5+ lives */
 .health-bar-stack { display: inline-grid; grid-auto-flow: column; align-items: center; column-gap: 4px; max-width: 100%; }
 .health-bar-stack.stack { grid-auto-flow: row; grid-template-columns: repeat(5, auto); gap: 2px 4px; place-content: center end; }
+/* When only a single row, keep hearts visually centered with the timer by right-aligning within the left column */
+.controls-left .health-bar-stack { justify-content: end; }
 
 /* Also support runtime class swap used in JS */
 .controls-center .health-bar-row { display: inline-flex; align-items: center; gap: 4px; justify-content: end; max-width: 100%; }
@@ -1079,8 +1085,9 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 
 /* Inline health bar next to controls */
 .health-bar-row { display: inline-flex; align-items: center; gap: 4px; flex-wrap: nowrap; max-width: 100%; }
-.health-bar-row.stack { display: grid; grid-template-columns: repeat(5, auto); gap: 2px 4px; place-content: center end; }
-.health-heart { width: 22px; height: 22px; position: relative; display: inline-block; }
+.controls-left .health-bar-row { justify-content: flex-end; }
+.health-bar-row.stack { display: grid; grid-template-columns: repeat(5, auto); gap: 1px 4px; place-content: center end; }
+.health-heart { width: 33px; height: 33px; position: relative; display: inline-block; }
 .health-heart .heart-full, .health-heart .heart-half { position: absolute; inset: 0; }
 .health-heart .heart-half { display: none; }
 .health-heart.lost .heart-full { display: none; }
@@ -1121,12 +1128,13 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 /* Base classes not needed; descendant rules below apply when these are present */
 
 /* Add a gentle glow on the last remaining heart */
-.health-low .health-heart:last-child .heart-full .heart-svg,
-.health-critical .health-heart:last-child .heart-full .heart-svg { filter: drop-shadow(0 0 2px rgb(0 0 0 / 10%)); }
+/* Target the designated last remaining heart explicitly */
+.health-low .health-heart.last-heart .heart-full .heart-svg,
+.health-critical .health-heart.last-heart .heart-full .heart-svg { filter: drop-shadow(0 0 2px rgb(0 0 0 / 10%)); }
 
 /* Size pulse on the whole heart */
-.health-low .health-heart:last-child { animation: pulse 1.8s ease-in-out infinite; }
-.health-critical .health-heart:last-child { animation: pulse 1.2s ease-in-out infinite; }
+.health-low .health-heart.last-heart { animation: pulse 1.8s ease-in-out infinite; }
+.health-critical .health-heart.last-heart { animation: pulse 1.2s ease-in-out infinite; }
 
 @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
 
@@ -1136,7 +1144,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
   50%       { fill: #f59e0b; }
 }
 
-.health-low .health-heart:last-child .heart-full .heart-svg {
+.health-low .health-heart.last-heart .heart-full .heart-svg {
   animation: lowHeartColor 1.8s ease-in-out infinite;
 }
 
@@ -1146,7 +1154,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
   50%       { fill: #ef4444; }
 }
 
-.health-critical .health-heart:last-child .heart-full .heart-svg {
+.health-critical .health-heart.last-heart .heart-full .heart-svg {
   animation: criticalHeartColor 1.2s ease-in-out infinite;
 }
 
@@ -1232,7 +1240,22 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 .value-pill { display: inline-block; border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 0.05rem 0.5rem; margin-left: 0.35rem; font-variant-numeric: tabular-nums; font-weight: 800; }
 .control-hints { display: grid; gap: 2px; }
 .settings-form input[type="range"] { width: 100%; }
-.settings-form #idle-timeout-slider { width: 100%; }
+.settings-form #idle-timeout-slider[aria-disabled="true"],
+.settings-form #idle-timeout-slider:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+/* Dim the slider thumb when disabled (WebKit/Blink) */
+.settings-form #idle-timeout-slider:disabled::-webkit-slider-thumb {
+  background: var(--border);
+  border-color: var(--border);
+}
+/* Firefox */
+.settings-form #idle-timeout-slider:disabled::-moz-range-thumb {
+  background: var(--border);
+  border-color: var(--border);
+}
 .settings-form .hint { display: block; color: #718096; margin-top: 0.1rem; }
 .settings-group .field { margin-top: 0.75rem; }
 .settings-group .field label { display: block; margin-bottom: 0.25rem; color: #4a5568; font-weight: 600; }

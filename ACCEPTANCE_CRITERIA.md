@@ -50,6 +50,12 @@ Modals and overlays
   - Be centered and responsive, never exceeding viewport
   - Support backdrop click to close where appropriate (Confirm excluded)
   - Trap focus while open and support Escape to close
+  - Use a centralized modal controller that:
+    - Toggles an `is-open` class (no inline `style.display`)
+    - Locks body scroll while any modal is open
+    - Restores focus to the opener on close
+    - Emits `modalopen`/`modalclose` events for orchestration
+    - Supports `data-backdrop-close="false"` to disable backdrop closing (used by Confirm)
 
 - Help modal
   - Displays gameplay guidance as a grid of sections (Lives, Hints, Sync, Zen, Mobile, Keyboard) using consistent `.help-card` styling.
@@ -65,6 +71,7 @@ Modals and overlays
   - Respect Escape/backdrop close behavior consistent with other overlays
   - Quick actions row `.landing-quick` shows three icon buttons in this exact order: Stats | Settings | Help
   - Each quick action opens its modal when clicked while the landing is visible: Stats → `#stats-modal`, Settings → `#settings-modal`, Help → `#help-modal`
+  - When a modal is opened from the landing overlay and then closed via Close button, ESC, or backdrop: landing overlay reappears unless a game has started in the meantime
   - The header menu popover shows the compact icons with Settings and Help; order there is not constrained unless specified elsewhere
 
 - Signed‑in name display

@@ -3,104 +3,92 @@
 ```yaml
 - banner:
   - text: Classic Medium
-  - button "Menu" [expanded]: ☰
-  - menu:
-    - menuitem "🏠 Home"
-    - menuitem "🔄 New puzzle…"
-    - menuitem "Daily": 📅 Daily
-    - separator
-    - menuitem "↺ Restart puzzle"
-    - menuitem "🧹 Clear All"
-    - separator
-    - menuitem "📊 Stats"
-    - separator
-    - menuitem "Sign in with Google"
-    - group "Utilities":
-      - menuitem "Settings": ⚙️
-      - menuitem "Help": ❓
+  - button "Menu": ☰
 - main:
   - button "Pause or resume": 00:00 ▶
-  - textbox
-  - textbox
-  - textbox: "1"
-  - textbox: "2"
-  - textbox
-  - textbox
-  - textbox
-  - textbox: "7"
-  - textbox
+  - textbox: "4"
   - textbox: "9"
-  - textbox
-  - textbox
+  - textbox: "6"
   - textbox: "1"
+  - textbox: "2"
+  - textbox: "3"
+  - textbox: "5"
   - textbox: "7"
+  - textbox: "8"
+  - textbox: "5"
+  - textbox: "8"
+  - textbox: "3"
+  - textbox: "4"
+  - textbox: "7"
+  - textbox: "9"
+  - textbox: "6"
+  - textbox: "1"
+  - textbox: "2"
+  - textbox: "1"
   - textbox
   - textbox
+  - textbox: "5"
   - textbox: "6"
   - textbox: "8"
   - textbox: "3"
+  - textbox: "4"
+  - textbox: "9"
+  - textbox: "2"
   - textbox: "6"
-  - textbox: "7"
-  - textbox: "5"
-  - textbox
-  - textbox
-  - textbox: "1"
-  - textbox
-  - textbox: "4"
   - textbox: "1"
   - textbox: "7"
-  - textbox
-  - textbox
-  - textbox: "2"
-  - textbox
-  - textbox
-  - textbox
-  - textbox
-  - textbox: "2"
-  - textbox: "4"
-  - textbox
-  - textbox: "3"
-  - textbox
   - textbox: "8"
-  - textbox
+  - textbox: "4"
+  - textbox: "9"
+  - textbox: "3"
   - textbox: "5"
+  - textbox: "3"
+  - textbox: "4"
   - textbox: "7"
-  - textbox
-  - textbox
-  - textbox
-  - textbox
+  - textbox: "9"
+  - textbox: "5"
   - textbox: "6"
-  - textbox
-  - textbox
+  - textbox: "8"
+  - textbox: "2"
+  - textbox: "1"
+  - textbox: "8"
+  - textbox: "5"
+  - textbox: "9"
+  - textbox: "3"
+  - textbox: "1"
+  - textbox: "2"
+  - textbox: "4"
+  - textbox: "6"
+  - textbox: "7"
+  - textbox: "6"
+  - textbox: "3"
+  - textbox: "5"
+  - textbox: "2"
   - textbox: "9"
   - textbox: "1"
-  - textbox: "6"
-  - textbox
-  - textbox: "2"
-  - textbox
-  - textbox
-  - textbox: "3"
   - textbox: "7"
-  - textbox: "1"
-  - textbox: "5"
   - textbox: "8"
-  - textbox: "1"
-  - textbox
-  - textbox
-  - textbox: "5"
+  - textbox: "4"
+  - textbox: "7"
   - textbox: "2"
-  - textbox
-  - textbox
+  - textbox: "8"
   - textbox: "6"
-  - textbox
+  - textbox: "4"
   - textbox: "5"
-  - textbox
-  - textbox
-  - textbox
+  - textbox: "1"
+  - textbox: "9"
+  - textbox: "3"
+  - textbox: "9"
   - textbox: "1"
   - textbox: "4"
-  - textbox
-  - textbox
+  - textbox: "8"
+  - textbox: "3"
+  - textbox: "7"
+  - textbox: "2"
+  - textbox: "5"
+  - textbox: "6"
+  - text: Paused
+  - button "Resume"
   - button "1"
   - button "2"
   - button "3"
@@ -116,4 +104,9 @@
   - button "Redo": ↷
   - button "Notes": ✎
   - button "Toggle number lock" [pressed]: 🔒
+- dialog "Stats":
+  - heading "Stats" [level=2]
+  - text: 0 Total Played 0 Wins 0% Win Rate 0 Losses 0 Daily streak • 0 completed Level Played Wins Win% Best 0 0 0% - 0 0 0% - 0 0 0% - 0 0 0% - 0 0 0% - 0 0 0% - Time distribution 0–5m 5–10m 10–15m 15m+ Date Diff Time Mist. No daily results yet. Play today’s Daily to get started!
+  - button "Close"
+  - button "Reset all stats": Reset Stats
 ```

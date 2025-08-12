@@ -76,6 +76,16 @@ test.describe('Modal ergonomics', () => {
     await expect(overlay).toBeHidden();
   });
 
+  test('Body scroll is locked while a modal is open', async ({ page }) => {
+    await page.click('#menu-btn');
+    await page.click('#menu-settings');
+    await expect(page.locator('#settings-modal')).toBeVisible();
+    const overflow = await page.evaluate(() => document.body.style.overflow || window.getComputedStyle(document.body).overflow);
+    expect([overflow, overflow.replace('-x', '').replace('-y', '')].some(v => v.includes('hidden'))).toBeTruthy();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#settings-modal')).toBeHidden();
+  });
+
   test('Help > About is collapsed by default and expands/collapses on toggle', async ({ page }) => {
     await page.click('#menu-btn');
     await page.click('#menu-help');
