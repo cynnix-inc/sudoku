@@ -1,33 +1,12 @@
-name: Update Changelog
+name: Deprecated - Changelog (disabled)
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
-  changelog:
+  noop:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Generate changelog
-        run: |
-          node tools/update-changelog.js
-
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "docs(changelog): automated update"
-          file_pattern: CHANGELOG.md
+      - run: echo "This workflow is deprecated; use update-changelog.yml instead."
 
 
