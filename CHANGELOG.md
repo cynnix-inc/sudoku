@@ -9,6 +9,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 ### Changes
 
 - **Added**:
+  - chore: tighten CSP, externalize inline scripts, expand SW precache and nav fallback, add PNG icons + generator, sync SW version, add CI workflow, modal focus trap (8e818a8)
   - chore(security): add CSP via headers and meta; add fallback env.js to avoid 404; set no-store for env.js (e223ea4)
   - new hint types (c169401)
   - chore: add GH Action to auto-update CHANGELOG on main; add npm script and docs (54a5b8d)
@@ -17,6 +18,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
+  - chore: update CHANGELOG.md [skip ci] (473ba48)
   - qlf (f45cd40)
   - update env config (0fa06f5)
   - kitchen sink (842c563)
