@@ -1,9 +1,8 @@
 name: Update Changelog
 
+# Run only when manually triggered. This prevents CI from creating
+# commits on main that diverge from local work.
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch: {}
 
 # The job needs to be able to push the updated CHANGELOG.md back to the repo
