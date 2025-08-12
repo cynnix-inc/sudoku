@@ -55,6 +55,11 @@ class SudokuGame {
         // Timer pause/resume state
         this.isPaused = false;
         this._elapsedBeforePause = 0;
+        // Idle detection state
+        this._idleTimer = null;
+        this._idleTimeoutMs = 120000; // 2 minutes of inactivity
+        this._idlePromptActive = false;
+        this._lastActivityAt = Date.now();
         // Auth state (Supabase)
         this._isLoggedIn = false;
         // Zen mode flag
@@ -85,6 +90,16 @@ class SudokuGame {
             this.resumeSettings && this.resumeSettings();
             this.renderHealthBar();
             this.resumeFromStorage && this.resumeFromStorage();
+        }
+
+        // Start idle detection on real UI
+        if (!this._headless) {
+            this._initIdleDetection && this._initIdleDetection();
+            // Mobile/app lifecycle: treat app switch or lock as blur/hidden → auto-pause immediately
+            try {
+                window.addEventListener('pagehide', () => { this.autoPauseOnBlur && this.autoPauseOnBlur(); }, { passive: true });
+                window.addEventListener('blur', () => { this.autoPauseOnBlur && this.autoPauseOnBlur(); });
+            } catch {}
         }
 
         // Confetti helper: stronger "cannon" burst with smart fallback anchors (prefer logo origin)
@@ -3713,6 +3728,21 @@ class SudokuGame {
                     <button id="dev-palin" class="dev-tile"><span class="icon">💬</span><span class="label">Palindrome toast</span></button>
                   </div>
                 </details>
+                <details class="dev-section" data-id="game">
+                  <summary class="dev-section-title">Game</summary>
+                  <div class="dev-grid">
+                    <div class="dev-tile dev-tile-solve" role="group" aria-labelledby="dev-solve-title">
+                      <span class="icon">🏁</span>
+                      <span id="dev-solve-title" class="label">Solve</span>
+                      <div class="time-inline" style="display:flex; gap:1px; align-items:center; margin-top:2px;">
+                        <input id="dev-solve-mm" class="dev-input time-input" placeholder="mm" inputmode="numeric" maxlength="2" aria-label="Minutes" style="width:3ch; padding:1px 2px; text-align:center;" />
+                        <span class="sep" aria-hidden="true">:</span>
+                        <input id="dev-solve-ss" class="dev-input time-input" placeholder="ss" inputmode="numeric" maxlength="2" aria-label="Seconds" style="width:3ch; padding:1px 2px; text-align:center;" />
+                      </div>
+                    </div>
+                    <button id="dev-fail-lose" class="dev-tile"><span class="icon">💥</span><span class="label">Fail</span></button>
+                  </div>
+                </details>
                 <div class="dev-seed-group" role="group" aria-labelledby="dev-seed-heading">
                   <div class="dev-seed-head">
                     <div id="dev-seed-heading" class="dev-seed-title">Seeded game</div>
@@ -4008,6 +4038,80 @@ class SudokuGame {
                 this.generateSeeded && this.generateSeeded(seed, diff);
             });
 
+            // Game helpers: solve or fail with optional time override (mm:ss inside tile)
+            const parseTimeToSeconds = (mmRaw, ssRaw) => {
+                const mm = String(mmRaw || '').trim();
+                const ss = String(ssRaw || '').trim();
+                if (!mm && !ss) return null;
+                const m = mm ? Math.max(0, parseInt(mm, 10) || 0) : 0;
+                let s = ss ? Math.max(0, parseInt(ss, 10) || 0) : 0;
+                if (!Number.isFinite(m) || !Number.isFinite(s)) return null;
+                if (s > 59) s = 59;
+                return (m * 60) + s;
+            };
+
+            const runSolve = () => {
+                const mm = panel.querySelector('#dev-solve-mm')?.value || '';
+                const ss = panel.querySelector('#dev-solve-ss')?.value || '';
+                const secs = parseTimeToSeconds(mm, ss);
+                if (secs !== null) {
+                    // Force timer to desired elapsed time
+                    this.stopTimer && this.stopTimer();
+                    this.isPaused = false;
+                    this._pauseStartedAt = null;
+                    this._elapsedBeforePause = 0;
+                    this._hasStarted = true;
+                    this.startTime = Date.now() - (secs * 1000);
+                    this.updateTimer && this.updateTimer();
+                    this.updateTimerButton && this.updateTimerButton();
+                }
+                // Solve board and trigger normal win flow (records stats, best time if applicable)
+                this.solvePuzzle && this.solvePuzzle();
+            };
+
+            const solveTile = panel.querySelector('.dev-tile-solve');
+            solveTile?.addEventListener('click', (e) => {
+                // Allow click on the tile container (not when clicking in inputs)
+                if (e.target && (e.target.closest('#dev-solve-mm') || e.target.closest('#dev-solve-ss'))) return;
+                runSolve();
+            });
+            const mmInput = panel.querySelector('#dev-solve-mm');
+            const ssInput = panel.querySelector('#dev-solve-ss');
+            const restrictTwoDigits = (el) => {
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    const digits = (el.value || '').replace(/\D+/g, '').slice(0, 2);
+                    if (el.value !== digits) el.value = digits;
+                });
+            };
+            restrictTwoDigits(mmInput);
+            restrictTwoDigits(ssInput);
+            panel.querySelector('#dev-solve-mm')?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    runSolve();
+                    if (mmInput) mmInput.value = '';
+                    if (ssInput) ssInput.value = '';
+                }
+            });
+            panel.querySelector('#dev-solve-ss')?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    runSolve();
+                    if (mmInput) mmInput.value = '';
+                    if (ssInput) ssInput.value = '';
+                }
+            });
+
+            panel.querySelector('#dev-fail-lose')?.addEventListener('click', () => {
+                // Ensure a move is registered so loss counts in stats
+                this._hasMadeMove = true;
+                this.isGameOver = true;
+                this.stopTimer && this.stopTimer();
+                this.showGameOver && this.showGameOver();
+                this.recordLoss && this.recordLoss();
+            });
+
             // Show window and focus
             panel.style.display = 'grid';
             hideRestore();
@@ -4232,6 +4336,19 @@ class SudokuGame {
                 }, { once: true });
             });
         }
+
+        // Activity listeners for idle detection (mouse/keyboard/touch)
+        const markActivity = () => { this._markUserActivity && this._markUserActivity(); };
+        ['pointerdown','pointermove','keydown','keyup','touchstart','touchmove','click','wheel','scroll','focus'].forEach(evt => {
+            try { window.addEventListener(evt, markActivity, { passive: true }); } catch { window.addEventListener(evt, markActivity); }
+        });
+        // Page/tab visibility changes also count as activity
+        try {
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') markActivity();
+                else this.autoPauseOnBlur && this.autoPauseOnBlur();
+            });
+        } catch {}
     }
 
     /**
@@ -4829,10 +4946,22 @@ class SudokuGame {
             this.stopTimer();
             this.updateTimer();
             this.updateTimerButton && this.updateTimerButton();
+            // Ensure overlay provides a way to resume when manually paused
+            try {
+                overlay.innerHTML = '<div class="idle-cta" style="display:grid; gap:12px; place-items:center; text-align:center;">'
+                  + '<div style="font-weight:800; font-size:1.25rem;">Paused</div>'
+                  + '<div style="display:flex; gap:10px;">'
+                  +   '<button id="resume-overlay-btn" class="btn btn-primary">Resume</button>'
+                  + '</div>'
+                  + '</div>';
+                const btn = document.getElementById('resume-overlay-btn');
+                if (btn) btn.addEventListener('click', () => this.togglePause());
+            } catch {}
         } else {
             // Resuming
             this.startTimer();
             this.updateTimerButton && this.updateTimerButton();
+            try { overlay.innerHTML = 'Paused'; } catch {}
         }
     }
 
@@ -4848,6 +4977,103 @@ class SudokuGame {
         this.stopTimer();
         this.updateTimer();
         this.updateTimerButton && this.updateTimerButton();
+        // Ensure overlay provides a resume affordance when paused due to blur/background
+        try {
+            overlay.innerHTML = '<div class="idle-cta" style="display:grid; gap:12px; place-items:center; text-align:center;">'
+              + '<div style="font-weight:800; font-size:1.25rem;">Paused</div>'
+              + '<div style="display:flex; gap:10px;">'
+              +   '<button id="resume-overlay-btn" class="btn btn-primary">Resume</button>'
+              + '</div>'
+              + '</div>';
+            const btn = document.getElementById('resume-overlay-btn');
+            if (btn) btn.addEventListener('click', () => this.resumeFromPause && this.resumeFromPause());
+            // Also allow clicking anywhere on the overlay to resume
+            overlay.onclick = (e) => {
+                if (e.target && (e.target.id === 'resume-overlay-btn')) return; // handled by button
+                this.resumeFromPause && this.resumeFromPause();
+            };
+        } catch {}
+    }
+
+    // Idle system
+    _initIdleDetection() {
+        // Ensure any existing timer cleared
+        clearTimeout(this._idleTimer);
+        this._idleTimer = null;
+        this._idlePromptActive = false;
+        this._lastActivityAt = Date.now();
+        // Kick off idle timer
+        this._armIdleTimer();
+    }
+
+    _markUserActivity() {
+        this._lastActivityAt = Date.now();
+        // If a prompt was showing and user interacted, just resume
+        if (this._idlePromptActive) {
+            this._idlePromptActive = false;
+            this.resumeFromPause && this.resumeFromPause();
+        }
+        this._armIdleTimer();
+    }
+
+    _armIdleTimer() {
+        clearTimeout(this._idleTimer);
+        // Do not auto-pause if game hasn't started or is already paused via user
+        const shouldRun = this._hasStarted && !this.isGameOver;
+        if (!shouldRun) return;
+        this._idleTimer = setTimeout(async () => {
+            // If already paused or tab hidden, skip double actions
+            if (this.isPaused || document.visibilityState === 'hidden') return;
+            // Pause the game
+            try { this.autoPauseOnBlur ? this.autoPauseOnBlur() : this.togglePause(); } catch { this.togglePause && this.togglePause(); }
+            this._idlePromptActive = true;
+            // Inline fallback UI on the pause overlay in case modal cannot render
+            try {
+                const overlay = document.getElementById('pause-overlay');
+                if (overlay) {
+                    overlay.innerHTML = '<div class="idle-cta" style="display:grid; gap:12px; place-items:center; text-align:center;">'
+                      + '<div style="font-weight:800; font-size:1.25rem;">Paused for inactivity</div>'
+                      + '<div style="opacity:0.9;">Are you still there?</div>'
+                      + '<div style="display:flex; gap:10px;">'
+                      +   '<button id="idle-resume-btn" class="btn btn-primary">I\'m here</button>'
+                      +   '<button id="idle-stay-btn" class="btn btn-secondary">Stay paused</button>'
+                      + '</div>'
+                      + '</div>';
+                    const onResume = () => {
+                        this._idlePromptActive = false;
+                        overlay.innerHTML = 'Paused';
+                        this.resumeFromPause && this.resumeFromPause();
+                        this._armIdleTimer();
+                    };
+                    const onStay = () => {
+                        // keep paused; leave prompt though for clarity
+                        // Re-arm to gently re-check later
+                        clearTimeout(this._idleTimer);
+                        this._idleTimer = setTimeout(() => { this._idlePromptActive = false; this._armIdleTimer(); }, timeoutMs);
+                    };
+                    document.getElementById('idle-resume-btn')?.addEventListener('click', onResume);
+                    document.getElementById('idle-stay-btn')?.addEventListener('click', onStay);
+                }
+            } catch {}
+            // Ask user to confirm they're present; reuse confirm modal for accessibility
+            const stillThere = await (this.showConfirm ? this.showConfirm('Are you still there?', { title: 'Paused for inactivity', okText: 'I\'m here', cancelText: 'Stay paused' }) : Promise.resolve(window.confirm('Are you still there?')));
+            if (stillThere) {
+                this._idlePromptActive = false;
+                try { const overlay = document.getElementById('pause-overlay'); if (overlay) overlay.innerHTML = 'Paused'; } catch {}
+                this.resumeFromPause && this.resumeFromPause();
+                this._armIdleTimer();
+            } else {
+                // Keep paused; re-arm a gentle reminder later
+                clearTimeout(this._idleTimer);
+                this._idleTimer = setTimeout(() => {
+                    // Only re-prompt if still paused and idle
+                    if (this.isPaused && this._idlePromptActive) {
+                        this._idlePromptActive = false; // allow re-show
+                        this._armIdleTimer();
+                    }
+                }, this._idleTimeoutMs);
+            }
+        }, this._idleTimeoutMs);
     }
 
     // Resume helper for closing modals (settings/stats)
@@ -4856,6 +5082,7 @@ class SudokuGame {
         if (!overlay) return;
         const isShowing = overlay.style.display !== 'none' && overlay.style.display !== '';
         if (this.isPaused || isShowing) {
+            try { overlay.innerHTML = 'Paused'; } catch {}
             overlay.style.display = 'none';
             this.startTimer();
             this.updateTimerButton && this.updateTimerButton();

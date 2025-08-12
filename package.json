@@ -16,7 +16,8 @@
     "check": "npm run lint && npm run lint:css && npm run test:unit && npm run e2e",
     "build:env": "node tools/generate-env.js",
     "build:version": "node tools/generate-version.js",
-    "serve": "npm run build:env && npm run build:version && http-server -p 5173 -c-1",
+    "build:icons": "node tools/generate-icons.js",
+    "serve": "npm run build:env && npm run build:version && npm run build:icons && http-server -p 5173 -c-1",
     "test:stubs": "node tools/gen-test-stubs.js",
     "e2e:ui": "playwright test --ui",
     "changelog": "node tools/update-changelog.js",
@@ -25,6 +26,8 @@
     "version:bump:patch": "npm version patch -m \"chore: bump version to %s\" && npm run build:version",
     "version:bump:minor": "npm version minor -m \"chore: bump version to %s\" && npm run build:version",
     "version:bump:major": "npm version major -m \"chore: bump version to %s\" && npm run build:version"
+  ,
+  "postversion": "node tools/sync-sw-version.js && git add service-worker.js && git commit -m \"chore: sync SW version\" || true"
   },
   "repository": {
     "type": "git",

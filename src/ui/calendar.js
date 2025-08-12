@@ -1,6 +1,6 @@
 // Calendar UI helpers extracted from the main game class.
 
-export function openCalendar(game) {
+function openCalendar(game) {
   const modal = document.getElementById('calendar-modal');
   if (!modal) { try { console.warn('Calendar modal not found in DOM.'); } catch {} return; }
   game._calendarRefMonth = game._calendarRefMonth || new Date();
@@ -21,7 +21,7 @@ export function openCalendar(game) {
   if (nextBtn && !nextBtn._bound) { nextBtn._bound = true; nextBtn.addEventListener('click', () => { shiftCalendar(game, 1); }); }
 }
 
-export function shiftCalendar(game, deltaMonths) {
+function shiftCalendar(game, deltaMonths) {
   const d = game._calendarRefMonth || new Date();
   const year = d.getFullYear();
   const month = d.getMonth();
@@ -30,7 +30,7 @@ export function shiftCalendar(game, deltaMonths) {
   renderCalendar(game);
 }
 
-export function renderCalendar(game) {
+function renderCalendar(game) {
   const grid = document.getElementById('calendar-grid');
   const label = document.getElementById('calendar-month-label');
   const streaksRow = document.getElementById('calendar-streaks');
@@ -287,7 +287,7 @@ export function renderCalendar(game) {
   } catch {}
 }
 
-export function refreshCalendarHeaders(game) {
+function refreshCalendarHeaders(game) {
   const wrap = document.getElementById('calendar-weekdays');
   if (!wrap) return;
   const weekstart = ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
@@ -296,5 +296,6 @@ export function refreshCalendarHeaders(game) {
 }
 
 try { if (typeof window !== 'undefined') window.SudokuCalendar = { openCalendar, shiftCalendar, renderCalendar, refreshCalendarHeaders }; } catch {}
+try { if (typeof module !== 'undefined' && module.exports) module.exports = { openCalendar, shiftCalendar, renderCalendar, refreshCalendarHeaders }; } catch {}
 
 
