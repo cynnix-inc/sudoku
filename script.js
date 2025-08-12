@@ -835,6 +835,22 @@ class SudokuGame {
         if (error) throw error;
     }
 
+    // Merge a small patch into remote settings.prefs (fetch → merge → upsert)
+    async _updateRemotePrefs(patch) {
+        try {
+            if (typeof window === 'undefined' || !window.supabase) return;
+            const { data: { user } } = await window.supabase.auth.getUser();
+            if (!user) return;
+            let remote = null, error = null;
+            try {
+                ({ data: remote, error } = await window.supabase.from('settings').select('prefs').eq('user_id', user.id).single());
+            } catch {}
+            if (error && error.code && error.code !== 'PGRST116') throw error;
+            const merged = { ...(remote?.prefs || {}), ...(patch || {}) };
+            await this._retryAsync(() => this._upsertRemoteSettings(user.id, merged));
+        } catch {}
+    }
+
     _clearRemoteSettingsCache() {
         // no-op placeholder; reserved for future per-device keys
     }
@@ -4659,59 +4675,96 @@ class SudokuGame {
                     }
                 } catch {}
             };
-            const refreshDynamicTiles = () => {
+            const refreshDynamicTiles = async () => {
                 try {
+                    // Prefer cloud (if signed in); fall back to local 'sudoku-recent'
+                    let cloudLast = null;
+                    let cloudMost = null; // { type, difficulty }
+                    try {
+                        if (typeof window !== 'undefined' && window.supabase) {
+                            const { data: { user } } = await window.supabase.auth.getUser();
+                            if (user) {
+                                // Pull most played from remote stats.by_difficulty
+                                try {
+                                    const { data: statsRow } = await window.supabase.from('stats').select('by_difficulty').eq('user_id', user.id).single();
+                                    const byDiff = statsRow?.by_difficulty || {};
+                                    let bestKey = null; let bestCount = -1;
+                                    Object.entries(byDiff).forEach(([diff, obj]) => {
+                                        const played = (obj && typeof obj.played === 'number') ? obj.played : 0;
+                                        if (played > bestCount) { bestCount = played; bestKey = diff; }
+                                    });
+                                    if (bestKey && bestCount > 0) cloudMost = { type: 'classic', difficulty: bestKey };
+                                } catch {}
+                                // Pull last played from remote settings.prefs.lastPlayed
+                                try {
+                                    const { data: settingsRow } = await window.supabase.from('settings').select('prefs').eq('user_id', user.id).single();
+                                    const lp = settingsRow?.prefs?.lastPlayed;
+                                    if (lp && lp.type !== 'daily') cloudLast = { type: lp.type || 'classic', difficulty: lp.difficulty || 'medium' };
+                                } catch {}
+                            }
+                        }
+                    } catch {}
+
+                    // Local fallback
                     const raw = localStorage.getItem('sudoku-recent');
                     const recent = Array.isArray(JSON.parse(raw || '[]')) ? JSON.parse(raw || '[]') : [];
-                    // Last played (non-daily)
-                    const last = recent[0];
-                    if (last && last.type !== 'daily') {
+                    const localLast = (recent[0] && recent[0].type !== 'daily') ? recent[0] : null;
+
+                    // Determine Last played to display
+                    const effectiveLast = cloudLast || localLast || null;
+                    if (effectiveLast) {
                         if (lastBtn) lastBtn.style.display = '';
-                        if (lastBtn) lastBtn.setAttribute('data-diff', last.difficulty || 'medium');
-                        // Render combined pill inside tile
+                        if (lastBtn) lastBtn.setAttribute('data-diff', effectiveLast.difficulty || 'medium');
                         try {
                             const host = document.getElementById('landing-last-pill');
                             if (host && typeof this.renderCombinedModePill === 'function') {
-                                this.renderCombinedModePill(host, { type: 'normal', difficulty: last.difficulty || 'medium', gameType: last.type || 'classic' });
+                                this.renderCombinedModePill(host, { type: 'normal', difficulty: effectiveLast.difficulty || 'medium', gameType: effectiveLast.type || 'classic' });
                             } else if (host) {
-                                host.textContent = `${(last.type||'classic')} • ${(last.difficulty||'medium')}`;
+                                host.textContent = `${(effectiveLast.type||'classic')} • ${(effectiveLast.difficulty||'medium')}`;
                             }
                         } catch {}
                     } else {
                         if (lastBtn) lastBtn.style.display = 'none';
                     }
-                    // Most played within last N entries (excluding daily)
-                    const WINDOW = 20; // last N games window
-                    const slice = recent.filter(r => r && r.type !== 'daily').slice(0, WINDOW);
-                    if (slice.length) {
-                        const counts = {};
-                        for (const r of slice) {
-                            const key = `${r.type || 'classic'}:${r.difficulty || 'medium'}`;
-                            counts[key] = (counts[key] || 0) + 1;
+
+                    // Determine Most played to display
+                    let most = cloudMost;
+                    if (!most) {
+                        // Recompute from local recent window (exclude daily)
+                        const WINDOW = 20;
+                        const slice = recent.filter(r => r && r.type !== 'daily').slice(0, WINDOW);
+                        if (slice.length) {
+                            const counts = {};
+                            for (const r of slice) {
+                                const key = `${r.type || 'classic'}:${r.difficulty || 'medium'}`;
+                                counts[key] = (counts[key] || 0) + 1;
+                            }
+                            let bestKey = null, bestCount = -1;
+                            Object.entries(counts).forEach(([k,v]) => { if (v > bestCount) { bestCount = v; bestKey = k; } });
+                            if (bestKey) {
+                                const [type, diff] = bestKey.split(':');
+                                most = { type, difficulty: diff };
+                            }
                         }
-                        let bestKey = null, bestCount = -1;
-                        Object.entries(counts).forEach(([k,v]) => { if (v > bestCount) { bestCount = v; bestKey = k; } });
-                        if (bestKey) {
-                            const [type, diff] = bestKey.split(':');
-                            // If same as last played, hide Most played
-                            const lastKey = last ? `${last.type || 'classic'}:${last.difficulty || 'medium'}` : null;
-                            if (lastKey && lastKey === bestKey) {
-                                if (favBtn) favBtn.style.display = 'none';
-                            } else {
+                    }
+
+                    if (most) {
+                        // If same as last played, hide Most played
+                        const lastKey = effectiveLast ? `${effectiveLast.type || 'classic'}:${effectiveLast.difficulty || 'medium'}` : null;
+                        const mostKey = `${most.type || 'classic'}:${most.difficulty || 'medium'}`;
+                        if (lastKey && mostKey === lastKey) {
+                            if (favBtn) favBtn.style.display = 'none';
+                        } else {
                             if (favBtn) favBtn.style.display = '';
-                            if (favBtn) favBtn.setAttribute('data-diff', diff);
-                            // Render combined pill inside tile
+                            if (favBtn) favBtn.setAttribute('data-diff', most.difficulty || 'medium');
                             try {
                                 const host = document.getElementById('landing-fav-pill');
                                 if (host && typeof this.renderCombinedModePill === 'function') {
-                                    this.renderCombinedModePill(host, { type: 'normal', difficulty: diff, gameType: type });
+                                    this.renderCombinedModePill(host, { type: 'normal', difficulty: most.difficulty || 'medium', gameType: most.type || 'classic' });
                                 } else if (host) {
-                                    host.textContent = `${type} • ${diff}`;
+                                    host.textContent = `${most.type || 'classic'} • ${most.difficulty || 'medium'}`;
                                 }
                             } catch {}
-                            }
-                        } else {
-                            if (favBtn) favBtn.style.display = 'none';
                         }
                     } else {
                         if (favBtn) favBtn.style.display = 'none';
@@ -4807,7 +4860,7 @@ class SudokuGame {
                 const diff = btn.getAttribute('data-diff') || 'medium';
                 const iconHost = btn.querySelector('.diff-icon');
                 if (iconHost) iconHost.innerHTML = this.getDifficultyIcon(diff);
-                btn.addEventListener('click', async () => {
+                    btn.addEventListener('click', async () => {
                     const diff = btn.getAttribute('data-diff') || 'medium';
                     if (this.isGameInProgress && this.isGameInProgress()) {
                         const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
@@ -4824,6 +4877,8 @@ class SudokuGame {
                         const pruned = arr.slice(0, 50);
                         localStorage.setItem('sudoku-recent', JSON.stringify(pruned));
                     } catch {}
+                        // Update cloud settings with lastPlayed for cross-device landing tiles
+                        try { await this._updateRemotePrefs && this._updateRemotePrefs({ lastPlayed: { type: 'classic', difficulty: diff, ts: Date.now() } }); } catch {}
                     this.setDailyUiState && this.setDailyUiState(false);
                     this._activeDailyKey = null;
                     this.updateModeIndicator({ type: 'normal', difficulty: diff });
