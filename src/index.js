@@ -11,6 +11,9 @@ import './game/types.js';
 import './ui/dom.js';
 import './ui/events.js';
 import './ui/calendar.js';
+import './utils/devlog.js';
+import './ui/timer.js';
+import './ui/health.js';
 import { APP_VERSION } from './version.js';
 
 // Future: import fine‑grained modules here (ui orchestrators, analytics) and

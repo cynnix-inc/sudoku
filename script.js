@@ -612,7 +612,7 @@ class SudokuGame {
                 }
             });
             this._authUnsubMain = sub?.subscription?.unsubscribe?.bind(sub.subscription);
-        } catch {}
+        } catch (e) { try { window.__devlog && window.__devlog('syncRemoteStats error', e); } catch {} }
     }
 
     async loginWithGoogle() {
@@ -656,26 +656,27 @@ class SudokuGame {
             const localStats = localStatsRaw ? JSON.parse(localStatsRaw) : {};
             const localUpdatedAt = localStats.updatedAt ? new Date(localStats.updatedAt) : null;
 
-            const { data: remote, error } = await window.supabase
-                .from('stats')
-                .select('*')
-                .eq('user_id', user.id)
-                .single();
+            let remote, error;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                ({ data: remote, error } = await window.supabase.from('stats').select('*').eq('user_id', user.id).single());
+                if (!error) break;
+                await new Promise(r => setTimeout(r, 200 * Math.pow(2, attempt)));
+            }
             if (error && error.code !== 'PGRST116') throw error;
 
             const remoteUpdatedAt = remote?.updated_at ? new Date(remote.updated_at) : null;
 
             if (!remote && (!localUpdatedAt)) {
                 // No remote row and no local timestamp: create an empty baseline row
-                await this._upsertRemoteStats(user.id, {});
+                await this._retryAsync(() => this._upsertRemoteStats(user.id, {}));
             } else if (localStats && (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt))) {
-                await this._upsertRemoteStats(user.id, localStats);
+                await this._retryAsync(() => this._upsertRemoteStats(user.id, localStats));
             } else if (remote && (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt))) {
                 const merged = this._mapRemoteStatsToLocal(remote);
                 localStorage.setItem('sudoku-stats', JSON.stringify(merged));
             }
         } catch (e) {
-            console.error('syncRemoteStats failed', e);
+            try { window.__devlog && window.__devlog('syncRemoteStats failed', e); } catch {}
         } finally {
             this._syncingStats = false;
         }
@@ -707,19 +708,20 @@ class SudokuGame {
                 // accent: undefined,
             });
 
-            const { data: remote, error } = await window.supabase
-                .from('settings')
-                .select('*')
-                .eq('user_id', user.id)
-                .single();
+            let remote, error;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                ({ data: remote, error } = await window.supabase.from('settings').select('*').eq('user_id', user.id).single());
+                if (!error) break;
+                await new Promise(r => setTimeout(r, 200 * Math.pow(2, attempt)));
+            }
             if (error && error.code !== 'PGRST116') throw error;
             const remoteUpdatedAt = remote?.updated_at ? new Date(remote.updated_at) : null;
 
             if (!remote && !localUpdatedAt) {
                 // create baseline row from local prefs snapshot
-                await this._upsertRemoteSettings(user.id, toRemotePrefs(local));
+                await this._retryAsync(() => this._upsertRemoteSettings(user.id, toRemotePrefs(local)));
             } else if (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt)) {
-                await this._upsertRemoteSettings(user.id, toRemotePrefs(local));
+                await this._retryAsync(() => this._upsertRemoteSettings(user.id, toRemotePrefs(local)));
             } else if (remote && (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt))) {
                 // Merge remote into local: only gameplay+calendar fields; preserve local appearance
                 const prefs = remote.prefs || {};
@@ -739,7 +741,7 @@ class SudokuGame {
                 this.resumeSettings && this.resumeSettings();
             }
         } catch (e) {
-            console.error('syncRemoteSettings failed', e);
+            try { window.__devlog && window.__devlog('syncRemoteSettings error', e); } catch {}
         } finally {
             this._syncingSettings = false;
         }
@@ -753,6 +755,15 @@ class SudokuGame {
 
     _clearRemoteSettingsCache() {
         // no-op placeholder; reserved for future per-device keys
+    }
+
+    // Generic retry helper with exponential backoff
+    async _retryAsync(fn, attempts = 3, baseDelayMs = 200) {
+        let lastErr;
+        for (let i = 0; i < attempts; i++) {
+            try { return await fn(); } catch (e) { lastErr = e; await new Promise(r => setTimeout(r, baseDelayMs * Math.pow(2, i))); }
+        }
+        throw lastErr;
     }
 
     _mapLocalStatsToRow(userId, stats) {
