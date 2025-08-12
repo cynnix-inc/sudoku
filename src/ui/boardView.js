@@ -32,6 +32,7 @@ export function renderBoard(game, boardElement) {
         cell.setAttribute('role', 'gridcell');
         cell.setAttribute('aria-selected', 'false');
         cell.setAttribute('aria-label', `Row ${row + 1}, Column ${col + 1}`);
+        cell.setAttribute('aria-invalid', 'false');
       } catch {}
 
       const notes = el('div', { className: 'notes' });

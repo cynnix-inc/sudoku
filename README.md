@@ -112,6 +112,10 @@ npm run build:env
 
 `npm run serve` will also generate `env.js` automatically if missing.
 
+### Release automation
+
+Releases are automated with semantic‑release on pushes to `main`. Use Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `perf:`, `test:`). The version shown in Help → About is sourced from the release tag.
+
 ## Future Enhancements
 
 - Save/load game progress

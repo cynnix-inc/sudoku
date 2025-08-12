@@ -50,20 +50,34 @@ export function wireCoreUiEvents(game) {
     });
   }
 
-  // Modal buttons
+  // Modal buttons (legacy modal id)
   const modalNew = document.getElementById('modal-new-game');
-  if (modalNew) modalNew.addEventListener('click', () => { const m = document.getElementById('modal'); if (m) m.style.display = 'none'; game.newGame && game.newGame(); });
+  if (modalNew) modalNew.addEventListener('click', () => { const m = document.getElementById('modal'); if (m) { try { window.SudokuModals?.closeModal && window.SudokuModals.closeModal('modal'); } catch { m.classList.remove('is-open'); } } game.newGame && game.newGame(); });
   const modalClose = document.getElementById('modal-close');
-  if (modalClose) modalClose.addEventListener('click', () => { const m = document.getElementById('modal'); if (m) m.style.display = 'none'; });
-  window.addEventListener('click', (event) => { const m = document.getElementById('modal'); if (event.target === m) m.style.display = 'none'; });
+  if (modalClose) modalClose.addEventListener('click', () => { const m = document.getElementById('modal'); if (m) { try { window.SudokuModals?.closeModal && window.SudokuModals.closeModal('modal'); } catch { m.classList.remove('is-open'); } } });
+  // Backdrop clicks handled by centralized controller
 
   // Shared modal focus trap and ESC handling for all modals
   const trapFocus = (modal) => {
     if (!modal || modal._trapBound) return;
     modal._trapBound = true;
+    // Move focus to the first focusable when opened
+    const focusFirst = () => {
+      try {
+        const focusables = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const list = Array.from(focusables).filter(el => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+        if (list[0]) list[0].focus();
+      } catch {}
+    };
+    const obs = new MutationObserver(() => {
+      const isOpen = modal.classList.contains('is-open') || (() => { try { return window.getComputedStyle(modal).display !== 'none'; } catch { return false; } })();
+      if (isOpen) { focusFirst(); obs.disconnect(); }
+    });
+    obs.observe(modal, { attributes: true, attributeFilter: ['style','class'] });
     modal.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        modal.style.display = 'none';
+        try { window.SudokuModals?.closeModal && window.SudokuModals.closeModal(modal.id); }
+        catch { modal.classList.remove('is-open'); }
         return;
       }
       if (e.key !== 'Tab') return;
@@ -80,7 +94,7 @@ export function wireCoreUiEvents(game) {
 
   // Global keyboard shortcuts
   document.addEventListener('keydown', (e) => {
-    const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some((m) => m.style.display === 'block');
+    const anyModalOpen = document.body.classList.contains('modal-open') || !!document.querySelector('.modal.is-open') || Array.from(document.querySelectorAll('.modal')).some((m) => { try { return window.getComputedStyle(m).display !== 'none'; } catch { return false; } });
     if (anyModalOpen) return;
     const key = e.key.toLowerCase();
     if ((e.ctrlKey || e.metaKey) && key === 'z' && !e.shiftKey) { e.preventDefault(); game.undo && game.undo(); return; }

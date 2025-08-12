@@ -233,10 +233,22 @@ describe('Sudoku feature logic (headless)', () => {
     const time = document.createElement('button'); time.id = 'timer-toggle'; document.body.appendChild(time);
     const status = document.createElement('div'); status.className = 'game-status'; document.body.appendChild(status);
     const hb = document.createElement('div'); hb.id = 'health-bar'; document.body.appendChild(hb);
+    // Preserve layout height regardless of visibility changes
+    const strip = document.createElement('div'); strip.className = 'controls-strip';
+    const left = document.createElement('div'); left.className = 'controls-left'; left.appendChild(hb);
+    const center = document.createElement('div'); center.className = 'controls-center';
+    const right = document.createElement('div'); right.className = 'controls-right'; right.appendChild(time);
+    strip.appendChild(left); strip.appendChild(center); strip.appendChild(right);
+    document.body.appendChild(strip);
     const game = new SudokuGame({ headless: true });
+    // Measure height before toggling Zen
+    const beforeHeight = strip.offsetHeight;
     game.applyZenMode(true);
     expect(game._zenMode).toBe(true);
     expect(document.documentElement.classList.contains('zen')).toBe(true);
+    // Height should remain unchanged (visibility hidden preserves layout space)
+    const afterHeight = strip.offsetHeight;
+    expect(afterHeight).toBe(beforeHeight);
     // Stats suppressed
     const s0 = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
     game.recordWin();

@@ -17,7 +17,7 @@ describe('Appearance sizing settings (persist/resume)', () => {
     try { localStorage.clear(); } catch {}
   });
 
-  test('persistSettings stores grid/digit/note sizes; resumeSettings stages values and applies appliedGridSize', () => {
+  test('persistSettings stores grid/digit/note sizes; resumeSettings stages values, reapplies CSS vars, and sets appliedGridSize', () => {
     const g1 = new SudokuGame({ headless: true });
 
     // Change staged values in the DOM and persist
@@ -34,8 +34,14 @@ describe('Appearance sizing settings (persist/resume)', () => {
     expect(document.getElementById('digit-size-slider').value).toBe('5');
     expect(document.getElementById('note-size-slider').value).toBe('1');
 
-    // Applied grid defaults to 2 unless explicitly set by close handler; ensure numeric
-    expect(typeof g2._appliedGridSize === 'number').toBe(true);
+    // Applied grid should reflect the stored grid size
+    expect(g2._appliedGridSize).toBe(3);
+
+    // CSS variables for digit and note scale should be applied
+    const digitScale = document.documentElement.style.getPropertyValue('--digit-scale');
+    const noteScale  = document.documentElement.style.getPropertyValue('--note-scale');
+    expect(digitScale.trim()).toBe('0.68'); // step 5 → 0.68
+    expect(noteScale.trim()).toBe('0.12');  // step 1 → 0.12
   });
 });
 

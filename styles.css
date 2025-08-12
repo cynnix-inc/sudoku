@@ -125,17 +125,21 @@ body {
   --pad-enabled-ring: rgb(100 116 139 / 40%);
 }
 
-/* Zen mode: hide timer and status line, keep difficulty visible */
+/* Zen mode: visually hide timer and status but preserve layout space */
 .zen #timer-toggle,
-.zen .game-status { display: none !important; }
+.zen .game-status { visibility: hidden !important; pointer-events: none; }
 
-/* In Zen, hide hearts except during Daily */
-.zen:not(.daily-active) #health-bar { display: none !important; }
+/* In Zen, visually hide hearts (except during Daily) while preserving space */
+.zen:not(.daily-active) #health-bar { visibility: hidden !important; pointer-events: none; }
 
 /* Daily compact hearts: badge counter over a single heart */
 .health-compact { position: relative; display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
 .health-compact .health-heart { position: relative; display: inline-block; }
 .health-badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #22c55e; color: #fff; font-size: 11px; line-height: 18px; text-align: center; font-weight: 900; box-shadow: 0 2px 6px rgb(0 0 0 / 18%); }
+/* Unlimited lives: overlap the badge with the heart by roughly one-third */
+/* Place the badge inside the heart and overlap ~30% */
+.health-compact.health-infinite .health-heart { position: relative; }
+.health-compact.health-infinite .health-heart .health-badge { top: -4px; right: -4px; }
 .health-badge.badge-danger { background: #ef4444; }
 
 /* Zen: make compact heart larger and ensure heart renders above its badge */
@@ -144,8 +148,14 @@ body {
 .zen .health-compact .health-badge { z-index: 1; }
 
 .rail { max-width: calc(var(--cell-size) * 9 + 8px); margin-left: auto; margin-right: auto; width: 100%; padding-left: 0; padding-right: 0; }
+/* Show state driven by class (not inline styles) */
+.modal.is-open { display: grid; }
+
+/* Prevent background scroll when any modal is open */
+body.modal-open { overflow: hidden; }
 .app-header { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; margin-bottom: 0.5rem; }
 .header-left { display: flex; align-items: center; gap: 0.75rem; justify-self: start; }
+.header-left:empty { min-width: 12px; min-height: 12px; visibility: visible; }
 .header-left:empty { display: flex; }
 .header-center { display: flex; align-items: center; justify-content: center; }
 .inline-actions { display: flex; gap: 0.5rem; }
@@ -167,7 +177,6 @@ body {
   border-radius: 12px;
   max-height: 2.55rem; /* keep at/under timer */
   overflow: hidden;
-  min-width: 7.2rem; /* allow a bit tighter fit next to timer */
 }
 .mode-combined .mode-type { font-weight: 700; color: var(--text); line-height: 1.05; font-size: 0.9em; text-align: center; }
 .mode-combined .pill-sep-h { height: 1px; width: 84%; background: var(--border); opacity: 0.45; margin: 1px 0; }
@@ -196,11 +205,13 @@ body {
 /* Center timer over board; right column holds lives (moved to src/ui/controls.css) */
 
 /* Health bar next to timer: inline row by default; stack for 5+ lives */
-.health-bar-stack { display: inline-grid; grid-auto-flow: column; align-items: center; column-gap: 4px; max-width: 100%; }
-.health-bar-stack.stack { grid-auto-flow: row; grid-template-columns: repeat(5, auto); gap: 2px 4px; place-content: center end; }
+.health-bar-stack { display: inline-grid; grid-auto-flow: column; align-items: center; column-gap: 0; max-width: 100%; }
+.health-bar-stack.stack { grid-auto-flow: row; grid-template-columns: repeat(5, max-content); gap: 0; place-content: center end; }
+/* When only a single row, keep hearts visually centered with the timer by right-aligning within the left column */
+.controls-left .health-bar-stack { justify-content: end; }
 
 /* Also support runtime class swap used in JS */
-.controls-center .health-bar-row { display: inline-flex; align-items: center; gap: 4px; justify-content: end; max-width: 100%; }
+.controls-center .health-bar-row { display: inline-flex; align-items: center; gap: 0; justify-content: end; max-width: 100%; }
 
 .header-actions {
     display: flex;
@@ -546,7 +557,7 @@ details.dev-section[open] > summary.dev-section-title::after { transform: transl
     margin-bottom: 0.25rem;
 }
 .landing-subtitle { text-align: center; color: var(--text-muted); margin-bottom: 0.6rem; }
-.landing-daily { display: grid; gap: 0.3rem; justify-items: center; margin-bottom: 0.7rem; }
+.landing-daily { display: grid; gap: 0.6rem; justify-items: center; margin-bottom: 0.7rem; }
 .landing-daily-meta { color: var(--text-muted); font-size: 0.9rem; }
 .btn-large { padding: 0.9rem 1.4rem; font-size: 1.05rem; }
 .btn-small { padding: 0.4rem 0.7rem; font-size: 0.9rem; }
@@ -603,7 +614,16 @@ details.dev-section[open] > summary.dev-section-title::after { transform: transl
 .diff-card .diff-text { font-weight: 800; }
 .diff-card .diff-hint { font-size: 0.72rem; color: var(--text-muted); }
 
-/* Daily card variant */
+/* Improve legibility of static tiles (Last/Most): tighter layout */
+.static-card .diff-text { font-size: 0.98rem; line-height: 1.05; text-align: center; display: block; width: 100%; }
+.static-card .diff-hint { font-size: 0.74rem; opacity: 0.9; }
+.static-card .diff-icon { --diff-icon-size: 22px; }
+/* Combined pill inside static tiles */
+.static-card .mode-pill { margin-top: 2px; }
+/* Keep content padding inside static cards to avoid spill on small widths */
+.static-card { padding: 0.5rem; }
+
+/* Daily card variant (also used for Last/Most tiles) */
 .daily-card { border: 2px solid var(--accent); position: relative; background: linear-gradient(135deg, var(--accent-10a), var(--accent-05a)); box-shadow: 0 10px 28px var(--accent-22a); width: var(--daily-tile-size); height: var(--daily-tile-size); overflow: hidden; }
 [data-theme="dark"] .daily-card { background: linear-gradient(135deg, var(--accent-14a), var(--accent-08a)); box-shadow: 0 10px 28px rgb(0 0 0 / 35%); }
 .daily-card::after { content: ""; position: absolute; inset: -55% -55% auto auto; width: 140%; height: 140%; background: radial-gradient(ellipse at top right, var(--accent-32a), rgb(14 165 233 / 22%) 45%, transparent 62%); transform: rotate(8deg); pointer-events: none; }
@@ -633,6 +653,23 @@ details.dev-section[open] > summary.dev-section-title::after { transform: transl
 
 /* pulse the accent border slightly to draw attention */
 .daily-card:not([aria-disabled="true"]) { box-shadow: 0 8px 24px var(--accent-18a), 0 0 0 0 var(--accent-22a); animation: pulseBorder 2400ms ease-in-out infinite; }
+
+/* Remove glow/animations from Last/Most (static-card) */
+.static-card { border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-sm) !important; transform: none !important; }
+.static-card::before,
+.static-card::after { display: none !important; }
+.static-card { animation: none !important; }
+/* Ensure static tile content doesn't clip and fits within tile */
+.static-card { overflow: visible; }
+.static-card .mode-combined { min-width: 0; width: 90%; max-width: 90%; padding: 0.22rem 0.4rem; margin: 0.1rem auto 0; }
+/* Force pill to occupy 90% of tile width and center it */
+.static-card .mode-pill.mode-combined { display: inline-flex; justify-content: center; align-items: center; width: 90%; max-width: 90%; box-sizing: border-box; margin: 0.15rem auto 0; }
+/* Ensure pill host spans behave like blocks so centering works */
+.static-card #landing-last-pill,
+.static-card #landing-fav-pill { display: block; width: 100%; }
+.static-card .mode-combined .mode-type,
+.static-card .mode-combined .mode-diff,
+.static-card .mode-combined .mode-diff .mode-diff-text { overflow: visible; text-overflow: clip; }
 
 @keyframes pulseBorder { 0%,100% { box-shadow: 0 8px 24px var(--accent-18a), 0 0 0 0 var(--accent-22a);} 50% { box-shadow: 0 10px 28px var(--accent-22a), 0 0 0 6px var(--accent-12a);} }
 
@@ -697,7 +734,16 @@ details.dev-section[open] > summary.dev-section-title::after { transform: transl
 }
 
 /* Calendar + Daily actions row */
-.landing-daily-actions { display: inline-grid; grid-auto-flow: column; gap: 0.4rem; align-items: center; }
+.landing-daily-actions { display: grid; grid-auto-flow: column; gap: 0.8rem; align-items: center; }
+/* Make dynamic tiles (Last/Most) the same footprint and visual style as Daily */
+.landing-daily-actions .daily-card { width: var(--daily-tile-size); height: var(--daily-tile-size); position: relative; }
+
+/* Add extra breathing room around the glowing Daily tile so effects don't touch neighbors */
+.landing-daily-actions .daily-center-wrap { margin: 0 0.4rem; }
+@media (width <= 520px) {
+  .landing-daily-actions { gap: 0.9rem; }
+  .landing-daily-actions .daily-center-wrap { margin: 0 0.5rem; }
+}
 
 /* Google Sign-in button (brand-aligned) */
 .google-btn {
@@ -1073,9 +1119,17 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 /* Vertical health bar (hearts) */
 
 /* Inline health bar next to controls */
-.health-bar-row { display: inline-flex; align-items: center; gap: 4px; flex-wrap: nowrap; max-width: 100%; }
-.health-bar-row.stack { display: grid; grid-template-columns: repeat(5, auto); gap: 2px 4px; place-content: center end; }
-.health-heart { width: 22px; height: 22px; position: relative; display: inline-block; }
+.health-bar-row { display: inline-flex; align-items: center; gap: 0; flex-wrap: nowrap; max-width: 100%; font-size: 0; }
+.controls-left .health-bar-row { justify-content: flex-end; }
+.health-bar-row.stack { display: grid; grid-template-columns: repeat(5, max-content); gap: 0; place-content: center end; align-items: end; line-height: 0; }
+/* Use explicit margins for fine-grained horizontal spacing */
+.health-bar-row .health-heart { margin-right: 1px; }
+.health-bar-row .health-heart:last-child { margin-right: 0; }
+.health-bar-row.stack .health-heart { margin-right: 1px; }
+.health-bar-row.stack .health-heart:nth-child(5n) { margin-right: 0; }
+/* Pull top row down slightly to tighten vertical spacing */
+.health-bar-row.stack .health-heart[data-row="1"] { margin-bottom: -8px; }
+.health-heart { width: 33px; height: 33px; position: relative; display: inline-block; }
 .health-heart .heart-full, .health-heart .heart-half { position: absolute; inset: 0; }
 .health-heart .heart-half { display: none; }
 .health-heart.lost .heart-full { display: none; }
@@ -1116,12 +1170,13 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 /* Base classes not needed; descendant rules below apply when these are present */
 
 /* Add a gentle glow on the last remaining heart */
-.health-low .health-heart:last-child .heart-full .heart-svg,
-.health-critical .health-heart:last-child .heart-full .heart-svg { filter: drop-shadow(0 0 2px rgb(0 0 0 / 10%)); }
+/* Target the designated last remaining heart explicitly */
+.health-low .health-heart.last-heart .heart-full .heart-svg,
+.health-critical .health-heart.last-heart .heart-full .heart-svg { filter: drop-shadow(0 0 2px rgb(0 0 0 / 10%)); }
 
 /* Size pulse on the whole heart */
-.health-low .health-heart:last-child { animation: pulse 1.8s ease-in-out infinite; }
-.health-critical .health-heart:last-child { animation: pulse 1.2s ease-in-out infinite; }
+.health-low .health-heart.last-heart { animation: pulse 1.8s ease-in-out infinite; }
+.health-critical .health-heart.last-heart { animation: pulse 1.2s ease-in-out infinite; }
 
 @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
 
@@ -1131,7 +1186,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
   50%       { fill: #f59e0b; }
 }
 
-.health-low .health-heart:last-child .heart-full .heart-svg {
+.health-low .health-heart.last-heart .heart-full .heart-svg {
   animation: lowHeartColor 1.8s ease-in-out infinite;
 }
 
@@ -1141,7 +1196,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
   50%       { fill: #ef4444; }
 }
 
-.health-critical .health-heart:last-child .heart-full .heart-svg {
+.health-critical .health-heart.last-heart .heart-full .heart-svg {
   animation: criticalHeartColor 1.2s ease-in-out infinite;
 }
 
@@ -1217,16 +1272,42 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 
 /* Settings modal refined layout */
 .settings-modal-content { max-width: 520px; }
+/* Distinguish Settings modal title from section headers and labels */
+.settings-modal-content > h2 { font-size: 1.25rem; font-weight: 800; letter-spacing: 0.2px; }
 .settings-form { display: grid; gap: 1rem; text-align: left; }
 .settings-section { background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.9rem; box-shadow: var(--shadow-sm); }
 .settings-section select { width: 100%; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); }
-.section-title { margin: 0 0 0.6rem; font-size: 0.95rem; letter-spacing: 0.2px; color: var(--text); font-weight: 800; }
+.section-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 800;
+}
 .control-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.75rem; padding: 0.35rem 0; }
 .control-col { display: grid; gap: 0.4rem; padding: 0.35rem 0; }
-.control-label { font-weight: 600; color: var(--text); }
+.control-label { font-size: 0.95rem; font-weight: 600; color: var(--text); }
 .value-pill { display: inline-block; border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 0.05rem 0.5rem; margin-left: 0.35rem; font-variant-numeric: tabular-nums; font-weight: 800; }
 .control-hints { display: grid; gap: 2px; }
 .settings-form input[type="range"] { width: 100%; }
+.settings-form .control-label[data-label-disabled="true"] { color: var(--text-muted); }
+.settings-form #idle-timeout-slider[aria-disabled="true"],
+.settings-form #idle-timeout-slider:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+/* Dim the slider thumb when disabled (WebKit/Blink) */
+.settings-form #idle-timeout-slider:disabled::-webkit-slider-thumb {
+  background: var(--border);
+  border-color: var(--border);
+}
+/* Firefox */
+.settings-form #idle-timeout-slider:disabled::-moz-range-thumb {
+  background: var(--border);
+  border-color: var(--border);
+}
 .settings-form .hint { display: block; color: #718096; margin-top: 0.1rem; }
 .settings-group .field { margin-top: 0.75rem; }
 .settings-group .field label { display: block; margin-bottom: 0.25rem; color: #4a5568; font-weight: 600; }
@@ -1490,6 +1571,31 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 .calendar-modal-content { max-width: 640px; }
 .calendar-header { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
 .calendar-header { margin-top: 1rem; }
+
+/* Quick Help modal */
+.quickhelp-modal-content { max-width: 560px; }
+.quickhelp-head { display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: center; margin-bottom: 0.6rem; }
+.quickhelp-tabs { display: inline-flex; gap: 0.35rem; background: var(--surface-muted); padding: 0.2rem; border-radius: var(--radius); border: 1px solid var(--border); }
+.qh-tab { appearance: none; border: 0; background: transparent; padding: 0.36rem 0.6rem; border-radius: var(--radius); cursor: pointer; color: var(--text-muted); font-weight: 600; }
+.qh-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm) inset; }
+.quickhelp-search input { width: 220px; max-width: 50vw; padding: 0.45rem 0.6rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.quickhelp-body { text-align: left; }
+.qh-panel[hidden] { display: none !important; }
+.qh-list { margin: 0 0 0.75rem; padding-left: 1rem; display: grid; gap: 0.4rem; }
+.qh-list li { color: var(--text); }
+.quickhelp-actions { display: flex; justify-content: flex-end; }
+.qh-kbd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem 0.9rem; }
+.qh-kbd-grid div { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; align-items: center; }
+.qh-kbd-grid kbd { background: var(--surface-muted); border: 1px solid var(--border); padding: 0.1rem 0.3rem; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* Help: two-pane with sticky TOC */
+.help-content.with-toc { display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: start; }
+.help-toc { position: sticky; top: 10px; display: grid; gap: 0.35rem; text-align: left; }
+.help-toc a { color: var(--text-muted); text-decoration: none; font-weight: 600; }
+.help-toc a:hover { color: var(--text); text-decoration: underline; }
+.qh-demo { margin-top: 0.6rem; background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.6rem; }
+.qh-demo-grid { height: 140px; background: repeating-linear-gradient(0deg, var(--border), var(--border) 1px, transparent 1px, transparent 16px), repeating-linear-gradient(90deg, var(--border), var(--border) 1px, transparent 1px, transparent 16px); border-radius: var(--radius-sm); opacity: 0.7; }
+.qh-demo-actions { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
 .calendar-month-label { text-align: center; font-weight: 800; letter-spacing: 0.5px; }
 .calendar-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 0.25rem; padding: 0.25rem 0; color: var(--text-muted); font-size: 0.85rem; }
 .calendar-weekdays > div { text-align: center; }

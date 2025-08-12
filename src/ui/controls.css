@@ -99,7 +99,7 @@
 
 .health-bar-stack {
   display: grid;
-  gap: 4px;
+  gap: 0;
   justify-items: center;
 }
 

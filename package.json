@@ -21,13 +21,12 @@
     "test:stubs": "node tools/gen-test-stubs.js",
     "e2e:ui": "playwright test --ui",
     "changelog": "node tools/update-changelog.js",
+    "release": "semantic-release",
     "supabase:link": "npx --yes supabase link",
     "supabase:push": "npx --yes supabase db push",
     "version:bump:patch": "npm version patch -m \"chore: bump version to %s\" && npm run build:version",
     "version:bump:minor": "npm version minor -m \"chore: bump version to %s\" && npm run build:version",
     "version:bump:major": "npm version major -m \"chore: bump version to %s\" && npm run build:version"
-  ,
-  "postversion": "node tools/sync-sw-version.js && git add service-worker.js && git commit -m \"chore: sync SW version\" || true"
   },
   "repository": {
     "type": "git",
@@ -43,12 +42,19 @@
   "homepage": "https://github.com/ngroulx/soduku#readme",
   "devDependencies": {
     "@playwright/test": "^1.54.2",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.0",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^10.3.5",
+    "@semantic-release/npm": "^12.0.1",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^9.1.2",
     "http-server": "^14.1.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.0.5",
     "prettier": "^3.6.2",
+    "semantic-release": "^24.1.1",
     "stylelint": "^16.23.1",
     "stylelint-config-standard": "^39.0.0"
   }

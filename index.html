@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#667eea">
     <title>Ultimate Sudoku</title>
@@ -21,7 +21,7 @@
     <div class="container">
         <header>
             <div class="rail app-header">
-                <div class="header-left">
+                <div class="header-left" style="visibility:visible">
                     <div id="user-chip" class="user-chip" style="display:none" aria-live="polite" title="Signed in">
                       <img id="user-avatar" alt="" aria-hidden="true" />
                       <span id="user-name"></span>
@@ -42,6 +42,7 @@
                           <hr/>
                           <button id="menu-restart" class="popover-item" role="menuitem"><span class="menu-icon">↺</span><span>Restart puzzle</span></button>
                           <button id="menu-clear" class="popover-item" role="menuitem"><span class="menu-icon">🧹</span><span>Clear All</span></button>
+                          <button id="menu-solve" class="popover-item" role="menuitem"><span class="menu-icon">✅</span><span>Solve</span></button>
                           <hr/>
                           <button id="menu-stats" class="popover-item" role="menuitem"><span class="menu-icon">📊</span><span>Stats</span></button>
                           <hr/>
@@ -59,7 +60,7 @@
         </header>
 
         <main>
-            <div id="landing-overlay" class="landing-overlay" style="display:none;">
+            <div id="landing-overlay" class="landing-overlay" style="display:flex;">
                 <div class="landing-card">
                     <div id="landing-result" class="landing-result" hidden></div>
                     <div class="landing-hero">
@@ -173,7 +174,15 @@
                         <button id="landing-continue-btn" class="btn btn-secondary btn-large" style="display:none">Continue</button>
                         <div class="landing-daily" id="landing-daily-section">
                             <div class="landing-daily-actions">
+                                <!-- Last played (left) -->
                                 <div class="daily-tile-wrap">
+                                    <button id="landing-last-btn" class="btn btn-secondary diff-btn diff-card daily-card static-card" style="display:none" aria-live="polite">
+                                        <span class="diff-text">Last played</span>
+                                        <span id="landing-last-pill"></span>
+                                    </button>
+                                </div>
+                                <!-- Daily (center) -->
+                                <div class="daily-tile-wrap daily-center-wrap">
                                     <button id="landing-daily-btn" class="btn btn-secondary diff-btn diff-card daily-card" aria-live="polite">
                                         <span class="diff-icon" id="landing-daily-icon"></span>
                                         <span class="diff-text">Daily</span>
@@ -184,6 +193,12 @@
                                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                                             <path fill="currentColor" d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Zm12 7H5v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9ZM6 7h12V6a1 1 0 0 0-1-1h-1v1a1 1 0 1 1-2 0V5H8v1a1 1 0 1 1-2 0V5H5a1 1 0 0 0-1 1v1Z"/>
                                         </svg>
+                                    </button>
+                                </div>
+                                <div class="daily-tile-wrap">
+                                    <button id="landing-fav-btn" class="btn btn-secondary diff-btn diff-card daily-card static-card" style="display:none" aria-live="polite">
+                                        <span class="diff-text">Most played</span>
+                                        <span id="landing-fav-pill"></span>
                                     </button>
                                 </div>
                             </div>
@@ -210,7 +225,7 @@
                 </div>
             </div>
             <div class="rail controls-strip">
-                <div class="controls-left">
+                    <div class="controls-left">
                     <div class="hearts-row"><div id="health-bar" class="health-bar-stack" aria-label="Lives" aria-live="polite"></div></div>
                 </div>
                 <div class="controls-center">
@@ -265,9 +280,57 @@
         </main>
     </div>
 
+    <!-- Quick Help modal (compact, searchable, two-tab overlay) -->
+    <div id="quickhelp-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="quickhelp-title" data-backdrop-close="true" style="display:none;">
+        <div class="modal-content quickhelp-modal-content" tabindex="-1">
+            <h2 id="quickhelp-title">Quick Help</h2>
+            <div class="quickhelp-head">
+                <div class="quickhelp-tabs" role="tablist" aria-label="Quick Help tabs">
+                    <button id="qh-tab-basics" class="qh-tab active" role="tab" aria-selected="true" aria-controls="qh-panel-basics">Basics</button>
+                    <button id="qh-tab-shortcuts" class="qh-tab" role="tab" aria-selected="false" aria-controls="qh-panel-shortcuts">Shortcuts</button>
+                </div>
+                <div class="quickhelp-search">
+                    <input id="qh-search" type="search" placeholder="Search help (Ctrl+/)" aria-label="Search help" />
+                </div>
+            </div>
+            <div class="quickhelp-body">
+                <section id="qh-panel-basics" class="qh-panel" role="tabpanel" aria-labelledby="qh-tab-basics">
+                    <ul class="qh-list">
+                        <li><strong>Goal</strong>: Fill each row, column, and 3×3 box with 1–9, no repeats.</li>
+                        <li><strong>Lives</strong>: Wrong unique entries reduce Lives. Set to 11 for Unlimited. Daily uses fixed Lives.</li>
+                        <li><strong>Notes</strong>: Toggle with ✎ to add pencil marks; press-and-hold for temporary notes.</li>
+                        <li><strong>Hints</strong>: Adds +30s. Change type in Settings → Gameplay → Hint type.</li>
+                        <li><strong>Zen mode</strong>: Hides timer and chips; normal games use Unlimited Lives.</li>
+                    </ul>
+                    <div class="quickhelp-actions">
+                        <button id="qh-open-full" class="btn btn-secondary">Open full Help</button>
+                    </div>
+                </section>
+                <section id="qh-panel-shortcuts" class="qh-panel" role="tabpanel" aria-labelledby="qh-tab-shortcuts" hidden>
+                    <div class="qh-kbd-grid">
+                        <div><kbd>1</kbd>…<kbd>9</kbd><span>Enter number</span></div>
+                        <div><kbd>0</kbd> / ⌫ / ⌦<span>Erase</span></div>
+                        <div>← ↑ → ↓ / WASD / H J K L<span>Move</span></div>
+                        <div>Shift + number<span>Notes toggle (if Notes on)</span></div>
+                        <div><span>Pad 1–9 click</span><span>Lock/unlock number</span></div>
+                        <div><kbd>Ctrl</kbd>+<kbd>Z</kbd><span>Undo</span></div>
+                        <div><kbd>Ctrl</kbd>+<kbd>Y</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd><span>Redo</span></div>
+                        <div><kbd>Esc</kbd><span>Clear number lock</span></div>
+                        <div><kbd>?</kbd><span>Open Quick Help</span></div>
+                        <div><kbd>Ctrl</kbd>+<kbd>/</kbd><span>Help search</span></div>
+                    </div>
+                </section>
+                
+            </div>
+            <div class="modal-buttons">
+                <button id="quickhelp-close" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- New Puzzle modal (game type + difficulty chooser) -->
-    <div id="newpuzzle-modal" class="modal" style="display:none;">
-        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="newpuzzle-title">
+    <div id="newpuzzle-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="newpuzzle-title" data-backdrop-close="true" style="display:none;">
+        <div class="modal-content" tabindex="-1">
             <h2 id="newpuzzle-title">New Puzzle</h2>
             <div class="settings-form">
              <div class="settings-section">
@@ -295,8 +358,8 @@
         </div>
     </div>
 
-    <div id="modal" class="modal">
-        <div class="modal-content">
+    <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-backdrop-close="true">
+        <div class="modal-content" tabindex="-1">
             <h2 id="modal-title">Game Complete!</h2>
             <p id="modal-message">Congratulations! You've solved the puzzle!</p>
             <div class="modal-buttons">
@@ -306,9 +369,9 @@
         </div>
     </div>
 
-    <div id="stats-modal" class="modal">
-        <div class="modal-content">
-            <h2>Stats</h2>
+    <div id="stats-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="stats-title" data-backdrop-close="true">
+        <div class="modal-content" tabindex="-1">
+            <h2 id="stats-title">Stats</h2>
             <div id="stats-content"></div>
             <div class="modal-buttons">
                 <button id="stats-close" class="btn btn-secondary">Close</button>
@@ -319,9 +382,9 @@
         </div>
     </div>
 
-    <div id="settings-modal" class="modal">
-        <div class="modal-content settings-modal-content">
-            <h2>Settings</h2>
+    <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" data-backdrop-close="true">
+        <div class="modal-content settings-modal-content" tabindex="-1">
+            <h2 id="settings-title">Settings</h2>
             <div id="settings-saved" class="save-toast" role="status" aria-live="polite">Saved ✓</div>
             <div class="settings-form">
                 <div class="settings-section">
@@ -353,17 +416,25 @@ Hold Shift to move backward.">ⓘ</span></span>
                         <span class="control-label">Zen mode <span class="help-tip" data-tooltip="A calmer experience:
 • Hides timer, Lives, difficulty, and status.
 • Runs don’t update stats or best times.
-• Daily puzzles keep fixed Lives.">ⓘ</span></span>
+• Daily puzzles keep fixed Lives.
+• Sets Lives to Unlimited and disables the Lives slider.">ⓘ</span></span>
                         <label class="switch"><input type="checkbox" id="zen-mode-toggle" aria-label="Zen mode"><span class="switch-slider" aria-hidden="true"></span></label>
                     </div>
                      <div class="control-col">
                         <div class="control-label">Lives <span class="help-tip" data-tooltip="Lives limit how many wrong entries you can make.
 Set to 11 for Unlimited.
+Disabled in Zen mode (Lives are Unlimited).
 Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily.">ⓘ</span> <span class="value-pill" id="lives-limit-pill">3</span><span id="lives-limit-value" style="display:none">3</span></div>
                         <input type="range" id="lives-limit" min="0" max="11" step="1" value="3" />
-                        <div class="control-hints">
-                            <small class="hint" id="lives-preview">Hearts: ×3</small>
-                        </div>
+                        <div class="control-hints"></div>
+                     <div class="control-row">
+                        <span class="control-label">Auto‑pause on idle <span class="help-tip" data-tooltip="Pauses the game after inactivity.">ⓘ</span></span>
+                        <label class="switch"><input type="checkbox" id="idle-autopause-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
+                    </div>
+                    <div class="control-row">
+                        <span class="control-label">Idle timeout <span class="help-tip" data-tooltip="How long to wait before auto‑pause.">ⓘ</span> <span class="value-pill" id="idle-timeout-pill">2:00</span></span>
+                        <input type="range" id="idle-timeout-slider" min="30" max="600" step="30" value="120" />
+                    </div>
                     </div>
                 </div>
                 <div class="settings-section">
@@ -441,18 +512,27 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
         </div>
     </div>
 
-    <div id="help-modal" class="modal">
-        <div class="modal-content">
-            <h2>How to play</h2>
-            <div class="help-content">
+    <div id="help-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="help-title" data-backdrop-close="true">
+        <div class="modal-content" tabindex="-1">
+            <h2 id="help-title">How to play</h2>
+            <div class="help-content with-toc">
+                <nav class="help-toc" aria-label="Help contents">
+                    <a href="#help-lives">Lives</a>
+                    <a href="#help-hints">Hints</a>
+                    <a href="#help-sync">Sync</a>
+                    <a href="#help-zen">Zen mode</a>
+                    <a href="#help-mobile">Mobile</a>
+                    <a href="#help-keyboard">Keyboard</a>
+                    <a href="#help-about">About</a>
+                </nav>
                 <p>Goal: Fill the grid so each row, column, and 3×3 box contains 1–9 with no repeats.</p>
                 <div class="help-grid">
-                    <div class="help-card">
+                    <div class="help-card" id="help-lives">
                         <h4>❤️ Lives</h4>
                         <p>Lives are the number of wrong entries allowed. Each unique incorrect number placed in a cell uses one life. When you run out of lives, the game ends.</p>
                         <p>You can change Lives in Settings. Set to 11 for Unlimited. Daily puzzles use fixed Lives based on difficulty, so your setting won’t override Daily.</p>
                     </div>
-                    <div class="help-card">
+                    <div class="help-card" id="help-hints">
                         <h4>💡 Hints</h4>
                         <p>Hints help in different ways depending on the selected Hint type. Hints are limited by difficulty (Easy 5, Medium 3, Hard 2, Expert 1, Master/Extreme 0). Each hint adds +30s to your timer and marks the run as assisted (assisted runs don’t update your personal best).</p>
                         <div class="help-subsection">
@@ -464,8 +544,12 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                                 <li><span class="key">Escalating assistance</span><span class="desc">Tiered help on repeated taps: (1) highlight the next solvable cell → (2) show/narrow candidates → (3) reveal the answer. Cycles through as needed.</span></li>
                             </ul>
                             <p class="hint">Change Hint type in Settings → Gameplay → Hint type. The time penalty applies to every hint action, regardless of type.</p>
+                            <div class="qh-demo" id="demo-naked-single" aria-label="Demo: Naked Single">
+                                <div class="qh-demo-grid" aria-hidden="true"></div>
+                                <div class="qh-demo-actions"><button id="demo-naked-play" class="btn btn-secondary">Play demo</button></div>
+                            </div>
                         </div>
-                    <div class="help-card">
+                    <div class="help-card" id="help-sync">
                         <h4>🔄 Sync</h4>
                         <ul class="help-list">
                             <li><span class="key">Signed‑in sync</span><span class="desc">When signed in, your stats and gameplay/calendar settings sync across devices.</span></li>
@@ -474,7 +558,7 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                         </ul>
                     </div>
                     </div>
-                    <div class="help-card">
+                    <div class="help-card" id="help-zen">
                         <h4>🧘 Zen mode</h4>
                         <ul class="help-list">
                             <li><span class="key">Focus</span><span class="desc">Hides the on‑screen timer, Lives, difficulty chip, and status messages.</span></li>
@@ -483,7 +567,7 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                             <li><span class="key">Toggle</span><span class="desc">Turn on/off in Settings. It takes effect immediately without interrupting your game.</span></li>
                         </ul>
                     </div>
-                    <div class="help-card">
+                    <div class="help-card" id="help-mobile">
                         <h4>📱 Mobile / Touch</h4>
                         <ul class="help-list">
                             <li><span class="key">1–9</span><span class="desc">Enter number (on‑screen pad)</span></li>
@@ -497,7 +581,7 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                             <li><span class="key">💡</span><span class="desc">Hint: fills one correct cell</span></li>
                         </ul>
                     </div>
-                    <div class="help-card">
+                    <div class="help-card" id="help-keyboard">
                         <h4>⌨️ Mouse / Keyboard</h4>
                         <ul class="help-list">
                             <li><span class="key"><kbd>1</kbd>…<kbd>9</kbd></span><span class="desc">Enter number</span></li>
@@ -523,14 +607,14 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                 </div>
             </div>
             <div class="modal-buttons">
-                <button id="help-close" class="btn btn-secondary">Close</button>
+                <button id="help-close" class="btn btn-secondary" aria-label="Close help dialog">Close</button>
             </div>
         </div>
     </div>
 
-    <div id="daily-modal" class="modal">
-        <div class="modal-content">
-            <h2>Daily Puzzle</h2>
+    <div id="daily-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="daily-title" data-backdrop-close="true">
+        <div class="modal-content" tabindex="-1">
+            <h2 id="daily-title">Daily Puzzle</h2>
                  <div class="daily-meta">
                 <div>Date: <span id="daily-date"></span></div>
                  <div>Difficulty: <span id="daily-diff" class="badge"></span></div>
@@ -544,9 +628,9 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
         </div>
     </div>
 
-     <div id="calendar-modal" class="modal">
-         <div class="modal-content calendar-modal-content">
-             <h2>Daily Calendar</h2>
+     <div id="calendar-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-title" data-backdrop-close="true">
+         <div class="modal-content calendar-modal-content" tabindex="-1">
+             <h2 id="calendar-title">Daily Calendar</h2>
              <div id="calendar-streaks" class="calendar-streaks" aria-live="polite" aria-atomic="true" style="margin-bottom:6px;"></div>
              <div class="calendar-header">
                  <button id="calendar-prev" class="btn btn-secondary" title="Previous month">◀</button>
@@ -572,7 +656,7 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
      </div>
 
     <!-- Reusable confirm modal (replaces native confirm dialogs) -->
-    <div id="confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message" style="display:none;">
+    <div id="confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message" data-backdrop-close="false" style="display:none;">
         <div class="modal-content" tabindex="-1">
             <h2 id="confirm-title">Confirm</h2>
             <p id="confirm-message">Are you sure?</p>
