@@ -8,23 +8,14 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Changes
 
-- **Added**:
-  - test(e2e): make landing visible in automation, add Solve menu item, keep help About collapsed by default; record win on completion in automation; keep board width scaling responsive (766e409)
-  - chore: add dev logger, supabase retry/backoff, extract timer and health helpers, wire into index (fc45a8f)
-  - chore: tighten connect-src CSP, add aria-invalid and modal auto-focus, debounce resize (06810fd)
-  - chore: tighten CSP, externalize inline scripts, expand SW precache and nav fallback, add PNG icons + generator, sync SW version, add CI workflow, modal focus trap (8e818a8)
+
   - chore(security): add CSP via headers and meta; add fallback env.js to avoid 404; set no-store for env.js (e223ea4)
   - new hint types (c169401)
   - chore: add GH Action to auto-update CHANGELOG on main; add npm script and docs (54a5b8d)
   - docs: add CHANGELOG.md and script; generate initial history from git log (1651abf)
   - new health bar (af79dbc)
-  - ui overhaul and new settings (b6162b0)
+  - ui overhaul and new settings (b6162b0
 
-- **Changed**:
-  - baby with the bathwater (e9100af)
-  - test: stabilize idle headless timers and overlay, normalize modal display fallbacks, guard timer updates (f67b7c0)
-  - chore: update CHANGELOG.md [skip ci] (3be3504)
-  - chore: update CHANGELOG.md [skip ci] (473ba48)
   - qlf (f45cd40)
   - update env config (0fa06f5)
   - kitchen sink (842c563)
@@ -55,9 +46,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - grid 3x3 fixes (6f7b03e)
   - mobile grid fixes (2e0037b)
 
-- **Tests**:
-  - feat: idle controls in settings, headless idle init, help interactions; adjust tests for idle display variants; persist idle settings; wire DOM bindings (1e0cf4e)
-  - mobile unit tests (b849163)
+
 
 
 ## [1.0.1] - 2025-08-09
