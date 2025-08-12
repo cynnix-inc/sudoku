@@ -1,0 +1,11 @@
+[build]
+  # Install deps and generate env.js + app version at build time
+  command = "npm ci && npm run build:env && npm run build:version"
+  # Deploy the repository root (index.html is at the root)
+  publish = "."
+
+# Optional: set Node version if needed
+# [build.environment]
+#   NODE_VERSION = "20"
+
+

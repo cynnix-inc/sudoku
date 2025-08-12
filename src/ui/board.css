@@ -155,20 +155,17 @@
   display: grid;
   gap: 0.4rem;
   margin-bottom: 1.1rem;
-  /* Match board width but never exceed viewport */
-  width: 100%;
-  max-width: calc(var(--cell-size) * 9 + 8px);
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
+  /* Match the board exactly */
+  width: var(--board-size);
   margin-left: auto;
   margin-right: auto;
 }
 
 .pad-numbers {
   display: grid;
-  /* Allow shrinking to avoid horizontal overflow */
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-  gap: 0.4rem;
+  /* One key per cell width; gaps match board separators (8 gaps) */
+  grid-template-columns: repeat(9, var(--cell-size));
+  gap: 1px;
 }
 
 .pad-actions {
@@ -180,9 +177,9 @@
 }
 
 .pad-actions .icon-btn {
-  /* Ensure comfortable touch targets on small phones */
-  width: clamp(44px, calc(var(--cell-size) * 0.9), 60px);
-  height: clamp(44px, calc(var(--cell-size) * 0.9), 60px);
+  /* Tools match number size for consistency */
+  width: var(--cell-size);
+  height: var(--cell-size);
   border-radius: var(--radius-md);
 }
 
@@ -221,12 +218,14 @@
 .number-btn {
   /* Prevent grid items from enforcing wide min-content and causing overflow */
   min-width: 0;
-  /* Scale padding and font with board size, keep within ergonomic bounds */
-  padding: clamp(8px, calc(var(--cell-size) * 0.22), 16px);
+  /* Square buttons tied to cell size */
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: clamp(10px, calc(var(--cell-size) * 0.28), 18px);
-  font-size: clamp(1rem, calc(var(--cell-size) * 0.42), 1.25rem);
+  border-radius: calc(var(--cell-size) * 0.18);
+  font-size: calc(var(--cell-size) * 0.42);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -280,10 +279,7 @@
   display: inline-block;
 }
 
-/* Very narrow screens: wrap digits into two rows (1–5 / 6–9) */
-@media (width <= 420px) {
-  .pad-numbers { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-}
+/* Removed two-row wrap: keypad always stays 9-wide, matching the grid */
 
 
 

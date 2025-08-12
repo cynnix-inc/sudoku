@@ -918,16 +918,20 @@ class SudokuGame {
             // Account for container horizontal margins + paddings
             const overhead = vw <= 768 ? 48 : 64;
             const maxBoardWidth = Math.min(520, Math.max(240, vw - overhead));
-            // Choose the largest integer cell size that fits (account for 8 gaps of 1px)
-            const raw = Math.floor((maxBoardWidth - 8) / 9);
+            // Base integer cell size that fits (account for 8 gaps of 1px)
+            const baseCell = Math.floor((maxBoardWidth - 8) / 9);
             // Use last applied grid size (staged slider changes shouldn't affect live board yet)
             const appliedGrid = (typeof this._appliedGridSize === 'number') ? this._appliedGridSize : 2;
             const scaleMap = { 1: 0.9, 2: 1.0, 3: 1.12 };
             const scale = scaleMap[appliedGrid] || 1.0;
-            const cellSize = Math.max(30, Math.min(60, Math.round(raw * scale)));
-            // Compute exact board width for these integer tracks
-            const boardWidth = cellSize * 9 + 8; // add 8px for 1px gaps between 9 columns
+            // Scale, but never exceed what fits in the viewport
+            const scaled = Math.round(baseCell * scale);
+            const clampedCell = Math.min(scaled, baseCell);
+            const cellSize = Math.max(30, Math.min(60, clampedCell));
+            // Exact board width for the final track size; never exceed maxBoardWidth
+            const boardWidth = Math.min(maxBoardWidth, cellSize * 9 + 8);
             boardElement.style.width = boardWidth + 'px';
+            // Keep CSS-dependent sizing (grid tracks, keypad, etc.) in sync
             document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
         };
         // Initial and on resize/orientation change
