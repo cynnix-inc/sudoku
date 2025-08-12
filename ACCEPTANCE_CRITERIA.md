@@ -5,6 +5,7 @@
   - Legend presents as a 2×3 grid on normal screens; collapses to a single tooltip pill on narrow screens.
   - Auto‑focus moves to the first playable day cell on open; Arrow keys navigate days; PageUp/PageDown change months; Enter/Space activates a day.
   - Play today button is placed to the right of Close in the footer and only shows when today is visible and not completed.
+  - When the calendar opens and today's Daily is completed, the calendar highlights the most recent incomplete day in the current visible month; if no such day exists, today remains highlighted.
 High-level acceptance criteria for Ultimate Sudoku
 
 - New Game
@@ -109,6 +110,17 @@ Modals and overlays
       - The Daily tile switches to a Calendar tile with no difficulty label or hint.
       - The tile shows a centered monochrome calendar icon with grid, sized to fill the tile cleanly, visually centered.
       - The small calendar overlay button is hidden; clicking the tile opens the Daily calendar modal.
+
+  - Dynamic tiles (Last played, Most played):
+    - Two tiles appear flanking the Daily tile when sufficient data exists.
+    - Last played shows the most recent non‑Daily game’s type and difficulty as a combined pill.
+    - Most played shows the most frequent non‑Daily game type+difficulty over the last 20 games.
+    - If Most played equals Last played (same type+difficulty), Most played is hidden.
+    - For brand‑new users or when there is no data, both dynamic tiles are hidden.
+    - Visual style matches the Daily tile’s footprint but without glow/animated sweep.
+    - The combined pill inside each tile is centered and sized to ~90% of the tile width; text does not clip or overflow at common widths.
+    - Spacing between the side tiles and the Daily tile is sufficient so Daily glow never visually touches side tiles.
+    - After a game completes (win or loss), the landing overlay refreshes to reflect updated Last/Most tiles without needing a page reload.
 
 - Signed‑in name display
   - Header chip and landing greeting use only the user's first name (from Google `full_name`), falling back to email or "Player" when missing.

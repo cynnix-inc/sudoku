@@ -78,6 +78,14 @@ function renderCalendar(game) {
   for (let i = 0; i < startOffset; i++) {
     const spacer = document.createElement('div'); spacer.className = 'calendar-cell empty'; spacer.setAttribute('aria-hidden', 'true'); grid.appendChild(spacer);
   }
+  // Persist the chosen highlight on the grid for tests/automation
+  try {
+    if (grid) {
+      const chosen = highlightKey || (highlightToday ? todayKeyLocal : '');
+      if (chosen) grid.setAttribute('data-highlight-key', chosen); else grid.removeAttribute('data-highlight-key');
+    }
+  } catch {}
+
   // Compute streaks from localStorage results
   // (results already loaded above)
   const computeStreaks = () => {
