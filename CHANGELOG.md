@@ -23,6 +23,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
+  - Update generate-version.js to improve version generation logic (a9ee91e)
+  - chore: update CHANGELOG.md [skip ci] (1cd37d6)
   - Refactor: update UI to use "Lives" instead of "Mistakes" throughout game interface and help text (9f0d9b3)
   - chore: update CHANGELOG.md [skip ci] (431505b)
   - ci: ignore CHANGELOG.md pushes; skip CI on [skip ci]; remove duplicate changelog workflow (3fb3bd1)
@@ -46,6 +48,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - grid overhaul (69154ca)
 
 - **Fixed**:
+  - ci(changelog): disable auto-update on push; run only via manual dispatch (84690be)
   - env fixes (c1490cc)
   - mobile layout fixes (fb44521)
   - mobile layout fixes (38fc607)
