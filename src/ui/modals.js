@@ -76,6 +76,12 @@ export function openModal(id, options = {}) {
   // Move focus inside
   setTimeout(() => focusFirstIn(modal), 0);
 
+  // Notify listeners
+  try {
+    const evt = new CustomEvent('modalopen', { bubbles: true, detail: { id } });
+    modal.dispatchEvent(evt);
+  } catch {}
+
   return true;
 }
 
@@ -94,6 +100,12 @@ export function closeModal(id) {
 
   // Restore focus to the opener
   restoreFocus();
+
+  // Notify listeners
+  try {
+    const evt = new CustomEvent('modalclose', { bubbles: true, detail: { id } });
+    modal.dispatchEvent(evt);
+  } catch {}
 
   return true;
 }

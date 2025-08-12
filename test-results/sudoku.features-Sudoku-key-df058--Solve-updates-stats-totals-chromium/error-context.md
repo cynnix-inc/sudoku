@@ -2,89 +2,103 @@
 
 ```yaml
 - banner:
-  - button "Menu": ☰
-- main:
   - text: Classic Medium
+  - button "Menu" [expanded]: ☰
+  - menu:
+    - menuitem "🏠 Home"
+    - menuitem "🔄 New puzzle…"
+    - menuitem "Daily": 📅 Daily
+    - separator
+    - menuitem "↺ Restart puzzle"
+    - menuitem "🧹 Clear All"
+    - separator
+    - menuitem "📊 Stats"
+    - separator
+    - menuitem "Sign in with Google"
+    - group "Utilities":
+      - menuitem "Settings": ⚙️
+      - menuitem "Help": ❓
+- main:
   - button "Pause or resume": 00:00 ▶
   - textbox
   - textbox
-  - textbox
   - textbox: "1"
-  - textbox: "4"
   - textbox: "2"
   - textbox
-  - textbox
-  - textbox
-  - textbox: "2"
-  - textbox
-  - textbox: "8"
-  - textbox: "3"
-  - textbox: "5"
   - textbox
   - textbox
   - textbox: "7"
-  - textbox: "4"
   - textbox
+  - textbox: "9"
   - textbox
-  - textbox
-  - textbox: "6"
-  - textbox: "8"
-  - textbox
-  - textbox: "3"
-  - textbox: "2"
-  - textbox: "5"
-  - textbox
-  - textbox: "3"
-  - textbox: "6"
-  - textbox
-  - textbox
-  - textbox: "5"
-  - textbox
-  - textbox: "8"
   - textbox
   - textbox: "1"
+  - textbox: "7"
+  - textbox
+  - textbox
+  - textbox: "6"
+  - textbox: "8"
+  - textbox: "3"
+  - textbox: "6"
+  - textbox: "7"
+  - textbox: "5"
+  - textbox
+  - textbox
+  - textbox: "1"
+  - textbox
+  - textbox: "4"
+  - textbox: "1"
+  - textbox: "7"
+  - textbox
+  - textbox
+  - textbox: "2"
+  - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "2"
+  - textbox: "4"
+  - textbox
+  - textbox: "3"
+  - textbox
   - textbox: "8"
   - textbox
+  - textbox: "5"
+  - textbox: "7"
   - textbox
   - textbox
+  - textbox
+  - textbox
+  - textbox: "6"
   - textbox
   - textbox
   - textbox: "9"
-  - textbox: "3"
+  - textbox: "1"
+  - textbox: "6"
   - textbox
   - textbox: "2"
   - textbox
+  - textbox
+  - textbox: "3"
   - textbox: "7"
-  - textbox
-  - textbox
-  - textbox: "4"
   - textbox: "1"
-  - textbox
-  - textbox: "7"
   - textbox: "5"
-  - textbox: "2"
-  - textbox
-  - textbox: "6"
-  - textbox: "3"
-  - textbox
-  - textbox
-  - textbox
-  - textbox: "6"
-  - textbox: "1"
-  - textbox
-  - textbox
-  - textbox: "9"
-  - textbox: "4"
-  - textbox: "7"
-  - textbox
   - textbox: "8"
-  - textbox
+  - textbox: "1"
   - textbox
   - textbox
   - textbox: "5"
-  - textbox: "7"
-  - textbox: "1"
+  - textbox: "2"
   - textbox
+  - textbox
+  - textbox: "6"
+  - textbox
+  - textbox: "5"
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "1"
+  - textbox: "4"
   - textbox
   - textbox
   - button "1"

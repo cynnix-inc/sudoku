@@ -15,8 +15,6 @@ import './utils/devlog.js';
 import './ui/timer.js';
 import './ui/health.js';
 import './ui/modals.js';
-import './ui/help.js';
-import './ui/tooltip.js';
 import './ui/hints.js';
 import { APP_VERSION } from './version.js';
 
@@ -32,12 +30,6 @@ function ensureSudokuGameInitialized() {
     if (!window.__sudokuGame) {
       window.__sudokuGame = new window.SudokuGame();
     }
-    // Ensure UI events are wired even if this module loads after script.js
-    try {
-      if (window.SudokuEvents && window.SudokuEvents.wireCoreUiEvents) {
-        window.SudokuEvents.wireCoreUiEvents(window.__sudokuGame);
-      }
-    } catch {}
   } catch {}
 }
 

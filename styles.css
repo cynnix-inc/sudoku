@@ -144,6 +144,11 @@ body {
 .zen .health-compact .health-badge { z-index: 1; }
 
 .rail { max-width: calc(var(--cell-size) * 9 + 8px); margin-left: auto; margin-right: auto; width: 100%; padding-left: 0; padding-right: 0; }
+/* Show state driven by class (not inline styles) */
+.modal.is-open { display: grid; }
+
+/* Prevent background scroll when any modal is open */
+body.modal-open { overflow: hidden; }
 .app-header { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; margin-bottom: 0.5rem; }
 .header-left { display: flex; align-items: center; gap: 0.75rem; justify-self: start; }
 .header-left:empty { display: flex; }

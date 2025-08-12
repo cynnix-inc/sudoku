@@ -7,7 +7,11 @@ function openCalendar(game) {
   refreshCalendarHeaders(game);
   renderCalendar(game);
   // Center using CSS grid layout
-  modal.style.display = 'grid';
+  if (window.SudokuModals?.openModal) {
+    window.SudokuModals.openModal('calendar-modal');
+  } else {
+    modal.classList.add('is-open');
+  }
   if (game && game._positionOverlayWithinGameArea) game._positionOverlayWithinGameArea(modal);
   if (game && game._bindOverlayRecalibration) game._bindOverlayRecalibration(modal);
   const closeBtn = document.getElementById('calendar-close');
@@ -15,7 +19,7 @@ function openCalendar(game) {
   const nextBtn = document.getElementById('calendar-next');
   if (closeBtn && !closeBtn._bound) {
     closeBtn._bound = true;
-    closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+    closeBtn.addEventListener('click', () => { (window.SudokuModals?.closeModal && window.SudokuModals.closeModal('calendar-modal')) || modal.classList.remove('is-open'); });
   }
   if (prevBtn && !prevBtn._bound) { prevBtn._bound = true; prevBtn.addEventListener('click', () => { shiftCalendar(game, -1); }); }
   if (nextBtn && !nextBtn._bound) { nextBtn._bound = true; nextBtn.addEventListener('click', () => { shiftCalendar(game, 1); }); }
@@ -98,7 +102,7 @@ function renderCalendar(game) {
         playBtn.addEventListener('click', () => {
           const dff = game.getDifficultyForDateKey(todayKeyLocal);
           game.loadDailyByKey && game.loadDailyByKey(todayKeyLocal, dff);
-          const modal = document.getElementById('calendar-modal'); if (modal) modal.style.display = 'none';
+          const modal = document.getElementById('calendar-modal'); if (modal) { (window.SudokuModals?.closeModal && window.SudokuModals.closeModal('calendar-modal')) || modal.classList.remove('is-open'); }
         });
       }
     }
@@ -135,7 +139,7 @@ function renderCalendar(game) {
       cell.addEventListener('click', () => {
         const dff = game.getDifficultyForDateKey(key);
         game.loadDailyByKey && game.loadDailyByKey(key, dff);
-        const modal = document.getElementById('calendar-modal'); if (modal) modal.style.display = 'none';
+        const modal = document.getElementById('calendar-modal'); if (modal) { (window.SudokuModals?.closeModal && window.SudokuModals.closeModal('calendar-modal')) || modal.classList.remove('is-open'); }
       });
       // Make focusable for keyboard users
       cell.setAttribute('tabindex', '0');

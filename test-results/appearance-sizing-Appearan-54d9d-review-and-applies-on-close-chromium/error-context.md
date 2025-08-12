@@ -2,91 +2,91 @@
 
 ```yaml
 - banner:
+  - text: Classic Medium
   - button "Menu": ☰
 - main:
-  - text: Classic Medium
   - button "Pause or resume": 00:00 ▶
   - textbox
-  - textbox: "8"
-  - textbox
-  - textbox: "2"
   - textbox
   - textbox: "5"
-  - textbox: "4"
-  - textbox: "7"
-  - textbox
-  - textbox: "4"
-  - textbox: "5"
-  - textbox
-  - textbox
-  - textbox: "7"
-  - textbox
-  - textbox
-  - textbox
-  - textbox: "8"
-  - textbox: "2"
-  - textbox: "6"
-  - textbox: "7"
-  - textbox
-  - textbox: "8"
-  - textbox
   - textbox: "1"
-  - textbox: "5"
   - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "9"
+  - textbox
+  - textbox: "7"
+  - textbox: "9"
+  - textbox: "4"
+  - textbox
+  - textbox: "6"
+  - textbox: "1"
   - textbox
   - textbox: "2"
-  - textbox: "8"
+  - textbox: "2"
+  - textbox: "1"
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "9"
   - textbox: "3"
   - textbox
-  - textbox: "4"
+  - textbox
+  - textbox: "1"
   - textbox
   - textbox
   - textbox
-  - textbox
-  - textbox
-  - textbox
+  - textbox: "6"
   - textbox
   - textbox: "5"
-  - textbox
-  - textbox
-  - textbox
-  - textbox
-  - textbox
-  - textbox
   - textbox
   - textbox: "7"
-  - textbox
-  - textbox: "8"
-  - textbox: "5"
-  - textbox: "1"
-  - textbox
-  - textbox
-  - textbox: "1"
-  - textbox: "2"
-  - textbox
-  - textbox: "9"
-  - textbox
   - textbox: "6"
-  - textbox: "4"
-  - textbox: "5"
-  - textbox: "6"
-  - textbox
-  - textbox
-  - textbox
   - textbox: "2"
+  - textbox: "7"
   - textbox
-  - textbox
-  - textbox: "8"
   - textbox: "1"
   - textbox
   - textbox: "9"
+  - textbox: "4"
+  - textbox: "3"
+  - textbox: "4"
+  - textbox
+  - textbox: "3"
+  - textbox
+  - textbox: "2"
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "6"
+  - textbox
+  - textbox
+  - textbox: "1"
+  - textbox: "2"
+  - textbox
+  - textbox
+  - textbox
   - textbox: "5"
+  - textbox: "8"
+  - textbox: "5"
+  - textbox
+  - textbox: "2"
   - textbox: "6"
   - textbox
   - textbox: "1"
-  - textbox
-  - textbox: "2"
   - textbox: "7"
+  - textbox: "3"
+  - textbox
+  - textbox: "7"
+  - textbox
+  - textbox
+  - textbox
+  - textbox
+  - textbox: "8"
+  - textbox: "2"
+  - textbox
+  - textbox
   - button "1"
   - button "2"
   - button "3"
