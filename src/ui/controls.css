@@ -44,7 +44,7 @@
 .controls-strip .timer {
   margin: 0;
   padding: 0.45rem 0.9rem;
-  font-size: 1.65rem;
+  font-size: clamp(1.1rem, 4.8vw, 1.65rem);
   line-height: 1;
   white-space: nowrap;
 }
@@ -102,5 +102,13 @@
   gap: 4px;
   justify-items: center;
 }
+
+/* (Removed) small-screen reflow that changed controls grid; keeping default layout */
+
+/* Tiny phones: keep icons tappable and avoid crowding */
+@media (width <= 420px) {
+  .controls-right { --icon-size: 36px; }
+}
+
 
 

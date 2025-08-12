@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#667eea">
     <title>Ultimate Sudoku</title>
@@ -39,12 +41,18 @@
     <div class="container">
         <header>
             <div class="rail app-header">
-                <div class="header-left"></div>
-                <div class="header-right">
+                <div class="header-left">
                     <div id="user-chip" class="user-chip" style="display:none" aria-live="polite" title="Signed in">
                       <img id="user-avatar" alt="" aria-hidden="true" />
                       <span id="user-name"></span>
                     </div>
+                </div>
+                <div class="header-center">
+                    <div class="difficulty-display">
+                      <div id="mode-indicator" class="mode-indicator" aria-live="polite"></div>
+                    </div>
+                </div>
+                <div class="header-right">
                     <div class="menu-wrap">
                           <button id="menu-btn" class="icon-btn badged" title="Open menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">☰<span id="menu-daily-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
                         <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
@@ -227,7 +235,6 @@
                 </div>
                 <div class="controls-center">
                     <div id="toast-container" class="toast-container inline" aria-live="polite" aria-atomic="true"></div>
-                    <div class="difficulty-display"><div id="mode-indicator" class="mode-indicator" aria-live="polite"></div></div>
                 </div>
                 <div class="controls-right">
                     <button id="timer-toggle" class="timer timer-btn" title="Pause or resume timer" aria-label="Pause or resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>

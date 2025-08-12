@@ -144,11 +144,12 @@ body {
 .zen .health-compact .health-badge { z-index: 1; }
 
 .rail { max-width: calc(var(--cell-size) * 9 + 8px); margin-left: auto; margin-right: auto; width: 100%; padding-left: 0; padding-right: 0; }
-.app-header { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.5rem; }
-.header-left { display: flex; align-items: center; gap: 0.75rem; }
-.header-left:empty { display: none; }
+.app-header { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; margin-bottom: 0.5rem; }
+.header-left { display: flex; align-items: center; gap: 0.75rem; justify-self: start; }
+.header-left:empty { display: flex; }
+.header-center { display: flex; align-items: center; justify-content: center; }
 .inline-actions { display: flex; gap: 0.5rem; }
-.header-right { display: flex; align-items: center; gap: 0.5rem; padding-top: 0; }
+.header-right { display: flex; align-items: center; gap: 0.5rem; padding-top: 0; justify-self: end; }
 .menu-wrap { position: relative; display: inline-block; }
 .difficulty-display { color: var(--text); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
 .mode-indicator { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; }
@@ -166,7 +167,7 @@ body {
   border-radius: 12px;
   max-height: 2.55rem; /* keep at/under timer */
   overflow: hidden;
-  min-width: 7.6rem; /* reduce cramping but keep dynamic width */
+  min-width: 7.2rem; /* allow a bit tighter fit next to timer */
 }
 .mode-combined .mode-type { font-weight: 700; color: var(--text); line-height: 1.05; font-size: 0.9em; text-align: center; }
 .mode-combined .pill-sep-h { height: 1px; width: 84%; background: var(--border); opacity: 0.45; margin: 1px 0; }
@@ -1112,8 +1113,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 .health-compact .x { font-variant-numeric: tabular-nums; opacity: 0.9; }
 
 /* Low-health pulse with color fade (accent ↔ yellow); critical stays red */
-.health-low {}
-.health-critical {}
+/* Base classes not needed; descendant rules below apply when these are present */
 
 /* Add a gentle glow on the last remaining heart */
 .health-low .health-heart:last-child .heart-full .heart-svg,
@@ -1426,7 +1426,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 
     /* Avoid horizontal scrolling on ultra-narrow devices */
     .container { max-width: 100%; border-radius: var(--radius-xl); }
-    .rail { max-width: 100%; padding-left: 0; padding-right: 0; }
+    .rail { max-width: 100%; padding-left: 4px; padding-right: 4px; }
     /* .sudoku-board moved to src/ui/board.css */
 
     /* Larger digits for readability on phones; still tied to cell size */
