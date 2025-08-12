@@ -1,14 +1,18 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Sudoku key interactions', () => {
-  test('header layout: hearts left, mode center, timer right', async ({ page }) => {
+test('header layout: user left, mode center, menu right', async ({ page }) => {
     await page.goto('/index.html');
     await page.waitForLoadState('domcontentloaded');
     await page.evaluate(() => { const landing = document.getElementById('landing-overlay'); if (landing) landing.style.display = 'none'; });
-    // Presence assertions for new header layout
-    await expect(page.locator('.controls-left .hearts-row #health-bar')).toBeVisible();
-    await expect(page.locator('.controls-center #mode-indicator')).toBeVisible();
-    await expect(page.locator('.controls-right #timer-toggle')).toBeVisible();
+  // Presence assertions for new header layout
+  await expect(page.locator('.app-header .header-left')).toBeVisible();
+  // If user chip is hidden, header-left still exists; when visible, ensure it’s placed
+  await expect(page.locator('.app-header .header-center .mode-indicator, .app-header .header-center #mode-indicator')).toBeVisible();
+  await expect(page.locator('.app-header .header-right #menu-btn')).toBeVisible();
+  // Controls strip remains for hearts and timer
+  await expect(page.locator('.controls-left .hearts-row #health-bar')).toBeVisible();
+  await expect(page.locator('.controls-right #timer-toggle')).toBeVisible();
   });
   test('set difficulty to hard programmatically → mode pill updates and board renders', async ({ page }) => {
     await page.goto('/index.html');

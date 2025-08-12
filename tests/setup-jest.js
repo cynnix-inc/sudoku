@@ -4,6 +4,12 @@ beforeEach(() => {
     <div class="container">
       <header>
         <div class="rail app-header">
+          <div class="header-left">
+            <div id="user-chip" class="user-chip" style="display:none"></div>
+          </div>
+          <div class="header-center">
+            <div class="difficulty-display"><div id="mode-indicator" class="mode-indicator"></div></div>
+          </div>
           <div class="header-right">
             <button id="menu-btn"></button>
             <div id="menu-popover"></div>
@@ -28,7 +34,6 @@ beforeEach(() => {
         <div class="controls-strip">
           <button id="timer-toggle" class="timer"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
           <div id="health-bar"></div>
-          <div id="mode-indicator"></div>
           <button id="notes-toggle" class="icon-btn" aria-label="Notes">✎</button>
         </div>
         <div id="status-message"></div>

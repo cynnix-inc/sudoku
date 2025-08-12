@@ -28,12 +28,24 @@ function main() {
   const outPath = path.join(projectRoot, 'env.js');
   const pkgPath = path.join(projectRoot, 'package.json');
 
-  let env = {};
-  if (fs.existsSync(envPath)) {
+  // Load from actual environment first (useful on hosts like Netlify/Vercel/CF Pages),
+  // then fall back to a local .env file if it exists.
+  let env = {
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+  };
+
+  if ((!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) && fs.existsSync(envPath)) {
     const contents = fs.readFileSync(envPath, 'utf8');
-    env = parseDotEnv(contents);
-  } else {
-    console.log('No .env found. Generating env.js with defaults and APP_VERSION only.');
+    const fileVars = parseDotEnv(contents);
+    env = {
+      SUPABASE_URL: env.SUPABASE_URL || fileVars.SUPABASE_URL,
+      SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY || fileVars.SUPABASE_ANON_KEY,
+    };
+  }
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    console.log('SUPABASE_URL or SUPABASE_ANON_KEY missing. Generating env.js without Supabase credentials.');
   }
 
   const supabaseUrl = env.SUPABASE_URL || '';

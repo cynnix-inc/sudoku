@@ -10,6 +10,7 @@ High-level acceptance criteria for Ultimate Sudoku
 - New Game
   - Clicking `#new-game-btn` creates a fresh puzzle with 81 cells. Givens vary by difficulty and may be below 20 for higher levels (approximate givens: Easy≈51, Medium≈41, Hard≈31, Expert≈21, Master≈19, Extreme≈17).
   - The `#mode-indicator` updates to show difficulty for normal games, and shows "Daily mmm-DD" in Daily mode.
+  - Header layout: user chip appears at far left in `header-left` when signed in, the `#mode-indicator` renders centered within `header-center`, and the hamburger menu button `#menu-btn` remains at far right in `header-right`.
 
 - Board interactions
   - Clicking a cell focuses it; pressing number pad sets value in that cell (unless it is an initial given).

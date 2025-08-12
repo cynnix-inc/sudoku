@@ -9,7 +9,13 @@ describe('Dev Tools panel', () => {
   beforeEach(() => {
     document.body.innerHTML = `
       <div class="container">
-        <header><div class="rail app-header"><div class="header-right"><button id="menu-btn"></button><div id="menu-popover"></div></div></div></header>
+        <header>
+          <div class="rail app-header">
+            <div class="header-left"><div id="user-chip" class="user-chip" style="display:none"></div></div>
+            <div class="header-center"><div class="difficulty-display"><div id="mode-indicator" class="mode-indicator"></div></div></div>
+            <div class="header-right"><button id="menu-btn"></button><div id="menu-popover"></div></div>
+          </div>
+        </header>
         <main>
           <div class="sudoku-board"><div id="board" class="board"></div></div>
         </main>
