@@ -23,6 +23,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
+  - Refactor: update UI to use "Lives" instead of "Mistakes" throughout game interface and help text (9f0d9b3)
+  - chore: update CHANGELOG.md [skip ci] (431505b)
   - ci: ignore CHANGELOG.md pushes; skip CI on [skip ci]; remove duplicate changelog workflow (3fb3bd1)
   - docs(changelog): automated update (738aa7e)
   - ci: ignore CHANGELOG.md pushes; skip CI on [skip ci]; deprecate duplicate changelog workflow (546ca95)
