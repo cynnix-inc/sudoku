@@ -776,6 +776,11 @@ class SudokuGame {
                 livesLimit: (typeof s.livesLimit === 'number') ? s.livesLimit : undefined,
                 weekstart: s.weekstart || 'sunday',
                 hintMode: s.hintMode || 'direct',
+                // Calendar filters and idle settings should sync across devices
+                calendarOnlyPlayable: !!s.calendarOnlyPlayable,
+                calendarOnlyIncomplete: !!s.calendarOnlyIncomplete,
+                idleAutoPause: (typeof s.idleAutoPause === 'boolean') ? !!s.idleAutoPause : undefined,
+                idleTimeoutSec: (typeof s.idleTimeoutSec === 'number') ? s.idleTimeoutSec : undefined,
                 // explicitly exclude themeDark and accent
                 // themeDark: undefined,
                 // accent: undefined,
@@ -807,6 +812,10 @@ class SudokuGame {
                     livesLimit: (typeof prefs.livesLimit === 'number') ? prefs.livesLimit : (local.livesLimit ?? 3),
                     weekstart: prefs.weekstart || local.weekstart || 'sunday',
                     hintMode: prefs.hintMode || local.hintMode || 'direct',
+                    calendarOnlyPlayable: (typeof prefs.calendarOnlyPlayable === 'boolean') ? !!prefs.calendarOnlyPlayable : !!local.calendarOnlyPlayable,
+                    calendarOnlyIncomplete: (typeof prefs.calendarOnlyIncomplete === 'boolean') ? !!prefs.calendarOnlyIncomplete : !!local.calendarOnlyIncomplete,
+                    idleAutoPause: (typeof prefs.idleAutoPause === 'boolean') ? !!prefs.idleAutoPause : !!local.idleAutoPause,
+                    idleTimeoutSec: (typeof prefs.idleTimeoutSec === 'number') ? prefs.idleTimeoutSec : (local.idleTimeoutSec ?? 120),
                     updatedAt: remote.updated_at || new Date().toISOString(),
                 };
                 localStorage.setItem('sudoku-settings', JSON.stringify(merged));
@@ -852,6 +861,8 @@ class SudokuGame {
             best_master: (stats.bestTimes && stats.bestTimes.master) || null,
             best_extreme: (stats.bestTimes && stats.bestTimes.extreme) || null,
             by_difficulty: stats.byDifficulty || null,
+            // Include per-day results so Daily progress syncs across devices
+            daily_results: (() => { try { return JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}'); } catch { return {}; } })(),
             updated_at: new Date().toISOString(),
         };
     }
@@ -865,6 +876,8 @@ class SudokuGame {
             master: row.best_master ?? null,
             extreme: row.best_extreme ?? null,
         };
+        // Persist remote daily results to local storage for calendar/stats UI
+        try { localStorage.setItem('sudoku-daily-results', JSON.stringify(row.daily_results || {})); } catch {}
         return {
             totalCompleted: row.total_played || 0,
             totalWins: row.total_wins || 0,
@@ -2711,13 +2724,26 @@ class SudokuGame {
         }
         const key = this.getUtcDateKey();
         const rerollFlagKey = `sudoku-daily-reroll-${key}`;
-        if (localStorage.getItem(rerollFlagKey)) {
+        // Consider both local flag and synced daily_results.rerolled
+        let alreadyRerolled = false;
+        try { const dr = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}'); alreadyRerolled = !!(dr && dr[key] && dr[key].rerolled); } catch {}
+        if (localStorage.getItem(rerollFlagKey) || alreadyRerolled) {
             this.showStatus('Reroll already used today', 'error');
             return false;
         }
         // Clear today’s cached daily so generation won’t return early
         try { localStorage.removeItem(`sudoku-daily-${key}`); } catch {}
         localStorage.setItem(rerollFlagKey, '1');
+        // Mark rerolled in synced daily_results and bump stats timestamp for sync
+        try {
+            const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
+            const prev = results[key] || {};
+            results[key] = { ...prev, rerolled: true };
+            localStorage.setItem('sudoku-daily-results', JSON.stringify(results));
+            const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
+            stats.updatedAt = new Date().toISOString();
+            localStorage.setItem('sudoku-stats', JSON.stringify(stats));
+        } catch {}
 
         // Use an alternate seed suffix for a different but deterministic reroll
         this._rerollSuffix = '-R';
@@ -2738,6 +2764,7 @@ class SudokuGame {
             if (this._dailyModalTimer) clearInterval(this._dailyModalTimer);
         }
         this.showStatus('Daily rerolled', 'success');
+        try { this.syncRemoteStats && this.syncRemoteStats(); } catch {}
         return true;
     }
 
@@ -5284,8 +5311,16 @@ class SudokuGame {
         const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
         results[activeKey] = { completed: true, elapsed, difficulty: diff, mistakes: this.mistakesCount, hints: this.hintsUsed };
         try { localStorage.setItem('sudoku-daily-results', JSON.stringify(results)); } catch {}
+        // Bump stats updatedAt so cloud sync can reconcile by recency
+        try {
+            const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
+            stats.updatedAt = new Date().toISOString();
+            localStorage.setItem('sudoku-stats', JSON.stringify(stats));
+        } catch {}
         // Update header notification
         this.updateDailyIconBadge && this.updateDailyIconBadge();
+        // Attempt to sync to cloud if signed in
+        try { this.syncRemoteStats && this.syncRemoteStats(); } catch {}
 
         // Update streak if completing today’s daily
         const todayKey = this.getUtcDateKey();

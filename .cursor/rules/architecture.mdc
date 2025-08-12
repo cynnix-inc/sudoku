@@ -1,0 +1,10 @@
+---
+alwaysApply: false
+---
+- Keep domain logic in `src/domain/**`.
+- `src/api/**` can import from `src/domain/**` and `src/lib/**` only.
+- Do not add new runtime singletons. Prefer injected dependencies.
+- Any new endpoint requires:
+  1) input validation
+  2) unit test
+  3) integration test touching its happy path
