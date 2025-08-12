@@ -4,8 +4,11 @@
   # Deploy the repository root (index.html is at the root)
   publish = "."
 
-# Optional: set Node version if needed
-# [build.environment]
-#   NODE_VERSION = "20"
+[build.environment]
+  # These keys must be client-visible for Supabase to work in the browser,
+  # so instruct Netlify's secret scanner to ignore them and the generated file.
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_ANON_KEY"
+  SECRETS_SCAN_OMIT_PATHS = "env.js"
+  # NODE_VERSION = "20"
 
 
