@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Regenerate CHANGELOG locally after each commit and amend if it changed
+npm run --silent changelog
+if ! git diff --quiet -- CHANGELOG.md; then
+  git add CHANGELOG.md
+  # Amend the previous commit to include changelog without changing message
+  git commit --amend --no-edit
+fi
+
+

@@ -23,6 +23,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
+  - chore(husky): auto-update CHANGELOG locally on commit and before push (8f0a7aa)
+  - docs(changelog): update local changelog (ec3d613)
   - Update generate-version.js to improve version generation logic (a9ee91e)
   - chore: update CHANGELOG.md [skip ci] (1cd37d6)
   - Refactor: update UI to use "Lives" instead of "Mistakes" throughout game interface and help text (9f0d9b3)
