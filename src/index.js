@@ -36,11 +36,15 @@ if (typeof window !== 'undefined') {
     ensureSudokuGameInitialized();
   }
 
-  // Reflect version in Help > About
+  // Reflect version in Help > About. Prefer dynamic window.APP_VERSION (from env.js)
+  // and fall back to the compiled APP_VERSION from src/version.js.
   const setVersion = () => {
     try {
       const el = document.getElementById('app-version');
-      if (el && APP_VERSION) el.textContent = String(APP_VERSION);
+      if (!el) return;
+      const fromWindow = (typeof window !== 'undefined' && window.APP_VERSION) ? String(window.APP_VERSION) : '';
+      const versionToShow = fromWindow || String(APP_VERSION || '');
+      if (versionToShow) el.textContent = versionToShow;
     } catch {}
   };
   if (document.readyState === 'loading') {

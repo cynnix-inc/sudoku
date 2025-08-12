@@ -1,10 +1,17 @@
-const VERSION = 'v4.1';
+// Version tokens should align with app version for predictable updates
+const VERSION = 'v1.0.1';
 const STATIC_CACHE = `sudoku-static-${VERSION}`;
 const RUNTIME_CACHE = `sudoku-runtime-${VERSION}`;
+// Precache core assets for first-visit offline reliability
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './styles.css',
+  './script.js',
+  './src/ui/board.css',
+  './src/ui/controls.css',
+  './src/index.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -91,7 +98,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(RUNTIME_CACHE).then((cache) => cache.put(req, copy));
           return resp;
         })
-        .catch(() => caches.match(req))
+        .catch(async () => (await caches.match(req)) || (await caches.match('./index.html')))
     );
     return;
   }
