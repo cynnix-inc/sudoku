@@ -85,12 +85,14 @@ export function wireCoreUiEvents(game) {
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     });
   };
-  ['modal', 'settings-modal', 'stats-modal', 'help-modal', 'daily-modal', 'calendar-modal', 'confirm-modal', 'newpuzzle-modal']
+  ['modal', 'settings-modal', 'stats-modal', 'help-modal', 'quickhelp-modal', 'daily-modal', 'calendar-modal', 'confirm-modal', 'newpuzzle-modal']
     .forEach(id => trapFocus(document.getElementById(id)));
 
   // Global keyboard shortcuts
   document.addEventListener('keydown', (e) => {
-    const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some((m) => m.style.display === 'block');
+    const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some((m) => {
+      try { return window.getComputedStyle(m).display !== 'none'; } catch { return false; }
+    });
     if (anyModalOpen) return;
     const key = e.key.toLowerCase();
     if ((e.ctrlKey || e.metaKey) && key === 'z' && !e.shiftKey) { e.preventDefault(); game.undo && game.undo(); return; }
@@ -101,6 +103,22 @@ export function wireCoreUiEvents(game) {
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'd') { e.preventDefault(); game._toggleDevPanel && game._toggleDevPanel(); return; }
+
+    // Quick Help: '?' (Shift+/), F1, and Ctrl+/ for search focus
+    if ((key === '?' || (key === '/' && e.shiftKey)) || e.key === 'F1') {
+      e.preventDefault();
+      const m = document.getElementById('quickhelp-modal');
+      if (m) m.style.display = 'grid';
+      try { const input = document.getElementById('qh-search'); if (input) input.focus(); } catch {}
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && key === '/') {
+      e.preventDefault();
+      const m = document.getElementById('quickhelp-modal');
+      if (m && m.style.display !== 'grid') m.style.display = 'grid';
+      const input = document.getElementById('qh-search'); if (input) input.focus();
+      return;
+    }
   });
 }
 

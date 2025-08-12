@@ -35,6 +35,9 @@ export function persistSettings(game) {
     autoCandidates: !!(document.getElementById('auto-candidates-toggle')?.checked),
     autoAdvance: !!(document.getElementById('auto-advance-toggle')?.checked),
     zenMode: !!(document.getElementById('zen-mode-toggle')?.checked),
+    // Idle auto‑pause controls
+    idleAutoPause: !!(document.getElementById('idle-autopause-toggle')?.checked),
+    idleTimeoutSec: parseInt(document.getElementById('idle-timeout-slider')?.value || '120', 10),
     livesEnabled: !(storedMistakeLimit >= 11),
     livesLimit: storedMistakeLimit,
     themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
@@ -43,11 +46,20 @@ export function persistSettings(game) {
     calendarOnlyIncomplete: !!(document.getElementById('calendar-filter-incomplete-settings')?.checked),
     accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
     hintMode: (document.getElementById('hint-mode-select')?.value) || 'direct',
+    idleAutoPause: !!(document.getElementById('idle-autopause-toggle')?.checked),
+    idleTimeoutSec: parseInt(document.getElementById('idle-timeout-slider')?.value || '120', 10),
     updatedAt: new Date().toISOString(),
   };
   try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
   // If signed in, sync gameplay + calendar preferences to cloud (not appearance)
   try { game.syncRemoteSettings && game.syncRemoteSettings(); } catch {}
+  // Apply idle settings immediately
+  try {
+    game._idleAutoPause = !!settings.idleAutoPause;
+    const sec = Number.isFinite(settings.idleTimeoutSec) ? settings.idleTimeoutSec : 120;
+    game._idleTimeoutMs = Math.max(30, sec) * 1000;
+    if (typeof game._initIdleDetection === 'function') game._initIdleDetection();
+  } catch {}
 }
 
 export function resumeFromStorage(game) {
@@ -93,6 +105,14 @@ export function resumeSettings(game) {
     }
     const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = !!s.themeDark;
     const zenToggle = document.getElementById('zen-mode-toggle'); if (zenToggle) zenToggle.checked = !!s.zenMode;
+    const idleToggle = document.getElementById('idle-autopause-toggle'); if (idleToggle && 'idleAutoPause' in s) idleToggle.checked = !!s.idleAutoPause;
+    const idleSlider = document.getElementById('idle-timeout-slider'); if (idleSlider && typeof s.idleTimeoutSec === 'number') idleSlider.value = String(Math.max(10, s.idleTimeoutSec));
+    const idlePill = document.getElementById('idle-timeout-pill');
+    if (idlePill && (idleSlider || typeof s.idleTimeoutSec === 'number')) {
+      const total = parseInt((idleSlider && idleSlider.value) || s.idleTimeoutSec || 0, 10);
+      const m = Math.floor(total / 60), ss = String(total % 60).padStart(2, '0');
+      idlePill.textContent = `${m}:${ss}`;
+    }
     const weekToggle = document.getElementById('weekstart-toggle'); if (weekToggle && s.weekstart) weekToggle.setAttribute('aria-checked', s.weekstart === 'monday' ? 'true' : 'false');
     const fPlayable = document.getElementById('calendar-filter-playable-settings'); if (fPlayable) fPlayable.checked = !!s.calendarOnlyPlayable;
     const fIncomplete = document.getElementById('calendar-filter-incomplete-settings'); if (fIncomplete) fIncomplete.checked = !!s.calendarOnlyIncomplete;
@@ -130,6 +150,11 @@ export function recordWin(game) {
   if ((game.hintsUsed || 0) === 0) {
     if (!best || elapsed < best) { stats.bestTimes[diff] = elapsed; newBest = true; }
   }
+  // Idle settings
+  const idleToggle = document.getElementById('idle-autopause-toggle'); if (idleToggle && typeof s.idleAutoPause === 'boolean') idleToggle.checked = !!s.idleAutoPause;
+  const idleSlider = document.getElementById('idle-timeout-slider'); if (idleSlider && typeof s.idleTimeoutSec === 'number') idleSlider.value = String(s.idleTimeoutSec);
+  if (typeof s.idleAutoPause === 'boolean') game._idleAutoPause = !!s.idleAutoPause;
+  if (typeof s.idleTimeoutSec === 'number') game._idleTimeoutMs = Math.max(30, s.idleTimeoutSec) * 1000;
   try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
   game.syncRemoteStats && game.syncRemoteStats();
   return newBest;
