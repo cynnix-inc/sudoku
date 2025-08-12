@@ -1,0 +1,38 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "jest": true
+  },
+  "extends": ["eslint:recommended", "prettier"],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "args": "after-used", "ignoreRestSiblings": true }],
+    "no-undef": "error",
+    "eqeqeq": ["warn", "always", { "null": "ignore" }],
+    "curly": ["warn", "multi-line"],
+    "max-lines": ["warn", { "max": 500, "skipBlankLines": true, "skipComments": true }],
+    "max-lines-per-function": ["warn", { "max": 120, "skipBlankLines": true, "skipComments": true }],
+    "max-depth": ["warn", 4],
+    "complexity": ["warn", 15]
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*"],
+      "rules": { "no-undef": "off" }
+    },
+    {
+      "files": ["src/**/*.js"],
+      "rules": {
+        "max-lines": ["warn", { "max": 350, "skipBlankLines": true, "skipComments": true }],
+        "max-lines-per-function": ["warn", { "max": 80, "skipBlankLines": true, "skipComments": true }],
+        "complexity": ["warn", 12]
+      }
+    }
+  ]
+}
+
+

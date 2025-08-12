@@ -17,25 +17,33 @@ const OUT = path.join(ROOT, 'tests', 'unit', 'sudoku.auto.test.js');
 function read(file) { return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : ''; }
 
 function extractMethods(source) {
-  // Naive parse of class SudokuGame body and method names.
+  // Parse the class body and capture ONLY class method definitions,
+  // avoiding calls like `apply()` or local arrow functions like `const show = () => {}`.
   const startIdx = source.indexOf('class SudokuGame');
   if (startIdx === -1) return [];
   const braceStart = source.indexOf('{', startIdx);
   if (braceStart === -1) return [];
-  // Scan forward and roughly capture until export end
   const body = source.slice(braceStart + 1);
-  const methodRegex = /^\s*([a-zA-Z_$][\w$]*)\s*\(/gm;
+
+  // Match forms like:
+  //   methodName(args) {
+  //   async methodName(args) {
+  //   static methodName(args) {
+  //   get name() { ... } / set name(v) { ... }
+  const defs = [
+    /\n\s*(?:async\s+|static\s+)?([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g,
+    /\n\s*(?:get|set)\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g,
+  ];
+
   const ignore = new Set(['constructor']);
   const methods = new Set();
-  let m;
-  while ((m = methodRegex.exec(body))) {
-    const name = m[1];
-    // Filter likely non-method matches by excluding control keywords and nested function names attached to consts
-    if (ignore.has(name)) continue;
-    // crude filter: skip names that look like 'if' 'for' etc, or are likely nested function names like requestAnimationFrame callback
-    if (/^(if|for|while|switch|try|catch|finally|return)$/.test(name)) continue;
-    // Also skip single-underscore private helpers if desired; include all for coverage
-    methods.add(name);
+  for (const rx of defs) {
+    let m;
+    while ((m = rx.exec(body))) {
+      const name = m[1];
+      if (ignore.has(name)) continue;
+      methods.add(name);
+    }
   }
   return Array.from(methods);
 }

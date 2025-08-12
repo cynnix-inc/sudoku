@@ -1,0 +1,158 @@
+// Stats and persistence helpers operating on a game instance.
+
+export function getElapsedSeconds(game) {
+  if (!game._hasStarted) return 0;
+  if (!game.startTime) return 0;
+  return Math.floor((Date.now() - game.startTime) / 1000);
+}
+
+export function persistToStorage(game) {
+  const elapsed = game._hasStarted ? getElapsedSeconds(game) : (game._pendingStart ? game._preStartElapsed : 0);
+  const diffEl = typeof document !== 'undefined' ? document.getElementById('difficulty') : null;
+  const data = {
+    board: game.board,
+    solution: game.solution,
+    initialBoard: game.initialBoard,
+    elapsed,
+    difficulty: diffEl ? diffEl.value : 'medium',
+    hintsUsed: game.hintsUsed,
+    hintsLimit: game.hintsLimit,
+    gameType: game.gameType || 'classic',
+  };
+  try { localStorage.setItem('sudoku-progress', JSON.stringify(data)); } catch {}
+}
+
+export function persistSettings(game) {
+  const mlEl = document.getElementById('lives-limit') || document.getElementById('mistakes-limit');
+  let storedMistakeLimit;
+  if (mlEl) {
+    if (mlEl.disabled && typeof game._userMistakeRestoreValue === 'number') storedMistakeLimit = game._userMistakeRestoreValue;
+    else storedMistakeLimit = parseInt(mlEl.value);
+  } else {
+    storedMistakeLimit = (game.livesLimit === Infinity ? 11 : game.livesLimit);
+  }
+  const settings = {
+    autoCandidates: !!(document.getElementById('auto-candidates-toggle')?.checked),
+    autoAdvance: !!(document.getElementById('auto-advance-toggle')?.checked),
+    zenMode: !!(document.getElementById('zen-mode-toggle')?.checked),
+    livesEnabled: !(storedMistakeLimit >= 11),
+    livesLimit: storedMistakeLimit,
+    themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
+    weekstart: ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || 'sunday',
+    calendarOnlyPlayable: !!(document.getElementById('calendar-filter-playable-settings')?.checked),
+    calendarOnlyIncomplete: !!(document.getElementById('calendar-filter-incomplete-settings')?.checked),
+    accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
+    hintMode: (document.getElementById('hint-mode-select')?.value) || 'direct',
+    updatedAt: new Date().toISOString(),
+  };
+  try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
+  // If signed in, sync gameplay + calendar preferences to cloud (not appearance)
+  try { game.syncRemoteSettings && game.syncRemoteSettings(); } catch {}
+}
+
+export function resumeFromStorage(game) {
+  try {
+    const raw = localStorage.getItem('sudoku-progress');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.board)) return;
+    game.board = data.board; game.solution = data.solution; game.initialBoard = data.initialBoard;
+    if (data.difficulty && document.getElementById('difficulty')) document.getElementById('difficulty').value = data.difficulty;
+    game._preStartElapsed = Math.max(0, parseInt(data.elapsed || 0, 10));
+    game._pendingStart = true;
+    game._hasStarted = false;
+    game.startTime = null;
+    game.hintsUsed = data.hintsUsed || 0;
+    game.hintsLimit = (Number.isFinite(data.hintsLimit) ? data.hintsLimit : game.hintsLimit);
+    // Carry forward persisted type (future use for non-9x9 variants)
+    if (data.gameType) game.gameType = data.gameType;
+    game.updateDisplay && game.updateDisplay();
+  } catch {}
+}
+
+export function resumeSettings(game) {
+  try {
+    const raw = localStorage.getItem('sudoku-settings');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (!s) return;
+    const ac = document.getElementById('auto-candidates-toggle'); if (ac) ac.checked = !!s.autoCandidates;
+    const aa = document.getElementById('auto-advance-toggle'); if (aa) aa.checked = !!s.autoAdvance;
+    const ml = document.getElementById('lives-limit') || document.getElementById('mistakes-limit'); const mlv = document.getElementById('lives-limit-value') || document.getElementById('mistakes-limit-value');
+    const limitValue = (typeof s.livesLimit === 'number') ? s.livesLimit : (typeof s.mistakeLimit === 'number' ? s.mistakeLimit : undefined);
+    if (ml && typeof limitValue === 'number') {
+      ml.value = limitValue;
+      if (mlv) mlv.textContent = limitValue >= 11 ? 'Unlimited' : String(limitValue);
+      const inProgress = game.isGameInProgress && game.isGameInProgress();
+      if (!inProgress) {
+        game.livesLimit = limitValue >= 11 ? Infinity : limitValue;
+        game.livesEnabled = !(limitValue >= 11);
+      } else {
+        game._pendingMistakeLimitValue = limitValue;
+      }
+    }
+    const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = !!s.themeDark;
+    const zenToggle = document.getElementById('zen-mode-toggle'); if (zenToggle) zenToggle.checked = !!s.zenMode;
+    const weekToggle = document.getElementById('weekstart-toggle'); if (weekToggle && s.weekstart) weekToggle.setAttribute('aria-checked', s.weekstart === 'monday' ? 'true' : 'false');
+    const fPlayable = document.getElementById('calendar-filter-playable-settings'); if (fPlayable) fPlayable.checked = !!s.calendarOnlyPlayable;
+    const fIncomplete = document.getElementById('calendar-filter-incomplete-settings'); if (fIncomplete) fIncomplete.checked = !!s.calendarOnlyIncomplete;
+    const swatches = document.querySelectorAll('#accent-swatches .swatch'); if (swatches && s.accent) swatches.forEach(b => b.setAttribute('aria-checked', b.dataset.accent === s.accent ? 'true' : 'false'));
+    const hintModeSel = document.getElementById('hint-mode-select'); if (hintModeSel && s.hintMode) hintModeSel.value = s.hintMode;
+    const isDark = !!s.themeDark;
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    try {
+      let meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'theme-color'); document.head.appendChild(meta); }
+      meta.setAttribute('content', isDark ? '#0b1220' : '#667eea');
+    } catch {}
+    if (s.accent && game._applyAccent) game._applyAccent(s.accent);
+    if (s.autoCandidates) game.recomputeAllCandidates && game.recomputeAllCandidates();
+    game.applyZenMode && game.applyZenMode(!!s.zenMode);
+    game.renderHealthBar && game.renderHealthBar();
+    game.refreshCalendarHeaders && game.refreshCalendarHeaders();
+  } catch {}
+}
+
+export function recordWin(game) {
+  if (game._zenMode) return false;
+  const diff = (game._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${game._activeDailyKey}`)||'{}').difficulty || game.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
+  const elapsed = getElapsedSeconds(game);
+  const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
+  stats.totalWins = (stats.totalWins || 0) + 1;
+  stats.totalCompleted = (stats.totalCompleted || 0) + 1;
+  stats.bestTimes = stats.bestTimes || {};
+  stats.byDifficulty = stats.byDifficulty || {};
+  const slot = (stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 });
+  slot.played += 1;
+  slot.wins += 1;
+  const best = stats.bestTimes[diff];
+  let newBest = false;
+  if ((game.hintsUsed || 0) === 0) {
+    if (!best || elapsed < best) { stats.bestTimes[diff] = elapsed; newBest = true; }
+  }
+  try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
+  game.syncRemoteStats && game.syncRemoteStats();
+  return newBest;
+}
+
+export function recordLoss(game) {
+  if (game._zenMode) return;
+  if (!game._hasMadeMove) return;
+  const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
+  const diff = (game._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${game._activeDailyKey}`)||'{}').difficulty || game.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
+  stats.totalLosses = (stats.totalLosses || 0) + 1;
+  stats.totalCompleted = (stats.totalCompleted || 0) + 1;
+  stats.byDifficulty = stats.byDifficulty || {};
+  const slot = (stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 });
+  slot.played += 1;
+  try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
+  game.syncRemoteStats && game.syncRemoteStats();
+}
+
+try {
+  if (typeof window !== 'undefined') {
+    window.SudokuStats = { getElapsedSeconds, persistToStorage, persistSettings, resumeFromStorage, resumeSettings, recordWin, recordLoss };
+  }
+} catch {}
+
+

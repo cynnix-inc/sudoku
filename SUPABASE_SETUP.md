@@ -21,10 +21,21 @@ This guide configures Supabase authentication (Google OAuth) and a `stats` table
 The app redirects back to `window.location.origin` after Google sign‑in, so make sure each origin you use is listed.
 
 ### 3) Create the `stats` table with RLS
-1. In Supabase: SQL Editor → New query
-2. Paste and run the contents of `supabase.sql` from this repo. It creates:
+
+Preferred: automate with Supabase CLI migrations
+
+1. Install the Supabase CLI: `npm i -g supabase`
+2. Link your project: `supabase link --project-ref YOUR_PROJECT_REF`
+3. Push migrations: `npm run supabase:push`
+
+This runs the SQL in `supabase/migrations/0001_create_stats.sql` to create:
    - A `stats` table keyed by `user_id` (references `auth.users(id)`)
    - RLS policies so users can only read/update their own row
+
+Manual fallback
+
+1. In Supabase: SQL Editor → New query
+2. Paste and run the contents of `supabase.sql` (or the migration file above)
 
 Schema summary:
 - Columns: `user_id (uuid, pk)`, `updated_at (timestamptz, default now())`,
@@ -37,30 +48,27 @@ Schema summary:
 
 The anon key is safe to embed in a public client; RLS policies protect your data.
 
-### 5) Configure the frontend
-Set your Supabase values in `index.html` so the app can initialize the client. Replace the placeholders here:
+### 5) Configure the frontend via `.env`
+1. Copy `.env.example` to `.env` in the project root and fill in real values:
 
-```347:365:index.html
-    <!-- Supabase: set your project URL and anon key (replace placeholders). You can also provide these via inline env in hosting. -->
-    <script>
-      window.SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR_SUPABASE_PROJECT_ID.supabase.co';
-      window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
-    </script>
-    <script type="module">
-      import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-      const supaUrl = (typeof window !== 'undefined' && window.SUPABASE_URL) ? window.SUPABASE_URL : '';
-      const supaKey = (typeof window !== 'undefined' && window.SUPABASE_ANON_KEY) ? window.SUPABASE_ANON_KEY : '';
-      if (supaUrl && supaKey && !/YOUR_SUPABASE/i.test(supaUrl) && !/YOUR_SUPABASE/i.test(supaKey)) {
-        window.supabase = createClient(supaUrl, supaKey);
-      } else {
-        window.supabase = undefined;
-      }
-    </script>
+```
+SUPABASE_URL=https://YOUR_SUPABASE_PROJECT_ID.supabase.co
+SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
 ```
 
+2. Generate `env.js` (loaded by `index.html`):
+
+```
+npm run build:env
+```
+
+`index.html` now loads `env.js` first and uses those values to initialize Supabase. If `.env` is absent, Supabase stays disabled and the app falls back to local stats.
+
+Tip: create a `.env` file manually with `SUPABASE_URL` and `SUPABASE_ANON_KEY`, then run `npm run build:env`.
+
 Options for production:
-- Keep the same values if you only deploy one environment
-- Or inject `window.SUPABASE_URL`/`window.SUPABASE_ANON_KEY` via your hosting platform before the module snippet runs
+- Prefer environment variables at build time to generate `env.js`
+- Or inject `window.SUPABASE_URL` / `window.SUPABASE_ANON_KEY` directly via your hosting platform before the module snippet runs
 
 ### 6) Run locally and test sign‑in
 1. Install and start the dev server:

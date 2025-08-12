@@ -2,129 +2,38 @@ const exported = require('../../script.js');
 const SudokuGame = exported.SudokuGame || exported.default?.SudokuGame || exported;
 
 describe('Sudoku auto-generated stubs', () => {
-  test.todo('setTimeout behavior');
-  test.todo('setA behavior');
-  test.todo('resetLives behavior');
+  // Keep only meaningful, uncovered behaviors. Remove false-positives and duplicates already covered elsewhere.
   test.todo('applyZenMode behavior');
-  test.todo('updateButtons behavior');
-  test.todo('await behavior');
-  test.todo('_mapLocalStatsToRow behavior');
-  test.todo('_mapRemoteStatsToLocal behavior');
   test.todo('isGameInProgress behavior');
-  test.todo('updateModeIndicator behavior');
+  // covered in sudoku.mode.test.js
   test.todo('updateDailyIconBadge behavior');
-  test.todo('spawnMistakeFloater behavior');
-  test.todo('initializeGame behavior');
+  // covered in sudoku.spawnmistake.test.js
+  // covered in sudoku.initialize.test.js
   test.todo('setupResponsiveSizing behavior');
-  test.todo('apply behavior');
-  test.todo('createBoard behavior');
-  test.todo('generatePuzzle behavior');
   test.todo('removeNumbersSymmetricUnique behavior');
-  test.todo('getUtcDateKey behavior');
-  test.todo('parseUtcKeyToDate behavior');
-  test.todo('getNextUtcMidnight behavior');
-  test.todo('startDailyCountdown behavior');
-  test.todo('update behavior');
-  test.todo('setDailyUiState behavior');
-  test.todo('generateDaily behavior');
-  test.todo('fillBox behavior');
-  test.todo('removeSymUnique behavior');
+  // covered in sudoku.daily.test.js
+  // covered in sudoku.misc-remaining.test.js and sudoku.generateDaily.smoke.test.js
   test.todo('getDifficultyForDateKey behavior');
-  test.todo('getWeekSeedFromDateKey behavior');
-  test.todo('buildWeeklyPattern behavior');
-  test.todo('rankDifficulty behavior');
-  test.todo('createSeededRng behavior');
-  test.todo('generateSolvedBoard behavior');
-  test.todo('solveBoard behavior');
-  test.todo('findEmptyCell behavior');
-  test.todo('isValidMove behavior');
-  test.todo('hasUniqueSolution behavior');
-  test.todo('solveCount behavior');
-  test.todo('findEmptyInGrid behavior');
-  test.todo('isValidInGrid behavior');
-  test.todo('removeNumbers behavior');
-  test.todo('selectCell behavior');
-  test.todo('highlightRelatedCells behavior');
-  test.todo('handleCellInput behavior');
-  test.todo('handleKeyDown behavior');
+  // covered in sudoku.difficulty-utils.test.js and sudoku.rng-difficulty.test.js
+  // covered in sudoku.ui-select.test.js and sudoku.input.test.js
   test.todo('updateCellDisplay behavior');
-  test.todo('setCellValue behavior');
-  test.todo('undo behavior');
-  test.todo('redo behavior');
-  test.todo('toggleNote behavior');
-  test.todo('clearNotes behavior');
-  test.todo('updateNotesDisplay behavior');
-  test.todo('updateDisplay behavior');
-  test.todo('highlightSameNumbers behavior');
-  test.todo('highlightNumber behavior');
-  test.todo('updateNumberPadAvailability behavior');
-  test.todo('checkGameComplete behavior');
-  test.todo('showGameOver behavior');
+  // covered in sudoku.highlight.test.js
+  // covered in sudoku.gameend.test.js
   test.todo('showGameCompleteModal behavior');
   test.todo('showLandingResult behavior');
-  test.todo('startTimer behavior');
-  test.todo('ensureGameStarted behavior');
-  test.todo('stopTimer behavior');
-  test.todo('clearInterval behavior');
-  test.todo('updateTimer behavior');
-  test.todo('updateTimerButton behavior');
-  test.todo('updateHintUi behavior');
-  test.todo('getTimeSpent behavior');
-  test.todo('newGame behavior');
-  test.todo('getDailyDifficulty behavior');
-  test.todo('openDailyModal behavior');
-  test.todo('resetMistakes behavior');
-  test.todo('renderHealthBar behavior');
-  test.todo('renderHeartSvg behavior');
-  test.todo('updateHealthBar behavior');
-  test.todo('solvePuzzle behavior');
-  test.todo('checkPuzzle behavior');
-  test.todo('clearBoard behavior');
-  test.todo('showStatus behavior');
-  test.todo('clearTimeout behavior');
-  test.todo('clearStatus behavior');
-  test.todo('showToast behavior');
-  test.todo('setupEventListeners behavior');
-  test.todo('sync behavior');
-  test.todo('applyAccent behavior');
-  test.todo('setChecked behavior');
-  test.todo('applyTheme behavior');
-  test.todo('close behavior');
-  test.todo('requestAnimationFrame behavior');
-  test.todo('refreshGreeting behavior');
-  test.todo('refreshDaily behavior');
-  test.todo('_initTooltips behavior');
-  test.todo('positionTooltip behavior');
-  test.todo('show behavior');
-  test.todo('showConfirm behavior');
-  test.todo('resolve behavior');
-  test.todo('showInfo behavior');
-  test.todo('onBoardPointerDown behavior');
-  test.todo('onBoardPointerMove behavior');
-  test.todo('onBoardPointerUp behavior');
-  test.todo('openCalendar behavior');
-  test.todo('shiftCalendar behavior');
-  test.todo('renderCalendar behavior');
-  test.todo('refreshCalendarHeaders behavior');
-  test.todo('getDifficultyIcon behavior');
-  test.todo('recordDailyResult behavior');
-  test.todo('giveHint behavior');
-  test.todo('togglePause behavior');
-  test.todo('autoPauseOnBlur behavior');
-  test.todo('resumeFromPause behavior');
-  test.todo('isAutoCandidatesEnabled behavior');
-  test.todo('isAutoAdvanceEnabled behavior');
-  test.todo('computeCandidates behavior');
-  test.todo('recomputeAllCandidates behavior');
-  test.todo('recomputeCandidatesForPeers behavior');
-  test.todo('getElapsedSeconds behavior');
-  test.todo('persistToStorage behavior');
-  test.todo('persistSettings behavior');
-  test.todo('resumeFromStorage behavior');
-  test.todo('resumeSettings behavior');
-  test.todo('recordWin behavior');
-  test.todo('recordLoss behavior');
-  test.todo('showStats behavior');
-  test.todo('animateNumber behavior');
-  test.todo('__initSudoku behavior');
+  // covered in sudoku.timer.test.js
+  // covered in sudoku.generateDaily.smoke.test.js and sudoku.ui-wrappers.test.js
+  // covered in sudoku.health.test.js
+  // covered in sudoku.status.test.js
+  // covered in sudoku.events-and-modals.test.js and sudoku.ui-wrappers.test.js
+  // covered in sudoku.pointer.test.js
+  // calendar behaviors are thin wrappers; UI covered elsewhere
+  // covered in sudoku.calendar.test.js
+  // covered in sudoku.daily-ui.test.js
+  // covered in sudoku.timer.test.js
+  // covered in sudoku.auto-candidates.test.js
+  // covered in sudoku.persistence.test.js
+  // covered in sudoku.animateNumber.test.js
 });
+
+

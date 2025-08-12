@@ -65,11 +65,18 @@ A modern, interactive Sudoku game built with HTML, CSS, and JavaScript. Features
 
 ```
 sudoku/
-├── index.html          # Main HTML file
-├── styles.css          # CSS styles and responsive design
-├── script.js           # JavaScript game logic
-└── README.md          # This file
+├── index.html           # Main HTML file
+├── styles.css           # Global styles (to be split by domain in /src/ui)
+├── script.js            # Core game class (kept CommonJS-compatible for tests)
+├── src/
+│   └── index.js         # ES module browser entry; initializes the game
+├── .eslintrc.json       # Lint rules with size/complexity guardrails
+└── README.md            # This file
 ```
+
+The browser now loads a small ES module entry (`src/index.js`) that creates a
+single `SudokuGame` instance on DOM ready. Unit tests keep importing
+`script.js` directly.
 
 ## Browser Compatibility
 
@@ -87,6 +94,23 @@ sudoku/
 ## Supabase SSO + Cloud Stats (optional)
 
 See `SUPABASE_SETUP.md` for a complete step‑by‑step guide.
+
+### Environment configuration
+
+Create a `.env` file in the project root with:
+
+```
+SUPABASE_URL=https://YOUR_SUPABASE_PROJECT_ID.supabase.co
+SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+```
+
+Then generate `env.js` (loaded by `index.html`) so the browser gets the values:
+
+```
+npm run build:env
+```
+
+`npm run serve` will also generate `env.js` automatically if missing.
 
 ## Future Enhancements
 

@@ -1,0 +1,14 @@
+# Environment and generated files
+.env
+.env.*.local
+.env.local
+env.js
+
+# Node
+node_modules/
+.npmrc
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log

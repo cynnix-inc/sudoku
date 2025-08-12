@@ -6,7 +6,12 @@
     <meta name="theme-color" content="#667eea">
     <title>Ultimate Sudoku</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236376f1'/%3E%3Cstop offset='1' stop-color='%238aa2ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='12' fill='url(%23g)'/%3E%3Ctext x='32' y='43' font-size='34' font-weight='700' text-anchor='middle' fill='white' font-family='Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif'%3ES%3C/text%3E%3C/svg%3E" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg">
     <link rel="stylesheet" href="styles.css?v=v4">
+    <link rel="stylesheet" href="src/ui/theme.css">
+    <link rel="stylesheet" href="src/ui/board.css">
+    <link rel="stylesheet" href="src/ui/controls.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
       if('serviceWorker' in navigator){
@@ -34,182 +39,31 @@
     <div class="container">
         <header>
             <div class="rail app-header">
-                <div class="header-left">
-                    <h1 class="app-logo" aria-label="Ultimate Sudoku">
-                      <span class="sr-only">Ultimate Sudoku</span>
-                      <svg class="logo-svg" viewBox="0 0 1000 400" role="img" aria-hidden="true" focusable="false">
-                        <defs>
-                          <!-- Enhanced Ultimate gradient with diagonal movement (slower, staggered) -->
-                          <linearGradient id="logoGradUltimate" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#f59e0b"/>
-                            <stop offset="50%" stop-color="#fbbf24"/>
-                            <stop offset="100%" stop-color="#f59e0b"/>
-                            <animate attributeName="x1" values="0%;100%;0%" dur="18s" repeatCount="indefinite"/>
-                            <animate attributeName="y1" values="0%;100%;0%" dur="20s" repeatCount="indefinite"/>
-                            <animate attributeName="x2" values="100%;0%;100%" dur="22s" repeatCount="indefinite"/>
-                            <animate attributeName="y2" values="100%;0%;100%" dur="24s" repeatCount="indefinite"/>
-                          </linearGradient>
-                          
-                          <!-- Enhanced Sudoku gradient with wave movement (slower) -->
-                          <linearGradient id="logoGradSudoku" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#5b6eea"/>
-                            <stop offset="25%" stop-color="#8aa2ff"/>
-                            <stop offset="50%" stop-color="#6366f1"/>
-                            <stop offset="75%" stop-color="#8aa2ff"/>
-                            <stop offset="100%" stop-color="#5b6eea"/>
-                            <animate attributeName="x1" values="-50%;0%;-50%" dur="24s" repeatCount="indefinite"/>
-                            <animate attributeName="x2" values="50%;100%;50%" dur="24s" repeatCount="indefinite"/>
-                          </linearGradient>
-                          
-                          <!-- Enhanced shimmer with multiple layers (slower, offset) -->
-                          <linearGradient id="logoShimmer" x1="-60%" y1="0%" x2="-30%" y2="0%">
-                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
-                            <stop offset="16%" stop-color="#ffffff" stop-opacity="0.9"/>
-                            <stop offset="32%" stop-color="#ffffff" stop-opacity="0"/>
-                            <animate attributeName="x1" values="-60%;-60%;120%;120%" keyTimes="0;0.86;0.96;1" dur="32s" repeatCount="indefinite"/>
-                            <animate attributeName="x2" values="-30%;-30%;150%;150%" keyTimes="0;0.86;0.96;1" dur="32s" repeatCount="indefinite"/>
-                          </linearGradient>
-                          
-                          <!-- Secondary shimmer for Sudoku (delayed for stagger) -->
-                          <linearGradient id="logoShimmerSudoku" x1="-80%" y1="0%" x2="-50%" y2="0%">
-                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
-                            <stop offset="20%" stop-color="#ffffff" stop-opacity="0.6"/>
-                            <stop offset="40%" stop-color="#ffffff" stop-opacity="0"/>
-                            <animate attributeName="x1" values="-80%;-80%;130%;130%" keyTimes="0;0.84;0.94;1" dur="38s" repeatCount="indefinite"/>
-                            <animate attributeName="x2" values="-50%;-50%;160%;160%" keyTimes="0;0.84;0.94;1" dur="38s" repeatCount="indefinite"/>
-                          </linearGradient>
-                          
-                          <!-- Grid icon gradient (slower movement) -->
-                          <linearGradient id="gridGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#6366f1"/>
-                            <stop offset="100%" stop-color="#8aa2ff"/>
-                            <animate attributeName="x1" values="0%;100%;0%" dur="28s" repeatCount="indefinite"/>
-                            <animate attributeName="y1" values="0%;100%;0%" dur="28s" repeatCount="indefinite"/>
-                          </linearGradient>
-
-                          <!-- Bridge gradient to harmonize grid with Ultimate/Sudoku colors (slower) -->
-                          <linearGradient id="bridgeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#f59e0b"/>
-                            <stop offset="100%" stop-color="#6366f1"/>
-                            <animate attributeName="x1" values="-30%;0%;130%" dur="26s" repeatCount="indefinite"/>
-                            <animate attributeName="x2" values="70%;100%;230%" dur="26s" repeatCount="indefinite"/>
-                          </linearGradient>
-                          
-                          <!-- Mini grid pattern for subtle texture inside Ultimate (slower) -->
-                          <pattern id="microGridPattern" width="6" height="6" patternUnits="userSpaceOnUse">
-                            <rect width="6" height="6" fill="transparent"/>
-                            <path d="M0 0 L6 0 6 6" stroke="#6366f1" stroke-opacity="0.32" stroke-width="0.6"/>
-                            <animate attributeName="patternTransform" values="translate(0,0);translate(3,1);translate(0,0)" dur="60s" repeatCount="indefinite"/>
-                          </pattern>
-
-                          <!-- Mask to confine effects to the Ultimate text, skewed to match -->
-                           <mask id="maskUltimate">
-                            <rect x="0" y="0" width="1000" height="400" fill="black"/>
-                             <text x="150" y="140" font-size="110" font-weight="700" fill="white" transform="translate(150,140) skewX(-14) translate(-150,-140)">Ultimate</text>
-                          </mask>
-
-                          <!-- Curved path mask to tuck grid under the U only -->
-                           <mask id="maskGridUnderUPath">
-                            <rect x="0" y="0" width="1000" height="400" fill="white"/>
-                             <path d="M158 62 C 154 120, 154 160, 162 216 L 196 216 L 196 62 Z" fill="black" transform="translate(150,140) skewX(-14) translate(-150,-140)" filter="url(#maskFeather)"/>
-                          </mask>
-
-                          <!-- Drop shadow filter for the U stroke overlay -->
-                          <filter id="uShadow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="1.5" dy="2.5" stdDeviation="1.6" flood-color="#0d0e26" flood-opacity="0.25"/>
-                          </filter>
-
-                           <!-- Subtle depth shadows for layered elements -->
-                           <filter id="gridShadow" x="-20%" y="-20%" width="140%" height="140%">
-                             <feDropShadow dx="0.5" dy="1.2" stdDeviation="1.2" flood-color="#0b1025" flood-opacity="0.18"/>
-                           </filter>
-                           <filter id="sudokuShadow" x="-20%" y="-20%" width="140%" height="140%">
-                             <feDropShadow dx="0" dy="2.2" stdDeviation="2.0" flood-color="#0b1025" flood-opacity="0.22"/>
-                           </filter>
-
-                          <!-- Feathering filter for mask edges -->
-                          <filter id="maskFeather" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur stdDeviation="1.8"/>
-                          </filter>
-
-                          <!-- Mask to tuck grid under the U -->
-                           <mask id="maskGridHideUnderU">
-                            <rect x="0" y="0" width="1000" height="400" fill="white"/>
-                             <text x="150" y="140" font-size="118" font-weight="800" fill="black" transform="translate(150,140) skewX(-14) translate(-150,-140)">U</text>
-                          </mask>
-                          
-                          <!-- Soft right-edge fade for the grid to reduce visual clash near the U -->
-                          <linearGradient id="gridSoftFade" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0" stop-color="white" stop-opacity="1"/>
-                            <stop offset="0.85" stop-color="white" stop-opacity="1"/>
-                            <stop offset="1" stop-color="white" stop-opacity="0"/>
-                          </linearGradient>
-                          <mask id="maskGridSoftEdge" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
-                            <rect x="0" y="0" width="1" height="1" fill="url(#gridSoftFade)"/>
-                          </mask>
-                        </defs>
-                        
-                        <!-- Sudoku Grid Icon (overlaps with the "U" in Ultimate) -->
-                          <g mask="url(#maskGridSoftEdge)">
-                          <g class="logo-grid" transform="translate(58, 64) scale(1.94)" mask="url(#maskGridUnderUPath)" filter="url(#gridShadow)">
-                          <!-- Outer border -->
-                            <rect class="grid-border" x="0" y="0" width="80" height="80" rx="8" fill="none" stroke="url(#gridGradient)" stroke-width="3" opacity="0.9" vector-effect="non-scaling-stroke"/>
-                          <!-- Horizontal lines -->
-                            <line x1="0" y1="26.67" x2="80" y2="26.67" stroke="url(#logoGradSudoku)" stroke-width="1.6" opacity="0.52" vector-effect="non-scaling-stroke"/>
-                            <line x1="0" y1="53.33" x2="80" y2="53.33" stroke="url(#logoGradSudoku)" stroke-width="1.6" opacity="0.52" vector-effect="non-scaling-stroke"/>
-                          <!-- Vertical lines -->
-                            <line x1="26.67" y1="0" x2="26.67" y2="80" stroke="url(#logoGradSudoku)" stroke-width="1.6" opacity="0.52" vector-effect="non-scaling-stroke"/>
-                            <line x1="53.33" y1="0" x2="53.33" y2="80" stroke="url(#logoGradSudoku)" stroke-width="1.6" opacity="0.52" vector-effect="non-scaling-stroke"/>
-                          <!-- Sample numbers for visual interest -->
-                          <text x="15" y="22" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">5</text>
-                          <text x="42" y="22" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">3</text>
-                          <text x="15" y="49" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">7</text>
-                          <text x="42" y="49" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">1</text>
-                          <text x="15" y="76" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">9</text>
-                          <text x="42" y="76" font-size="14" font-weight="700" fill="url(#logoGradSudoku)" opacity="0.5">6</text>
-                          </g>
-                          </g>
-
-                        <!-- Subtle connector path bridging grid to the U in Ultimate (renders behind text) -->
-                         <path class="logo-connector" d="M213 142 C 200 150, 192 160, 184 172" fill="none" stroke="url(#gridGradient)" stroke-width="2.2" stroke-linecap="round" opacity="0.32"/>
-                        
-                        <g class="logo-text">
-                          <!-- Sudoku behind Ultimate for clearer depth and reduced overlap -->
-                          <text class="sudoku" x="150" y="344" font-size="280" font-weight="800" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradSudoku)" filter="url(#sudokuShadow)">Sudoku</text>
-                          <text class="sudoku-shimmer" x="150" y="344" font-size="280" font-weight="800" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoShimmerSudoku)" opacity="0.4">Sudoku</text>
-
-                          <!-- Ultimate text with enhanced typography (now above Sudoku) -->
-                          <text class="ultimate" x="150" y="140" font-size="110" font-weight="700" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradUltimate)" transform="translate(150,140) skewX(-10) translate(-150,-140)" filter="url(#uShadow)">Ultimate</text>
-                          
-                          <!-- Subtle mini-grid texture clipped to Ultimate (overlay) -->
-                          <rect x="150" y="40" width="800" height="120" fill="url(#microGridPattern)" opacity="0.06" mask="url(#maskUltimate)" pointer-events="none"/>
- 
-                          <!-- Edge highlight for U to enhance overlap depth -->
-                          <text class="ultimate-edge" x="150" y="140" font-size="110" font-weight="800" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" transform="translate(150,140) skewX(-10) translate(-150,-140)" filter="url(#uShadow)">U</text>
- 
-                          <text class="ultimate-shimmer" x="150" y="140" font-size="110" font-weight="700" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoShimmer)" opacity="0.6" transform="translate(150,140) skewX(-10) translate(-150,-140)">Ultimate</text>
-                        </g>
-                      </svg>
-                    </h1>
-                </div>
+                <div class="header-left"></div>
                 <div class="header-right">
+                    <div id="user-chip" class="user-chip" style="display:none" aria-live="polite" title="Signed in">
+                      <img id="user-avatar" alt="" aria-hidden="true" />
+                      <span id="user-name"></span>
+                    </div>
                     <div class="menu-wrap">
                           <button id="menu-btn" class="icon-btn badged" title="Open menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">☰<span id="menu-daily-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
                         <div id="menu-popover" class="popover-menu" role="menu" style="display:none;">
-                          <button id="menu-newgame" class="popover-item" role="menuitem"><span class="menu-icon">🔄</span><span>New game</span></button>
-                          <button id="menu-dailys" class="popover-item badged" role="menuitem"><span class="menu-icon">📅</span><span>Dailys</span><span id="menu-dailys-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></button>
+                          <button id="menu-home" class="popover-item" role="menuitem"><span class="menu-icon">🏠</span><span>Home</span></button>
+                          <button id="menu-newgame" class="popover-item" role="menuitem"><span class="menu-icon">🔄</span><span>New puzzle…</span></button>
+                          <button id="menu-daily" class="popover-item badged" role="menuitem" aria-label="Daily"><span class="menu-icon">📅<span id="menu-daily-item-dot" class="badge-dot" aria-hidden="true" style="display:none"></span></span><span>Daily</span></button>
                           <hr/>
-                          <button id="menu-check" class="popover-item" role="menuitem"><span class="menu-icon">🔎</span><span>Check</span></button>
-                          <button id="menu-solve" class="popover-item" role="menuitem"><span class="menu-icon">🧩</span><span>Solve</span></button>
+                          <button id="menu-restart" class="popover-item" role="menuitem"><span class="menu-icon">↺</span><span>Restart puzzle</span></button>
                           <button id="menu-clear" class="popover-item" role="menuitem"><span class="menu-icon">🧹</span><span>Clear All</span></button>
                           <hr/>
                           <button id="menu-stats" class="popover-item" role="menuitem"><span class="menu-icon">📊</span><span>Stats</span></button>
                           <hr/>
-                          <button id="menu-login" class="popover-item" role="menuitem"><span class="menu-icon">🔐</span><span>Sign in with Google</span></button>
+                          <button id="menu-login" class="popover-item google-btn compact" role="menuitem" aria-label="Sign in with Google"><span class="g-logo" aria-hidden="true"></span><span class="g-text">Sign in with Google</span></button>
                           <button id="menu-logout" class="popover-item" role="menuitem" style="display:none"><span class="menu-icon">🚪</span><span>Sign out</span></button>
-                          <hr/>
-                          <button id="menu-settings" class="popover-item" role="menuitem"><span class="menu-icon">⚙️</span><span>Settings</span></button>
-                          <button id="menu-help" class="popover-item" role="menuitem"><span class="menu-icon">❓</span><span>Help</span></button>
+                          
+                          <div class="menu-icon-row" role="group" aria-label="Utilities">
+                            <button id="menu-settings" class="popover-item icon-only" role="menuitem" title="Settings" aria-label="Settings"><span class="menu-icon">⚙️</span></button>
+                            <button id="menu-help" class="popover-item icon-only" role="menuitem" title="Help" aria-label="Help"><span class="menu-icon">❓</span></button>
+                          </div>
                         </div>
                     </div>
                 </div>
@@ -221,7 +75,109 @@
                 <div class="landing-card">
                     <div id="landing-result" class="landing-result" hidden></div>
                     <div class="landing-hero">
+                        <div class="landing-logo">
+                          <h1 class="app-logo" aria-label="Ultimate Sudoku">
+                            <span class="sr-only">Ultimate Sudoku</span>
+                            <svg class="logo-svg" viewBox="0 0 1000 400" role="img" aria-hidden="true" focusable="false">
+                              <defs>
+                                <linearGradient id="logoGradUltimate" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stop-color="#f59e0b"/>
+                                  <stop offset="50%" stop-color="#fbbf24"/>
+                                  <stop offset="100%" stop-color="#f59e0b"/>
+                                  <animate attributeName="x1" values="0%;100%;0%" dur="18s" repeatCount="indefinite"/>
+                                  <animate attributeName="y1" values="0%;100%;0%" dur="20s" repeatCount="indefinite"/>
+                                  <animate attributeName="x2" values="100%;0%;100%" dur="22s" repeatCount="indefinite"/>
+                                  <animate attributeName="y2" values="100%;0%;100%" dur="24s" repeatCount="indefinite"/>
+                                </linearGradient>
+                                <linearGradient id="logoGradSudoku" x1="0%" y1="0%" x2="100%" y2="0%">
+                                  <stop offset="0%" stop-color="#5b6eea"/>
+                                  <stop offset="25%" stop-color="#8aa2ff"/>
+                                  <stop offset="50%" stop-color="#6366f1"/>
+                                  <stop offset="75%" stop-color="#8aa2ff"/>
+                                  <stop offset="100%" stop-color="#5b6eea"/>
+                                  <animate attributeName="x1" values="-50%;0%;-50%" dur="24s" repeatCount="indefinite"/>
+                                  <animate attributeName="x2" values="50%;100%;50%" dur="24s" repeatCount="indefinite"/>
+                                </linearGradient>
+                                <linearGradient id="logoShimmer" x1="-60%" y1="0%" x2="-30%" y2="0%">
+                                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+                                  <stop offset="16%" stop-color="#ffffff" stop-opacity="0.9"/>
+                                  <stop offset="32%" stop-color="#ffffff" stop-opacity="0"/>
+                                  <animate attributeName="x1" values="-60%;-60%;120%;120%" keyTimes="0;0.86;0.96;1" dur="32s" repeatCount="indefinite"/>
+                                  <animate attributeName="x2" values="-30%;-30%;150%;150%" keyTimes="0;0.86;0.96;1" dur="32s" repeatCount="indefinite"/>
+                                </linearGradient>
+                                <linearGradient id="logoShimmerSudoku" x1="-80%" y1="0%" x2="-50%" y2="0%">
+                                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+                                  <stop offset="20%" stop-color="#ffffff" stop-opacity="0.6"/>
+                                  <stop offset="40%" stop-color="#ffffff" stop-opacity="0"/>
+                                  <animate attributeName="x1" values="-80%;-80%;130%;130%" keyTimes="0;0.84;0.94;1" dur="38s" repeatCount="indefinite"/>
+                                  <animate attributeName="x2" values="-50%;-50%;160%;160%" keyTimes="0;0.84;0.94;1" dur="38s" repeatCount="indefinite"/>
+                                </linearGradient>
+                                <linearGradient id="gridGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stop-color="#6366f1"/>
+                                  <stop offset="100%" stop-color="#8aa2ff"/>
+                                  <animate attributeName="x1" values="0%;100%;0%" dur="28s" repeatCount="indefinite"/>
+                                  <animate attributeName="y1" values="0%;100%;0%" dur="28s" repeatCount="indefinite"/>
+                                </linearGradient>
+                                <linearGradient id="bridgeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                  <stop offset="0%" stop-color="#f59e0b"/>
+                                  <stop offset="100%" stop-color="#6366f1"/>
+                                  <animate attributeName="x1" values="-30%;0%;130%" dur="26s" repeatCount="indefinite"/>
+                                  <animate attributeName="x2" values="70%;100%;230%" dur="26s" repeatCount="indefinite"/>
+                                </linearGradient>
+                                <pattern id="microGridPattern" width="6" height="6" patternUnits="userSpaceOnUse">
+                                  <rect width="6" height="6" fill="transparent"/>
+                                  <path d="M0 0 L6 0 6 6" stroke="#6366f1" stroke-opacity="0.32" stroke-width="0.6"/>
+                                  <animate attributeName="patternTransform" values="translate(0,0);translate(3,1);translate(0,0)" dur="60s" repeatCount="indefinite"/>
+                                </pattern>
+                                 <mask id="maskUltimate">
+                                  <rect x="0" y="0" width="1000" height="400" fill="black"/>
+                                   <text x="150" y="140" font-size="110" font-weight="700" fill="white" transform="translate(150,140) skewX(-10) translate(-150,-140)">Ultimate</text>
+                                </mask>
+                                 <mask id="maskGridUnderUPath">
+                                  <rect x="0" y="0" width="1000" height="400" fill="white"/>
+                                   <path d="M158 62 C 154 120, 154 160, 162 216 L 196 216 L 196 62 Z" fill="black" transform="translate(150,140) skewX(-10) translate(-150,-140)" filter="url(#maskFeather)"/>
+                                </mask>
+                                <filter id="uShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                  <feDropShadow dx="1.5" dy="2.5" stdDeviation="1.6" flood-color="#0d0e26" flood-opacity="0.25"/>
+                                </filter>
+                                 <filter id="gridShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                   <feDropShadow dx="0.5" dy="1.2" stdDeviation="1.2" flood-color="#0b1025" flood-opacity="0.18"/>
+                                 </filter>
+                                 <filter id="sudokuShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                   <feDropShadow dx="0" dy="2.2" stdDeviation="2.0" flood-color="#0b1025" flood-opacity="0.22"/>
+                                 </filter>
+                                <filter id="maskFeather" x="-20%" y="-20%" width="140%" height="140%">
+                                  <feGaussianBlur stdDeviation="1.8"/>
+                                </filter>
+                                 <mask id="maskGridHideUnderU">
+                                  <rect x="0" y="0" width="1000" height="400" fill="white"/>
+                                   <text x="150" y="140" font-size="118" font-weight="800" fill="black" transform="translate(150,140) skewX(-10) translate(-150,-140)">U</text>
+                                </mask>
+                                <linearGradient id="gridSoftFade" x1="0" y1="0" x2="1" y2="0">
+                                  <stop offset="0" stop-color="white" stop-opacity="1"/>
+                                  <stop offset="0.85" stop-color="white" stop-opacity="1"/>
+                                  <stop offset="1" stop-color="white" stop-opacity="0"/>
+                                </linearGradient>
+                                <mask id="maskGridSoftEdge" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
+                                  <rect x="0" y="0" width="1" height="1" fill="url(#gridSoftFade)"/>
+                                </mask>
+                               </defs>
+                              <g class="logo-text">
+                                <text class="sudoku" x="100" y="344" font-size="280" font-weight="800" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradSudoku)" filter="url(#sudokuShadow)">SUDOKU</text>
+                                <text class="sudoku-shimmer" x="100" y="344" font-size="280" font-weight="800" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoShimmerSudoku)" opacity="0.4">SUDOKU</text>
+                                <text class="ultimate" x="100" y="140" font-size="110" font-weight="700" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoGradUltimate)" transform="translate(100,140) skewX(-18) translate(-100,-140)" filter="url(#uShadow)">Ultimate</text>
+                                <text class="ultimate-shimmer" x="100" y="140" font-size="110" font-weight="700" textLength="800" lengthAdjust="spacingAndGlyphs" fill="url(#logoShimmer)" opacity="0.6" transform="translate(100,140) skewX(-18) translate(-100,-140)">Ultimate</text>
+                              </g>
+                            </svg>
+                          </h1>
+                        </div>
                         <h2 id="landing-greeting" class="landing-title">Welcome!</h2>
+                        <div class="landing-signin-inline" style="margin: 0.6rem 0 0.2rem;">
+                          <button id="landing-signin" class="google-btn">
+                            <span class="g-logo" aria-hidden="true"></span>
+                            <span class="g-text">Sign in with Google</span>
+                          </button>
+                        </div>
                         <p class="landing-subtitle">Sharpen your mind with a clean, fast Sudoku.</p>
                     </div>
 
@@ -258,31 +214,23 @@
                     </div>
 
                     <div class="landing-quick">
-                        <button id="landing-settings" class="btn btn-tertiary btn-small">Settings</button>
-                        <button id="landing-stats" class="btn btn-tertiary btn-small">Stats</button>
+                        <button id="landing-stats" class="btn btn-tertiary btn-small icon-only" aria-label="Stats" title="Stats">📊</button>
+                        <button id="landing-settings" class="btn btn-tertiary btn-small icon-only" aria-label="Settings" title="Settings">⚙️</button>
+                        <button id="landing-help" class="btn btn-tertiary btn-small icon-only" aria-label="Help" title="Help">❓</button>
                     </div>
-                    <div class="landing-quick signin-row">
-                        <button id="landing-signin" class="google-btn">
-                          <span class="g-logo" aria-hidden="true"></span>
-                          <span class="g-text">Sign in with Google</span>
-                        </button>
-                    </div>
+                    
                 </div>
             </div>
             <div class="rail controls-strip">
                 <div class="controls-left">
-                    <div class="difficulty-display"><div id="mode-indicator" class="mode-indicator" aria-live="polite"></div></div>
+                    <div class="hearts-row"><div id="health-bar" class="health-bar-stack" aria-label="Lives" aria-live="polite"></div></div>
                 </div>
                 <div class="controls-center">
                     <div id="toast-container" class="toast-container inline" aria-live="polite" aria-atomic="true"></div>
-                    <div id="health-bar" class="health-bar-stack" aria-label="Lives" aria-live="polite"></div>
-                    <button id="timer-toggle" class="timer timer-btn" title="Pause or resume timer" aria-label="Pause or resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
+                    <div class="difficulty-display"><div id="mode-indicator" class="mode-indicator" aria-live="polite"></div></div>
                 </div>
                 <div class="controls-right">
-                    <button id="hint-btn" class="icon-btn badged" title="Get a hint: fills one correct cell (+30s)" aria-label="Hint"><span class="icon-emoji" aria-hidden="true">💡</span><span class="badge-mini" id="hint-badge" style="display:none"></span></button>
-                    <button id="notes-toggle" class="icon-btn" title="Toggle Notes mode (pencil marks)" aria-label="Notes">✎</button>
-                    <button id="undo-btn" class="icon-btn" title="Undo last action" aria-label="Undo">↶</button>
-                    <button id="redo-btn" class="icon-btn" title="Redo last action" aria-label="Redo">↷</button>
+                    <button id="timer-toggle" class="timer timer-btn" title="Pause or resume timer" aria-label="Pause or resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
                 </div>
             </div>
 
@@ -305,12 +253,22 @@
                     <button type="button" class="number-btn" data-number="9">9</button>
                 </div>
                 <div class="pad-actions">
-                    <button type="button" id="pad-lock-toggle" class="pad-action-btn icon-btn" title="Lock number to paint (tap again to unlock)" aria-label="Toggle number lock" aria-pressed="true">🔒</button>
-                    <button type="button" class="pad-action-btn icon-btn clear-cell" data-number="0" title="Erase selected cell" aria-label="Erase" id="pad-erase-btn">
-                        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-                            <path fill="currentColor" d="M3.5 14.5l6.5-6.5a3 3 0 0 1 4.24 0l4.76 4.76a1.5 1.5 0 0 1 0 2.12l-3.18 3.18a1.5 1.5 0 0 1-1.06.44H9.41a1.5 1.5 0 0 1-1.06-.44L3.5 16.62a1.5 1.5 0 0 1 0-2.12Zm2.12.71l2.48 2.48c.19.19.45.3.71.3h5.35c.27 0 .52-.11.71-.3l2.47-2.47-4.95-4.95a1 1 0 0 0-1.41 0l-5.36 5.36Z"/>
-                        </svg>
-                    </button>
+                    <div class="tools-col tools-left">
+                        <button id="hint-btn" class="pad-action-btn icon-btn badged" title="Get a hint: fills one correct cell (+30s)" aria-label="Hint"><span class="icon-emoji" aria-hidden="true">💡</span><span class="badge-mini" id="hint-badge" style="display:none"></span></button>
+                        <button type="button" class="pad-action-btn icon-btn clear-cell" data-number="0" title="Erase selected cell" aria-label="Erase" id="pad-erase-btn">
+                            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+                                <path fill="currentColor" d="M3.5 14.5l6.5-6.5a3 3 0 0 1 4.24 0l4.76 4.76a1.5 1.5 0 0 1 0 2.12l-3.18 3.18a1.5 1.5 0 0 1-1.06.44H9.41a1.5 1.5 0 0 1-1.06-.44L3.5 16.62a1.5 1.5 0 0 1 0-2.12Zm2.12.71l2.48 2.48c.19.19.45.3.71.3h5.35c.27 0 .52-.11.71-.3l2.47-2.47-4.95-4.95a1 1 0 0 0-1.41 0l-5.36 5.36Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="tools-col tools-center">
+                        <button id="undo-btn" class="pad-action-btn icon-btn" title="Undo last action" aria-label="Undo">↶</button>
+                        <button id="redo-btn" class="pad-action-btn icon-btn" title="Redo last action" aria-label="Redo">↷</button>
+                    </div>
+                    <div class="tools-col tools-right">
+                        <button id="notes-toggle" class="pad-action-btn icon-btn" title="Toggle Notes mode (pencil marks)" aria-label="Notes">✎</button>
+                        <button type="button" id="pad-lock-toggle" class="pad-action-btn icon-btn" title="Lock number to paint (tap again to unlock)" aria-label="Toggle number lock" aria-pressed="true">🔒</button>
+                    </div>
                 </div>
             </div>
 
@@ -318,6 +276,36 @@
                 <div id="status-message" class="status-message"></div>
             </div>
         </main>
+    </div>
+
+    <!-- New Puzzle modal (game type + difficulty chooser) -->
+    <div id="newpuzzle-modal" class="modal" style="display:none;">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="newpuzzle-title">
+            <h2 id="newpuzzle-title">New Puzzle</h2>
+            <div class="settings-form">
+             <div class="settings-section">
+                    <h3 class="section-title">Game type</h3>
+                    <div class="landing-diff-grid" role="radiogroup" aria-label="Game type">
+                        <button class="btn btn-secondary diff-btn diff-card" data-gametype="classic" role="radio" aria-checked="true"><span class="diff-icon"></span><span class="diff-text">Classic</span><span class="diff-hint">9×9</span></button>
+                        <!-- Future: killer, diagonal, etc. -->
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3 class="section-title">Difficulty</h3>
+                    <div id="newpuzzle-diffs" class="landing-diff-grid">
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="easy"><span class="diff-icon"></span><span class="diff-text">Easy</span><span class="diff-hint">Relaxed</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="medium"><span class="diff-icon"></span><span class="diff-text">Medium</span><span class="diff-hint">Balanced</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="hard"><span class="diff-icon"></span><span class="diff-text">Hard</span><span class="diff-hint">Tricky</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="expert"><span class="diff-icon"></span><span class="diff-text">Expert</span><span class="diff-hint">Advanced</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="master"><span class="diff-icon"></span><span class="diff-text">Master</span><span class="diff-hint">Elite</span></button>
+                        <button class="btn btn-secondary diff-btn diff-card" data-diff="extreme"><span class="diff-icon"></span><span class="diff-text">Extreme</span><span class="diff-hint">Insane</span></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="newpuzzle-cancel" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <div id="modal" class="modal">
@@ -381,7 +369,7 @@ Hold Shift to move backward.">ⓘ</span></span>
 • Daily puzzles keep fixed Lives.">ⓘ</span></span>
                         <label class="switch"><input type="checkbox" id="zen-mode-toggle" aria-label="Zen mode"><span class="switch-slider" aria-hidden="true"></span></label>
                     </div>
-                    <div class="control-col">
+                     <div class="control-col">
                         <div class="control-label">Lives <span class="help-tip" data-tooltip="Lives limit how many wrong entries you can make.
 Set to 11 for Unlimited.
 Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily.">ⓘ</span> <span class="value-pill" id="lives-limit-pill">3</span><span id="lives-limit-value" style="display:none">3</span></div>
@@ -412,15 +400,47 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                             <button type="button" class="swatch swatch-violet" data-accent="violet" role="radio" aria-checked="false" aria-label="Violet"></button>
                         </div>
                     </div>
+                    <div class="control-grid" id="board-sizing-section" style="display:grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items:start;">
+                        <div class="controls-stack" style="display:grid; gap:0.6rem;">
+                            <div class="control-col">
+                                <div class="control-label">Grid size <span class="help-tip" data-tooltip="Adjusts overall board/cell size.">ⓘ</span> <span class="value-pill" id="grid-size-pill">2</span></div>
+                                <input type="range" id="grid-size-slider" min="1" max="3" step="1" value="2" aria-label="Grid size" />
+                            </div>
+                            <div class="control-col">
+                                <div class="control-label">Input number size <span class="help-tip" data-tooltip="Scales the main digit inside each cell.">ⓘ</span> <span class="value-pill" id="digit-size-pill">3</span></div>
+                                <input type="range" id="digit-size-slider" min="1" max="5" step="1" value="3" aria-label="Input number size" />
+                            </div>
+                            <div class="control-col">
+                                <div class="control-label">Notes size <span class="help-tip" data-tooltip="Scales pencil‑mark annotations.">ⓘ</span> <span class="value-pill" id="note-size-pill">3</span></div>
+                                <input type="range" id="note-size-slider" min="1" max="5" step="1" value="3" aria-label="Notes size" />
+                            </div>
+                        </div>
+                        <div class="preview-wrap" style="justify-self:end;">
+                            <div class="sudoku-board" style="margin:0;">
+                                <div id="board-preview" class="board mini-board" aria-hidden="true"></div>
+                            </div>
+                        </div>
+                     </div>
                 </div>
                 <div class="settings-section">
                     <h3 class="section-title">Calendar</h3>
                     <div class="control-col">
-                                <div class="control-label">Week starts on <span class="help-tip" data-tooltip="Sets the first day shown in the Daily calendar.">ⓘ</span></div>
+                        <div class="control-label">Week starts on <span class="help-tip" data-tooltip="Sets the first day shown in the Daily calendar.">ⓘ</span></div>
                         <div id="weekstart-toggle" class="toggle-slider" role="switch" aria-checked="false" aria-label="Week start">
                             <span class="toggle-label left">Sun</span>
                             <span class="toggle-thumb" aria-hidden="true"></span>
                             <span class="toggle-label right">Mon</span>
+                        </div>
+                    </div>
+                    <div class="control-col">
+                        <div class="control-label">Filters</div>
+                        <div class="control-row">
+                            <span class="control-label">Only playable <span class="help-tip" data-tooltip="Hides future days so you only see days you can play now.">ⓘ</span></span>
+                            <label class="switch" title="Hide future days that cannot be played yet."><input type="checkbox" id="calendar-filter-playable-settings"><span class="switch-slider" aria-hidden="true"></span></label>
+                        </div>
+                        <div class="control-row">
+                            <span class="control-label">Only incomplete <span class="help-tip" data-tooltip="Hides days you’ve already completed.">ⓘ</span></span>
+                            <label class="switch" title="Hide days you've already finished."><input type="checkbox" id="calendar-filter-incomplete-settings"><span class="switch-slider" aria-hidden="true"></span></label>
                         </div>
                     </div>
                 </div>
@@ -458,6 +478,14 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                             </ul>
                             <p class="hint">Change Hint type in Settings → Gameplay → Hint type. The time penalty applies to every hint action, regardless of type.</p>
                         </div>
+                    <div class="help-card">
+                        <h4>🔄 Sync</h4>
+                        <ul class="help-list">
+                            <li><span class="key">Signed‑in sync</span><span class="desc">When signed in, your stats and gameplay/calendar settings sync across devices.</span></li>
+                            <li><span class="key">Device‑specific</span><span class="desc">Appearance choices (dark mode and accent color) stay on each device.</span></li>
+                            <li><span class="key">Offline</span><span class="desc">If you’re not signed in, everything is kept locally in your browser.</span></li>
+                        </ul>
+                    </div>
                     </div>
                     <div class="help-card">
                         <h4>🧘 Zen mode</h4>
@@ -498,6 +526,13 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                             <li><span class="key">💡</span><span class="desc">Hint: fills one correct cell</span></li>
                         </ul>
                     </div>
+                    <details id="help-about" class="help-card about-details">
+                        <summary>ℹ️ About</summary>
+                        <div class="about-content">
+                            <p><strong>Ultimate Sudoku</strong> v<span id="app-version">1.0.0</span></p>
+                            <p><strong>Data policy</strong>: Your game data (like wins, best times, and preferences) is stored locally in your browser. If you sign in, your stats and gameplay/calendar settings sync securely via Supabase so you can continue across devices. Appearance (dark mode and accent) stays device‑specific. No ads or third‑party trackers.</p>
+                        </div>
+                    </details>
                 </div>
             </div>
             <div class="modal-buttons">
@@ -525,15 +560,26 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
      <div id="calendar-modal" class="modal">
          <div class="modal-content calendar-modal-content">
              <h2>Daily Calendar</h2>
+             <div id="calendar-streaks" class="calendar-streaks" aria-live="polite" aria-atomic="true" style="margin-bottom:6px;"></div>
              <div class="calendar-header">
                  <button id="calendar-prev" class="btn btn-secondary" title="Previous month">◀</button>
                  <div id="calendar-month-label" class="calendar-month-label"></div>
                  <button id="calendar-next" class="btn btn-secondary" title="Next month">▶</button>
              </div>
              <div id="calendar-weekdays" class="calendar-weekdays" aria-hidden="true"></div>
-             <div id="calendar-grid" class="calendar-grid" role="grid" aria-label="Daily calendar"></div>
+              <div id="calendar-grid" class="calendar-grid" role="grid" aria-label="Daily calendar"></div>
+              <div class="calendar-quick" id="calendar-quick"></div>
+              <div id="calendar-legend" class="calendar-legend" aria-hidden="false" aria-label="Difficulty legend" title="Legend">
+                <span class="legend-chip" data-diff="easy"><span class="legend-icon"></span><span>Easy</span></span>
+                <span class="legend-chip" data-diff="medium"><span class="legend-icon"></span><span>Medium</span></span>
+                <span class="legend-chip" data-diff="hard"><span class="legend-icon"></span><span>Hard</span></span>
+                <span class="legend-chip" data-diff="expert"><span class="legend-icon"></span><span>Expert</span></span>
+                <span class="legend-chip" data-diff="master"><span class="legend-icon"></span><span>Master</span></span>
+                <span class="legend-chip" data-diff="extreme"><span class="legend-icon"></span><span>Extreme</span></span>
+              </div>
              <div class="modal-buttons">
                  <button id="calendar-close" class="btn btn-secondary">Close</button>
+                 <button id="calendar-play-today" class="btn btn-primary" style="display:none" aria-live="polite">Play today</button>
              </div>
          </div>
      </div>
@@ -552,7 +598,9 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
 
 
 
-    <!-- Supabase: set your project URL and anon key (replace placeholders). You can also provide these via inline env in hosting. -->
+    <!-- Load generated environment variables (creates window.SUPABASE_URL / window.SUPABASE_ANON_KEY if present). -->
+    <script src="env.js"></script>
+    <!-- Supabase: set your project URL and anon key (fallback placeholders). Prefer configuring via .env → env.js generator. -->
     <script>
       window.SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR_SUPABASE_PROJECT_ID.supabase.co';
       window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
@@ -563,11 +611,21 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
       const supaUrl = (typeof window !== 'undefined' && window.SUPABASE_URL) ? window.SUPABASE_URL : '';
       const supaKey = (typeof window !== 'undefined' && window.SUPABASE_ANON_KEY) ? window.SUPABASE_ANON_KEY : '';
       if (supaUrl && supaKey && !/YOUR_SUPABASE/i.test(supaUrl) && !/YOUR_SUPABASE/i.test(supaKey)) {
-        window.supabase = createClient(supaUrl, supaKey);
+        window.supabase = createClient(supaUrl, supaKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: 'sudoku-auth',
+            storage: (typeof window !== 'undefined' ? window.localStorage : undefined),
+            flowType: 'pkce'
+          }
+        });
       } else {
         window.supabase = undefined;
       }
     </script>
     <script src="script.js?v=v4"></script>
+    <script type="module" src="./src/index.js"></script>
   </body>
   </html>

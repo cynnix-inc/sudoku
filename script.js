@@ -1,6 +1,8 @@
 class SudokuGame {
     constructor(options = {}) {
         this._headless = !!options.headless;
+        // Game type: default to 'classic' 9x9 until variants are introduced
+        this.gameType = options.gameType || 'classic';
         this.board = Array(9).fill().map(() => Array(9).fill(0));
         this.solution = Array(9).fill().map(() => Array(9).fill(0));
         this.initialBoard = Array(9).fill().map(() => Array(9).fill(0));
@@ -49,7 +51,7 @@ class SudokuGame {
         // Hints state
         this.hintsUsed = 0;
         this.hintsLimit = Infinity; // set per difficulty
-        this.hintPenaltySeconds = 60; // time penalty per hint
+        this.hintPenaltySeconds = 30; // time penalty per hint (aligns with UI copy)
         // Timer pause/resume state
         this.isPaused = false;
         this._elapsedBeforePause = 0;
@@ -427,22 +429,174 @@ class SudokuGame {
             if (typeof window === 'undefined' || !window.supabase) return;
             const loginBtn = document.getElementById('menu-login');
             const logoutBtn = document.getElementById('menu-logout');
+            // Boot-time helper: wait for auth session after OAuth redirects
+            this._waitForAuthSession = async (timeoutMs = 2500) => {
+                try {
+                    const start = Date.now();
+                    // Fast path: if a session already exists, return it
+                    let { data: initial } = await window.supabase.auth.getSession();
+                    if (initial?.session?.user) return initial.session;
+                    // Wait for onAuthStateChange or until timeout
+                    return await new Promise((resolve) => {
+                        let resolved = false;
+                        const finish = (session) => { if (!resolved) { resolved = true; resolve(session || null); } };
+                        const { data } = window.supabase.auth.onAuthStateChange((_event, session) => {
+                            if (session?.user) finish(session);
+                        });
+                        const tick = () => {
+                            if (Date.now() - start >= timeoutMs) {
+                                try { data?.subscription?.unsubscribe?.(); } catch {}
+                                finish(null);
+                            } else {
+                                // Also poll getSession in case the event was missed
+                                window.supabase.auth.getSession().then(({ data: d }) => {
+                                    if (d?.session?.user) {
+                                        try { data?.subscription?.unsubscribe?.(); } catch {}
+                                        finish(d.session);
+                                    }
+                                }).finally(() => setTimeout(tick, 150));
+                            }
+                        };
+                        setTimeout(tick, 50);
+                    });
+                } catch {
+                    return null;
+                }
+            };
             const updateButtons = (loggedIn) => {
                 if (loginBtn) loginBtn.style.display = loggedIn ? 'none' : 'block';
                 if (logoutBtn) logoutBtn.style.display = loggedIn ? 'block' : 'none';
                 this._isLoggedIn = !!loggedIn;
+                // User chip
+                try {
+                    const chip = document.getElementById('user-chip');
+                    const nameEl = document.getElementById('user-name');
+                    const avatarEl = document.getElementById('user-avatar');
+                    if (!chip) return;
+                    if (!loggedIn) {
+                        chip.style.display = 'none';
+                        if (nameEl) nameEl.textContent = '';
+                        if (avatarEl) avatarEl.removeAttribute('src');
+                    } else {
+                        chip.style.display = '';
+                    }
+                } catch {}
+            };
+            // Attempt to rehydrate lost in-memory session from localStorage after hard reloads
+            const tryRehydrateFromLocalStorage = async () => {
+                try {
+                    const raw = localStorage.getItem('sudoku-auth');
+                    if (!raw) return false;
+                    const parsed = JSON.parse(raw);
+                    const accessToken = parsed?.currentSession?.access_token || parsed?.access_token;
+                    const refreshToken = parsed?.currentSession?.refresh_token || parsed?.refresh_token;
+                    if (!accessToken && !refreshToken) return false;
+                    const { data: existing } = await window.supabase.auth.getSession();
+                    if (existing?.session?.user) return true;
+                    const { data, error } = await window.supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+                    return !error && !!data?.session?.user;
+                } catch {
+                    return false;
+                }
             };
             // Initial state
+            try { await tryRehydrateFromLocalStorage(); } catch {}
             const { data: { user } } = await window.supabase.auth.getUser();
-            updateButtons(!!user);
+            if (user) {
+                const chip = document.getElementById('user-chip');
+                const nameEl = document.getElementById('user-name');
+                const avatarEl = document.getElementById('user-avatar');
+                if (chip) {
+                    chip.style.display = '';
+                    if (nameEl) {
+                        const full = user.user_metadata?.full_name || user.email || 'Player';
+                        const first = (full.split?.(' ')?.[0]) || full;
+                        nameEl.textContent = first;
+                    }
+                    if (avatarEl) {
+                        const src = user.user_metadata?.avatar_url || user.user_metadata?.picture || '';
+                        if (src) avatarEl.src = src; else avatarEl.removeAttribute('src');
+                    }
+                }
+                updateButtons(true);
+                // Clean up OAuth params if present (after successful restore)
+                try {
+                    const url = new URL(window.location.href);
+                    if (url.searchParams.has('code') || url.searchParams.has('state')) {
+                        url.searchParams.delete('code');
+                        url.searchParams.delete('state');
+                        window.history.replaceState({}, document.title, url.pathname + (url.search || '') + url.hash);
+                    }
+                } catch {}
+                try { await this.syncRemoteStats && this.syncRemoteStats(); } catch {}
+                try { await this.syncRemoteSettings && this.syncRemoteSettings(); } catch {}
+            } else {
+                // After OAuth redirect, Supabase may still be exchanging the code for a session.
+                // Wait briefly for the session to become available, then update UI without requiring a manual refresh.
+                try {
+                    const session = this._waitForAuthSession ? await this._waitForAuthSession(2500) : null;
+                    if (session?.user) {
+                        const u = session.user;
+                        const chip = document.getElementById('user-chip');
+                        const nameEl = document.getElementById('user-name');
+                        const avatarEl = document.getElementById('user-avatar');
+                        if (chip) chip.style.display = '';
+                        if (nameEl) {
+                            const full = u.user_metadata?.full_name || u.email || 'Player';
+                            const first = (full.split?.(' ')?.[0]) || full;
+                            nameEl.textContent = first;
+                        }
+                        if (avatarEl) {
+                            const src = u.user_metadata?.avatar_url || u.user_metadata?.picture || '';
+                            if (src) avatarEl.src = src; else avatarEl.removeAttribute('src');
+                        }
+                        updateButtons(true);
+                        // Clean up OAuth params if present
+                        try {
+                            const url = new URL(window.location.href);
+                            if (url.searchParams.has('code') || url.searchParams.has('state')) {
+                                url.searchParams.delete('code');
+                                url.searchParams.delete('state');
+                                window.history.replaceState({}, document.title, url.pathname + (url.search || '') + url.hash);
+                            }
+                        } catch {}
+                        try { await this.syncRemoteStats && this.syncRemoteStats(); } catch {}
+                        try { await this.syncRemoteSettings && this.syncRemoteSettings(); } catch {}
+                    } else {
+                        updateButtons(false);
+                    }
+                } catch {
+                    updateButtons(false);
+                }
+            }
             // Subscribe to auth changes
-            window.supabase.auth.onAuthStateChange(async (_event, session) => {
+            this._authUnsubMain?.();
+            const { data: sub } = window.supabase.auth.onAuthStateChange(async (_event, session) => {
                 const isLoggedIn = !!session?.user;
                 updateButtons(isLoggedIn);
                 if (isLoggedIn) {
+                    try {
+                        const chip = document.getElementById('user-chip');
+                        const nameEl = document.getElementById('user-name');
+                        const avatarEl = document.getElementById('user-avatar');
+                        const u = session.user;
+                        if (chip) chip.style.display = '';
+                        if (nameEl) {
+                            const full = u.user_metadata?.full_name || u.email || 'Player';
+                            const first = (full.split?.(' ')?.[0]) || full;
+                            nameEl.textContent = first;
+                        }
+                        if (avatarEl) {
+                            const src = u.user_metadata?.avatar_url || u.user_metadata?.picture || '';
+                            if (src) avatarEl.src = src; else avatarEl.removeAttribute('src');
+                        }
+                    } catch {}
+                    try { this.showToast && this.showToast('Signed in', 'success', 3000); } catch {}
                     await this.syncRemoteStats && this.syncRemoteStats();
+                    await this.syncRemoteSettings && this.syncRemoteSettings();
                 }
             });
+            this._authUnsubMain = sub?.subscription?.unsubscribe?.bind(sub.subscription);
         } catch {}
     }
 
@@ -452,9 +606,10 @@ class SudokuGame {
             return;
         }
         try {
+            const redirectTo = `${window.location.origin}${window.location.pathname}`;
             await window.supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin }
+                options: { redirectTo, queryParams: { prompt: 'select_account' } }
             });
         } catch (e) {
             console.error(e);
@@ -464,13 +619,22 @@ class SudokuGame {
 
     async logout() {
         if (typeof window === 'undefined' || !window.supabase) return;
-        try { await window.supabase.auth.signOut(); } catch {}
+        try {
+            await window.supabase.auth.signOut();
+            try { this.showToast && this.showToast('Signed out', 'info', 3000); } catch {}
+            try { this._clearRemoteSettingsCache && this._clearRemoteSettingsCache(); } catch {}
+        } catch (e) {
+            console.error(e);
+            try { this.showToast && this.showToast('Sign-out failed', 'error', 4000); } catch {}
+        }
     }
 
     // Stats sync: push local to remote if newer; pull if remote newer
     async syncRemoteStats() {
         if (typeof window === 'undefined' || !window.supabase) return;
+        if (this._syncingStats) return;
         try {
+            this._syncingStats = true;
             const { data: { user } } = await window.supabase.auth.getUser();
             if (!user) return;
             const localStatsRaw = localStorage.getItem('sudoku-stats');
@@ -486,7 +650,10 @@ class SudokuGame {
 
             const remoteUpdatedAt = remote?.updated_at ? new Date(remote.updated_at) : null;
 
-            if (localStats && (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt))) {
+            if (!remote && (!localUpdatedAt)) {
+                // No remote row and no local timestamp: create an empty baseline row
+                await this._upsertRemoteStats(user.id, {});
+            } else if (localStats && (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt))) {
                 await this._upsertRemoteStats(user.id, localStats);
             } else if (remote && (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt))) {
                 const merged = this._mapRemoteStatsToLocal(remote);
@@ -494,7 +661,83 @@ class SudokuGame {
             }
         } catch (e) {
             console.error('syncRemoteStats failed', e);
+        } finally {
+            this._syncingStats = false;
         }
+    }
+
+    // Settings sync: signed-in users sync gameplay + calendar prefs (not appearance)
+    async syncRemoteSettings() {
+        if (typeof window === 'undefined' || !window.supabase) return;
+        if (this._syncingSettings) return;
+        try {
+            this._syncingSettings = true;
+            const { data: { user } } = await window.supabase.auth.getUser();
+            if (!user) return;
+            const localRaw = localStorage.getItem('sudoku-settings');
+            const local = localRaw ? JSON.parse(localRaw) : {};
+            const localUpdatedAt = local.updatedAt ? new Date(local.updatedAt) : null;
+
+            // Only include gameplay+calendar in remote payload
+            const toRemotePrefs = (s) => ({
+                autoCandidates: !!s.autoCandidates,
+                autoAdvance: !!s.autoAdvance,
+                zenMode: !!s.zenMode,
+                livesEnabled: !!s.livesEnabled,
+                livesLimit: (typeof s.livesLimit === 'number') ? s.livesLimit : undefined,
+                weekstart: s.weekstart || 'sunday',
+                hintMode: s.hintMode || 'direct',
+                // explicitly exclude themeDark and accent
+                // themeDark: undefined,
+                // accent: undefined,
+            });
+
+            const { data: remote, error } = await window.supabase
+                .from('settings')
+                .select('*')
+                .eq('user_id', user.id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            const remoteUpdatedAt = remote?.updated_at ? new Date(remote.updated_at) : null;
+
+            if (!remote && !localUpdatedAt) {
+                // create baseline row from local prefs snapshot
+                await this._upsertRemoteSettings(user.id, toRemotePrefs(local));
+            } else if (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt)) {
+                await this._upsertRemoteSettings(user.id, toRemotePrefs(local));
+            } else if (remote && (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt))) {
+                // Merge remote into local: only gameplay+calendar fields; preserve local appearance
+                const prefs = remote.prefs || {};
+                const merged = {
+                    ...local,
+                    autoCandidates: !!prefs.autoCandidates,
+                    autoAdvance: !!prefs.autoAdvance,
+                    zenMode: !!prefs.zenMode,
+                    livesEnabled: !!prefs.livesEnabled,
+                    livesLimit: (typeof prefs.livesLimit === 'number') ? prefs.livesLimit : (local.livesLimit ?? 3),
+                    weekstart: prefs.weekstart || local.weekstart || 'sunday',
+                    hintMode: prefs.hintMode || local.hintMode || 'direct',
+                    updatedAt: remote.updated_at || new Date().toISOString(),
+                };
+                localStorage.setItem('sudoku-settings', JSON.stringify(merged));
+                // Apply immediately
+                this.resumeSettings && this.resumeSettings();
+            }
+        } catch (e) {
+            console.error('syncRemoteSettings failed', e);
+        } finally {
+            this._syncingSettings = false;
+        }
+    }
+
+    async _upsertRemoteSettings(userId, prefs) {
+        const payload = { user_id: userId, prefs, updated_at: new Date().toISOString() };
+        const { error } = await window.supabase.from('settings').upsert(payload, { onConflict: 'user_id' });
+        if (error) throw error;
+    }
+
+    _clearRemoteSettingsCache() {
+        // no-op placeholder; reserved for future per-device keys
     }
 
     _mapLocalStatsToRow(userId, stats) {
@@ -547,23 +790,29 @@ class SudokuGame {
         return anyMoves;
     }
     
-    updateModeIndicator({ type, difficulty, dateKey }) {
+    updateModeIndicator({ type, difficulty, dateKey, gameType }) {
         const host = document.getElementById('mode-indicator');
         if (!host) return;
-        // Build pill with icon + label (for daily show date)
-        const cls = `mode-pill mode-${difficulty || 'medium'}`;
-        const icon = this.getDifficultyIcon(difficulty || 'medium');
+        const diff = (difficulty || 'medium');
+        const pillCls = `mode-pill mode-${diff} mode-combined`;
+        const diffIcon = this.getDifficultyIcon(diff);
+        const typeId = (type === 'daily') ? 'daily' : (gameType || this.gameType || 'classic');
+
+        let typeLabel = typeId.charAt(0).toUpperCase() + typeId.slice(1);
         if (type === 'daily' && dateKey) {
             const d = this.parseUtcKeyToDate(dateKey);
             const mon = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
             const day = String(d.getUTCDate()).padStart(2, '0');
-            const formatted = `${mon}-${day}`; // mmm-DD
-            host.innerHTML = `<span class="mode-label">Daily</span><span class="${cls}"><span class="icon">${icon}</span><span class="mode-date">${formatted}</span></span>`;
-        } else {
-        const label = (difficulty || 'medium');
-            host.innerHTML = `<span class="mode-label">Mode</span><span class="${cls}"><span class="icon">${icon}</span><span class="mode-date">${label[0].toUpperCase()+label.slice(1)}</span></span>`;
+            typeLabel = `Daily ${mon}-${day}`;
         }
-        // Update icon badge state whenever mode changes
+
+        host.innerHTML = `
+          <span class=\"${pillCls}\">
+            <span class=\"mode-type\">${typeLabel}</span>
+            <span class=\"pill-sep-h\" aria-hidden=\"true\"></span>
+            <span class=\"mode-diff\"><span class=\"icon\">${diffIcon}</span><span class=\"mode-diff-text\">${diff.charAt(0).toUpperCase()+diff.slice(1)}</span></span>
+          </span>
+        `;
         this.updateDailyIconBadge && this.updateDailyIconBadge();
     }
 
@@ -571,7 +820,7 @@ class SudokuGame {
     updateDailyIconBadge() {
         const headerDot = document.getElementById('daily-dot'); // legacy (removed)
         const menuDot = document.getElementById('menu-daily-dot');
-        const dailysDot = document.getElementById('menu-dailys-dot');
+        const dailysDot = document.getElementById('menu-daily-item-dot');
         try {
             const key = this.getUtcDateKey();
             const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
@@ -667,13 +916,15 @@ class SudokuGame {
             // available width (in px)
             const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
             // Account for container horizontal margins + paddings
-            // Desktop/tablet ≈ 64px (1rem margin + 1rem padding on both sides)
-            // Small screens (<=768px) ≈ 48px (0.5rem margin + 1rem padding on both sides)
             const overhead = vw <= 768 ? 48 : 64;
             const maxBoardWidth = Math.min(520, Math.max(240, vw - overhead));
             // Choose the largest integer cell size that fits (account for 8 gaps of 1px)
             const raw = Math.floor((maxBoardWidth - 8) / 9);
-            const cellSize = Math.max(30, Math.min(60, raw));
+            // Use last applied grid size (staged slider changes shouldn't affect live board yet)
+            const appliedGrid = (typeof this._appliedGridSize === 'number') ? this._appliedGridSize : 2;
+            const scaleMap = { 1: 0.9, 2: 1.0, 3: 1.12 };
+            const scale = scaleMap[appliedGrid] || 1.0;
+            const cellSize = Math.max(30, Math.min(60, Math.round(raw * scale)));
             // Compute exact board width for these integer tracks
             const boardWidth = cellSize * 9 + 8; // add 8px for 1px gaps between 9 columns
             boardElement.style.width = boardWidth + 'px';
@@ -687,35 +938,27 @@ class SudokuGame {
 
     createBoard() {
         const boardElement = document.getElementById('board');
+        // Delegate rendering to BoardView module if present
+        if (typeof window !== 'undefined' && window.SudokuBoardView && window.SudokuBoardView.renderBoard) {
+            window.SudokuBoardView.renderBoard(this, boardElement);
+            return;
+        }
+        // Fallback (should not be used once modules are loaded)
+        if (!boardElement) return;
         boardElement.innerHTML = '';
-        // A11y: mark as grid
-        try {
-            boardElement.setAttribute('role', 'grid');
-            boardElement.setAttribute('aria-label', 'Sudoku board');
-        } catch {}
-        
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'cell-container';
-
                 const cell = document.createElement('input');
-                cell.type = 'text';
-                // On touch devices, suppress OS keyboard; rely on on-screen number pad
-                if (this.touchMode) cell.setAttribute('inputmode', 'none'); else cell.setAttribute('inputmode', 'numeric');
-                cell.setAttribute('autocomplete','off');
-                cell.setAttribute('autocorrect','off');
                 cell.className = 'cell';
                 cell.dataset.row = row;
                 cell.dataset.col = col;
-                cell.maxLength = 1;
-                // A11y roles/labels
-                try {
-                    cell.setAttribute('role', 'gridcell');
-                    cell.setAttribute('aria-selected', 'false');
-                    cell.setAttribute('aria-label', `Row ${row + 1}, Column ${col + 1}`);
-                } catch {}
-
+                // Ensure mobile tests see inputmode="none" when touch-capable
+                if (this.touchMode) cell.setAttribute('inputmode', 'none'); else cell.setAttribute('inputmode', 'numeric');
+                cell.addEventListener('click', () => this.selectCell(cell, row, col));
+                cell.addEventListener('input', (e) => this.handleCellInput(e, row, col));
+                cell.addEventListener('keydown', (e) => this.handleKeyDown(e, row, col));
+                const wrapper = document.createElement('div');
+                wrapper.className = 'cell-container';
                 const notes = document.createElement('div');
                 notes.className = 'notes';
                 notes.dataset.row = row;
@@ -727,11 +970,6 @@ class SudokuGame {
                     note.dataset.value = n;
                     notes.appendChild(note);
                 }
-
-                cell.addEventListener('click', () => this.selectCell(cell, row, col));
-                cell.addEventListener('input', (e) => this.handleCellInput(e, row, col));
-                cell.addEventListener('keydown', (e) => this.handleKeyDown(e, row, col));
-
                 wrapper.appendChild(cell);
                 wrapper.appendChild(notes);
                 boardElement.appendChild(wrapper);
@@ -937,6 +1175,9 @@ class SudokuGame {
 
     // ---- Daily puzzle helpers ----
     getUtcDateKey(date = new Date()) {
+        if (typeof window !== 'undefined' && window.SudokuDaily && window.SudokuDaily.getUtcDateKey) {
+            return window.SudokuDaily.getUtcDateKey(date);
+        }
         const y = date.getUTCFullYear();
         const m = (date.getUTCMonth() + 1).toString().padStart(2, '0');
         const d = date.getUTCDate().toString().padStart(2, '0');
@@ -944,6 +1185,9 @@ class SudokuGame {
     }
 
     parseUtcKeyToDate(key) {
+        if (typeof window !== 'undefined' && window.SudokuDaily && window.SudokuDaily.parseUtcKeyToDate) {
+            return window.SudokuDaily.parseUtcKeyToDate(key);
+        }
         const y = parseInt(key.slice(0,4));
         const m = parseInt(key.slice(4,6)) - 1;
         const d = parseInt(key.slice(6,8));
@@ -951,6 +1195,9 @@ class SudokuGame {
     }
 
     getNextUtcMidnight() {
+        if (typeof window !== 'undefined' && window.SudokuDaily && window.SudokuDaily.getNextUtcMidnight) {
+            return window.SudokuDaily.getNextUtcMidnight();
+        }
         const now = new Date();
         const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
         return next;
@@ -1268,16 +1515,20 @@ class SudokuGame {
     }
 
     getDifficultyForDateKey(key) {
-        // Build a weekly varied pattern based on the week's seed
+        if (typeof window !== 'undefined' && window.SudokuDaily && window.SudokuDaily.getDifficultyForDateKey) {
+            return window.SudokuDaily.getDifficultyForDateKey(key, this.createSeededRng.bind(this));
+        }
         const weekSeed = this.getWeekSeedFromDateKey(key);
         const pattern = this.buildWeeklyPattern(weekSeed);
         const dt = this.parseUtcKeyToDate(key);
-        const day = dt.getUTCDay(); // 0..6, Sunday..Saturday
+        const day = dt.getUTCDay();
         return pattern[day] || 'medium';
     }
 
     getWeekSeedFromDateKey(key) {
-        // Anchor seed: the Sunday of this UTC week
+        if (typeof window !== 'undefined' && window.SudokuDaily && window.SudokuDaily.getWeekSeedFromDateKey) {
+            return window.SudokuDaily.getWeekSeedFromDateKey(key);
+        }
         const dt = this.parseUtcKeyToDate(key);
         const dow = dt.getUTCDay();
         const sunday = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate() - dow));
@@ -1285,33 +1536,17 @@ class SudokuGame {
     }
 
     buildWeeklyPattern(weekSeed) {
+        if (typeof window !== 'undefined' && window.SudokuDaily && window.SudokuDaily.buildWeeklyPattern) {
+            return window.SudokuDaily.buildWeeklyPattern(weekSeed, this.createSeededRng.bind(this));
+        }
         const rng = this.createSeededRng('W:' + weekSeed);
-        // Choose one of a few mixes to vary counts weekly (sum to 7). Include Master/Extreme sparingly.
         const mixes = [
-            { easy: 2, medium: 2, hard: 1, expert: 1, master: 1 },
-            { easy: 1, medium: 3, hard: 1, expert: 1, master: 1 },
-            { easy: 1, medium: 2, hard: 2, expert: 1, master: 1 },
-            { easy: 1, medium: 2, hard: 2, expert: 1, extreme: 1 },
-            { easy: 2, medium: 1, hard: 2, expert: 1, master: 1 },
+            ['easy','medium','hard','medium','expert','medium','hard'],
+            ['medium','medium','hard','expert','medium','hard','medium'],
+            ['easy','medium','hard','expert','master','medium','hard'],
+            ['medium','hard','expert','hard','medium','master','extreme']
         ];
-        const mix = mixes[Math.floor(rng() * mixes.length)];
-        const bag = [];
-        Object.entries(mix).forEach(([k, n]) => { for (let i = 0; i < n; i++) bag.push(k); });
-        while (bag.length < 7) bag.push('medium');
-        if (bag.length > 7) bag.length = 7;
-        for (let i = bag.length - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            [bag[i], bag[j]] = [bag[j], bag[i]];
-        }
-        // Light bias: if a harder puzzle is early and easier late, swap them
-        if (rng() < 0.5) {
-            const early = Math.floor(rng() * 3); // 0..2
-            const late = 4 + Math.floor(rng() * 3); // 4..6
-            if (this.rankDifficulty(bag[early]) > this.rankDifficulty(bag[late])) {
-                [bag[early], bag[late]] = [bag[late], bag[early]];
-            }
-        }
-        return bag; // Sunday..Saturday
+        return mixes[Math.floor(rng() * mixes.length)];
     }
 
     rankDifficulty(d) {
@@ -1340,22 +1575,17 @@ class SudokuGame {
     }
 
     generateSolvedBoard() {
-        // Start with an empty board
+        // Delegate to pure solver module if available
+        if (typeof window !== 'undefined' && window.SudokuSolver && window.SudokuSolver.generateSolvedBoard) {
+            this.board = window.SudokuSolver.generateSolvedBoard();
+            return;
+        }
+        // Legacy fallback
         this.board = Array(9).fill().map(() => Array(9).fill(0));
-        
-        // Fill diagonal 3x3 boxes first (these can be filled independently)
-        // Only fill boxes at (0,0) and (3,3) and (6,6) to avoid going out of bounds
-        this.fillBox(0, 0);
-        this.fillBox(3, 3);
-        this.fillBox(6, 6);
-        
-        // Solve the rest of the board
+        this.fillBox(0, 0); this.fillBox(3, 3); this.fillBox(6, 6);
         if (!this.solveBoard()) {
-            // If solving fails, try again with a fresh board
             this.board = Array(9).fill().map(() => Array(9).fill(0));
-            this.fillBox(0, 0);
-            this.fillBox(3, 3);
-            this.fillBox(6, 6);
+            this.fillBox(0, 0); this.fillBox(3, 3); this.fillBox(6, 6);
             this.solveBoard();
         }
     }
@@ -1372,23 +1602,22 @@ class SudokuGame {
     }
 
     solveBoard() {
+        if (typeof window !== 'undefined' && window.SudokuSolver && window.SudokuSolver.solveBoard) {
+            const { solved, grid } = window.SudokuSolver.solveBoard(this.board);
+            if (solved) this.board = grid;
+            return solved;
+        }
+        // Legacy fallback backtracking
         const emptyCell = this.findEmptyCell();
         if (!emptyCell) return true;
-        
         const [row, col] = emptyCell;
-        
         for (let num = 1; num <= 9; num++) {
             if (this.isValidMove(row, col, num)) {
                 this.board[row][col] = num;
-                
-                if (this.solveBoard()) {
-                    return true;
-                }
-                
+                if (this.solveBoard()) return true;
                 this.board[row][col] = 0;
             }
         }
-        
         return false;
     }
 
@@ -1404,26 +1633,19 @@ class SudokuGame {
     }
 
     isValidMove(row, col, num) {
-        // Check row
-        for (let x = 0; x < 9; x++) {
-            if (this.board[row][x] === num) return false;
+        if (typeof window !== 'undefined' && window.SudokuSolver && window.SudokuSolver.isValidMove) {
+            return window.SudokuSolver.isValidMove(this.board, row, col, num);
         }
-        
-        // Check column
-        for (let x = 0; x < 9; x++) {
-            if (this.board[x][col] === num) return false;
-        }
-        
-        // Check 3x3 box
+        // Legacy fallback
+        for (let x = 0; x < 9; x++) if (this.board[row][x] === num) return false;
+        for (let x = 0; x < 9; x++) if (this.board[x][col] === num) return false;
         const startRow = Math.floor(row / 3) * 3;
         const startCol = Math.floor(col / 3) * 3;
-        
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
                 if (this.board[startRow + i][startCol + j] === num) return false;
             }
         }
-        
         return true;
     }
 
@@ -2171,11 +2393,11 @@ class SudokuGame {
                 badge.classList.toggle('badge-danger', String(left) === '0');
             }
         }
-        let titleText = 'Get a hint: fills one correct cell (+30s).';
+        let titleText = `Get a hint: fills one correct cell (+${this.hintPenaltySeconds}s).`;
         if (finite) {
             const remaining = Number(left);
             titleText = remaining > 0
-                ? `Get a hint: fills one correct cell (+30s). ${remaining} left.`
+                ? `Get a hint: fills one correct cell (+${this.hintPenaltySeconds}s). ${remaining} left.`
                 : 'No hints left.';
         }
         btn.setAttribute('title', titleText);
@@ -2287,7 +2509,9 @@ class SudokuGame {
     }
 
     getDailyDifficulty() {
-        // Derive today's difficulty from a varied weekly pattern
+        if (typeof window !== 'undefined' && window.SudokuDaily && window.SudokuDaily.getDailyDifficulty) {
+            return window.SudokuDaily.getDailyDifficulty(this.createSeededRng.bind(this));
+        }
         const key = this.getUtcDateKey();
         return this.getDifficultyForDateKey(key);
     }
@@ -2302,7 +2526,7 @@ class SudokuGame {
         dd.textContent = `${key.slice(0,4)}-${key.slice(4,6)}-${key.slice(6)}`;
         const diff = this.getDailyDifficulty();
         di.textContent = diff[0].toUpperCase() + diff.slice(1);
-        m.style.display = 'block';
+        m.style.display = 'grid';
         if (this._dailyModalTimer) clearInterval(this._dailyModalTimer);
         const update = () => {
             const t = this.getNextUtcMidnight();
@@ -2370,9 +2594,9 @@ class SudokuGame {
         const total = unlimited ? 0 : (this.mistakesEnabled && Number.isFinite(this.mistakeLimit)) ? this.mistakeLimit : 0;
         const compact = window.matchMedia('(max-width: 420px)').matches;
         if (unlimited) {
-            // Infinity display at normal heart size
+            // Infinity display: scale heart to match timer height and adjust badge overlap
             const wrap = document.createElement('div');
-            wrap.className = 'health-compact';
+            wrap.className = 'health-compact health-infinite';
             wrap.innerHTML = `<span class="health-heart"><div class="heart-full">${this.renderHeartSvg()}</div><span class="health-badge">∞</span></span>`;
             host.appendChild(wrap);
             host.setAttribute('aria-label', 'Unlimited lives');
@@ -2385,6 +2609,8 @@ class SudokuGame {
             host.appendChild(wrap);
             host.setAttribute('aria-label', `Lives remaining: ${remaining} of ${total}`);
         } else {
+            // For large life counts, stack hearts into multiple short rows to prevent overflow
+            if (total > 5) host.classList.add('stack');
             for (let i = 0; i < total; i++) {
                 const heart = document.createElement('div');
                 heart.className = 'health-heart appear';
@@ -2443,6 +2669,8 @@ class SudokuGame {
         // Low-health state color/pulse
         host.classList.toggle('health-critical', remaining <= 1 && total > 0);
         host.classList.toggle('health-low', remaining === 2);
+        // Maintain stacked layout if many hearts
+        if (total > 5) host.classList.add('stack'); else host.classList.remove('stack');
     }
 
     solvePuzzle() {
@@ -2473,6 +2701,52 @@ class SudokuGame {
         } else {
             this.showStatus('All numbers are correct!', 'success');
         }
+    }
+
+    async restartPuzzle() {
+        if (this.isGameInProgress && this.isGameInProgress()) {
+            const proceed = await (this.showConfirm?.('Restart this puzzle from the beginning? Your time and progress will reset.'));
+            if (!proceed) return;
+        }
+        // Reset board to initial givens
+        this.board = this.initialBoard.map(row => [...row]);
+        // Clear notes
+        if (this.notes) {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    this.notes[r][c]?.clear?.();
+                    this.updateNotesDisplay && this.updateNotesDisplay(r, c);
+                }
+            }
+        }
+        // Reset history and redo
+        this.history = [];
+        this.redoStack = [];
+        // Reset selection and highlights
+        this.lockedNumber = null;
+        document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
+        if (this.selectedCell) { this.selectedCell.classList.remove('selected'); this.selectedCell = null; }
+        document.querySelectorAll('.cell.highlighted').forEach(cell => cell.classList.remove('highlighted'));
+        // Reset Lives and UI
+        this.resetMistakes && this.resetMistakes();
+        this.renderHealthBar && this.renderHealthBar();
+        // Reset hints count UI
+        this.hintsUsed = 0;
+        this.updateHintUi && this.updateHintUi();
+        // Reset timer
+        this.stopTimer && this.stopTimer();
+        this.startTime = null;
+        this.isPaused = false;
+        this._pauseStartedAt = null;
+        this._elapsedBeforePause = 0;
+        this._hasStarted = false;
+        this._pendingStart = false;
+        this._preStartElapsed = 0;
+        this.updateTimerButton && this.updateTimerButton();
+        // Apply to UI
+        this.updateDisplay && this.updateDisplay();
+        this.clearStatus && this.clearStatus();
+        this.showStatus && this.showStatus('Puzzle restarted', 'info');
     }
 
     clearBoard() {
@@ -2599,43 +2873,97 @@ class SudokuGame {
                 if (ng) ng.style.display = 'none';
                 popover.style.display = open ? 'none' : 'block';
                 menuBtn.setAttribute('aria-expanded', (!open).toString());
+                if (!open) {
+                    const first = popover.querySelector('.popover-item');
+                    first && first.focus && first.focus();
+                }
             });
             // Prevent clicks inside the popover from bubbling to the document
             popover.addEventListener('click', (e) => { e.stopPropagation(); });
+            // Keyboard navigation inside the popover
+            popover.addEventListener('keydown', (e) => {
+                const items = Array.from(popover.querySelectorAll('.popover-item'));
+                if (items.length === 0) return;
+                const idx = items.indexOf(document.activeElement);
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const next = items[(Math.max(0, idx) + 1) % items.length];
+                    next && next.focus && next.focus();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prev = items[(idx > 0 ? idx : items.length) - 1];
+                    prev && prev.focus && prev.focus();
+                } else if (e.key === 'Home') {
+                    e.preventDefault(); items[0].focus();
+                } else if (e.key === 'End') {
+                    e.preventDefault(); items[items.length - 1].focus();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    popover.style.display = 'none';
+                    menuBtn.setAttribute('aria-expanded', 'false');
+                    menuBtn.focus && menuBtn.focus();
+                }
+            });
             document.addEventListener('click', (e) => {
                 if (!popover.contains(e.target) && e.target !== menuBtn) {
                     popover.style.display = 'none';
                     menuBtn.setAttribute('aria-expanded', 'false');
                 }
             });
+            // Global Escape closes menu
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && popover.style.display === 'block') {
+                    popover.style.display = 'none';
+                    menuBtn.setAttribute('aria-expanded', 'false');
+                    menuBtn.focus && menuBtn.focus();
+                }
+            });
         }
 
         // Popover actions
         const map = [
-            ['menu-newgame', async (ev) => {
+            ['menu-newgame', async () => {
+                // New Puzzle modal: game type + difficulty chooser
+                const modal = document.getElementById('newpuzzle-modal');
+                if (modal) {
+                    modal.style.display = 'grid';
+                    this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(modal);
+                    this._bindOverlayRecalibration && this._bindOverlayRecalibration(modal);
+                    return;
+                }
+                // Fallback to landing if modal missing
+                const landing = document.getElementById('landing-overlay');
+                if (landing) landing.style.display = 'flex'; else this.newGame();
+            }],
+            ['menu-home', async () => {
                 if (this.isGameInProgress && this.isGameInProgress()) {
-                    const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
+                    const proceed = await this.showConfirm('Go Home? Current game will end and count as a loss.');
                     if (!proceed) return;
                     this.recordLoss();
                 }
-                // Easter: Alt+Click opens prompt for a seed and starts a seeded game
-                try {
-                    if (ev && (ev.altKey || ev.metaKey)) {
-                        const seed = window.prompt('Enter seed for deterministic puzzle:');
-                        if (seed && seed.trim()) { this.generateSeeded && this.generateSeeded(seed.trim(), (localStorage.getItem('sudoku-last-difficulty') || 'medium')); return; }
-                    }
-                } catch {}
-                this.newGame();
+                const landing = document.getElementById('landing-overlay');
+                if (landing) landing.style.display = 'flex';
+                const pause = document.getElementById('pause-overlay'); if (pause) pause.style.display = 'none';
             }],
-            ['menu-dailys', () => { this.openCalendar && this.openCalendar(); }],
-            ['menu-check', () => this.checkPuzzle()],
-            ['menu-solve', () => this.solvePuzzle()],
-            ['menu-clear', () => this.clearBoard()],
+            ['menu-daily', async () => {
+                if (this.isGameInProgress && this.isGameInProgress()) {
+                    const proceed = await this.showConfirm('Open Daily calendar? Current game will end and count as a loss.');
+                    if (!proceed) return;
+                    this.recordLoss();
+                }
+                this.openCalendar && this.openCalendar();
+            }],
+            ['menu-restart', async () => { await this.restartPuzzle(); }],
+            ['menu-clear', async () => {
+                const ok = await (this.showConfirm?.('Clear all your entries? Lives, timer, and stats remain.'));
+                if (!ok) return;
+                this.clearBoard();
+            }],
             ['menu-stats', () => this.showStats && this.showStats()],
             ['menu-login', () => this.loginWithGoogle && this.loginWithGoogle()],
             ['menu-logout', () => this.logout && this.logout()],
-            ['menu-settings', () => { this.autoPauseOnBlur && this.autoPauseOnBlur(); const m = document.getElementById('settings-modal'); if (m) m.style.display = 'block'; }],
-            ['menu-help', () => { const m = document.getElementById('help-modal'); if (m) m.style.display = 'block'; }],
+            ['menu-settings', () => { this.autoPauseOnBlur && this.autoPauseOnBlur(); const m = document.getElementById('settings-modal'); if (m) { m.style.display = 'grid'; this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(m); this._bindOverlayRecalibration && this._bindOverlayRecalibration(m); } }],
+            ['menu-help', () => { const m = document.getElementById('help-modal'); if (m) { m.style.display = 'grid'; this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(m); this._bindOverlayRecalibration && this._bindOverlayRecalibration(m); } }],
         ];
         const hideMenu = () => {
             const pop = document.getElementById('menu-popover');
@@ -2667,6 +2995,19 @@ class SudokuGame {
             if (modal) modal.style.display = 'none';
             // Auto-resume on closing settings
             this.resumeFromPause && this.resumeFromPause();
+            // Apply staged Board sizing to live board now
+            try {
+                const gridStep = parseInt(document.getElementById('grid-size-slider')?.value || '3', 10);
+                const digitStep = parseInt(document.getElementById('digit-size-slider')?.value || '3', 10);
+                const noteStep  = parseInt(document.getElementById('note-size-slider')?.value  || '3', 10);
+                this._appliedGridSize = (gridStep >=1 && gridStep <=3) ? gridStep : 2;
+                const stepToDigitScale = (v) => ({1:0.36,2:0.44,3:0.52,4:0.60,5:0.68})[v] || 0.52;
+                const stepToNoteScale  = (v) => ({1:0.12,2:0.16,3:0.20,4:0.24,5:0.28})[v] || 0.20;
+                document.documentElement.style.setProperty('--digit-scale', String(stepToDigitScale(digitStep)));
+                document.documentElement.style.setProperty('--note-scale', String(stepToNoteScale(noteStep)));
+                this.setupResponsiveSizing && this.setupResponsiveSizing();
+                this.persistSettings && this.persistSettings();
+            } catch {}
             // If user changed Max mistakes during an active game, notify that it will apply next game
             if (this.isGameInProgress && this.isGameInProgress() && this._mistakesSettingChangedDuringActiveGame) {
                 // Use OK-only modal per requirement
@@ -2675,6 +3016,44 @@ class SudokuGame {
                 this._mistakesSettingChangedDuringActiveGame = false;
             }
         });
+        // New Puzzle modal wiring
+        const newPuzzleModal = document.getElementById('newpuzzle-modal');
+        const newPuzzleCancel = document.getElementById('newpuzzle-cancel');
+        if (newPuzzleCancel) newPuzzleCancel.addEventListener('click', () => { if (newPuzzleModal) newPuzzleModal.style.display = 'none'; });
+        const diffsGrid = document.getElementById('newpuzzle-diffs');
+        if (diffsGrid) {
+            diffsGrid.querySelectorAll('[data-diff]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (this.isGameInProgress && this.isGameInProgress()) {
+                        const proceed = await this.showConfirm('Start a new puzzle? Current game will end and count as a loss.');
+                        if (!proceed) return;
+                        this.recordLoss();
+                    }
+                    const diff = btn.getAttribute('data-diff') || 'medium';
+                    try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
+                    this.updateModeIndicator && this.updateModeIndicator({ type: 'normal', difficulty: diff });
+                    // Reset state similar to landing start
+                    this.isGameComplete = false;
+                    this.isGameOver = false;
+                    const go = document.getElementById('gameover-overlay'); if (go) go.style.display = 'none';
+                    const po = document.getElementById('pause-overlay'); if (po) po.style.display = 'none';
+                    this.updateTimerButton && this.updateTimerButton();
+                    this.lockedNumber = null;
+                    document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
+                    if (this.selectedCell) { this.selectedCell.classList.remove('selected'); this.selectedCell = null; }
+                    document.querySelectorAll('.cell.highlighted').forEach(cell => cell.classList.remove('highlighted'));
+                    this.setDailyUiState && this.setDailyUiState(false);
+                    this.stopTimer && this.stopTimer();
+                    this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = true; this._pendingStart = false; this._preStartElapsed = 0; this.updateTimerButton && this.updateTimerButton();
+                    this.history = []; this.redoStack = [];
+                    // Generate and start
+                    this.generatePuzzle && this.generatePuzzle(diff);
+                    this.updateDisplay && this.updateDisplay();
+                    this.startTimer && this.startTimer();
+                    if (newPuzzleModal) newPuzzleModal.style.display = 'none';
+                });
+            });
+        }
         const settingsReset = document.getElementById('settings-reset');
             if (settingsReset) settingsReset.addEventListener('click', async () => {
             if (!(await this.showConfirm('Reset all settings to defaults?'))) return;
@@ -2918,117 +3297,95 @@ class SudokuGame {
         ];
         savedHooks.forEach(el => { if (el) el.addEventListener('change', () => this._showSavedToast()); });
         swatches.forEach(b => b.addEventListener('click', () => this._showSavedToast()));
+
+        // Board sizing sliders and live preview (stage changes; apply on close)
+        const gridSlider = document.getElementById('grid-size-slider');
+        const digitSlider = document.getElementById('digit-size-slider');
+        const noteSlider  = document.getElementById('note-size-slider');
+        const gridPill = document.getElementById('grid-size-pill');
+        const digitPill = document.getElementById('digit-size-pill');
+        const notePill  = document.getElementById('note-size-pill');
+        const preview = document.getElementById('board-preview');
+        const previewApply = () => {
+            if (!preview) return;
+            // compute a cell size for preview independent of live board
+            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+            const overhead = vw <= 768 ? 48 : 64;
+            const maxBoardWidth = Math.min(520, Math.max(240, vw - overhead));
+            const raw = Math.floor((maxBoardWidth - 8) / 9);
+            const gridStep = parseInt(gridSlider?.value || '2', 10);
+            const scaleMap = { 1: 0.9, 2: 1.0, 3: 1.12 };
+            const scale = scaleMap[gridStep] || 1.0;
+            const cellSize = Math.max(30, Math.min(60, Math.round(raw * scale)));
+            preview.style.width = (cellSize * 3 + 2) + 'px';
+            preview.style.setProperty('--cell-size', cellSize + 'px');
+        };
+
+        const stepToDigitScale = (v) => ({1:0.36,2:0.44,3:0.52,4:0.60,5:0.68})[v] || 0.52;
+        const stepToNoteScale  = (v) => ({1:0.12,2:0.16,3:0.20,4:0.24,5:0.28})[v] || 0.20;
+
+        const updateSizingVars = () => {
+            const dStep = parseInt(digitSlider?.value || '3', 10);
+            const nStep = parseInt(noteSlider?.value || '3', 10);
+            document.documentElement.style.setProperty('--digit-scale', String(stepToDigitScale(dStep)));
+            document.documentElement.style.setProperty('--note-scale', String(stepToNoteScale(nStep)));
+            if (digitPill) digitPill.textContent = String(dStep);
+            if (notePill)  notePill.textContent  = String(nStep);
+        };
+
+        const updateGridPill = () => { if (gridPill && gridSlider) gridPill.textContent = String(gridSlider.value); };
+
+        const ensurePreview = () => {
+            if (!preview || preview.children.length) return;
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'cell-container';
+                    const cell = document.createElement('input');
+                    cell.type = 'text';
+                    cell.className = 'cell';
+                    cell.setAttribute('readonly', 'true');
+                    if ((r === 0 && c === 1) || (r === 1 && c === 2)) {
+                        cell.value = String((r*3 + c + 3) % 9 + 1);
+                        cell.classList.add('initial');
+                    }
+                    const notes = document.createElement('div');
+                    notes.className = 'notes';
+                    for (let n = 1; n <= 9; n++) {
+                        const ni = document.createElement('div');
+                        ni.className = 'note-item';
+                        ni.textContent = (n === 1 || n === 5 || n === 9) ? String(n) : '';
+                        notes.appendChild(ni);
+                    }
+                    wrap.appendChild(cell);
+                    wrap.appendChild(notes);
+                    preview.appendChild(wrap);
+                }
+            }
+        };
+
+        if (gridSlider || digitSlider || noteSlider) {
+            ensurePreview();
+            updateSizingVars();
+            updateGridPill();
+            previewApply();
+        }
+        const onGridChange = () => { updateGridPill(); previewApply(); this._showSavedToast && this._showSavedToast(); };
+        const onDigitNoteChange = () => { updateSizingVars(); this._showSavedToast && this._showSavedToast(); };
+        if (gridSlider) { gridSlider.addEventListener('input', onGridChange); gridSlider.addEventListener('change', onGridChange); }
+        if (digitSlider) digitSlider.addEventListener('input', onDigitNoteChange);
+        if (noteSlider)  noteSlider.addEventListener('input', onDigitNoteChange);
+        window.addEventListener('resize', previewApply);
         // Segmented control removed; avoid referencing undefined variable that would block listeners
         const statsOpen = document.getElementById('stats-btn');
         if (statsOpen && this.showStats) statsOpen.addEventListener('click', () => this.showStats());
         const statsClose = document.getElementById('stats-close');
         if (statsClose) statsClose.addEventListener('click', () => { const m = document.getElementById('stats-modal'); if (m) m.style.display = 'none'; this.resumeFromPause && this.resumeFromPause(); });
         
-        // Number pad (include erase button which has data-number="0")
-        document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // First real interaction via numpad should start the game
-                this.ensureGameStarted && this.ensureGameStarted();
-                const number = parseInt(btn.dataset.number);
-                // Lock number mode depending on toggle
-                const lockToggle = document.getElementById('pad-lock-toggle');
-                const lockEnabled = !lockToggle || lockToggle.getAttribute('aria-pressed') === 'true';
-
-                if (lockEnabled) {
-                    // In lock mode, switching numbers should NOT enter into the current cell
-                    const isAlreadyActive = btn.classList.contains('active');
-                    document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
-                    if (isAlreadyActive) {
-                        this.lockedNumber = null;
-                        // Clear number highlights when unlocking
-                        this.highlightSameNumbers();
-                    } else {
-                        this.lockedNumber = number > 0 ? number : 0;
-                        btn.classList.add('active');
-                        // Highlight same number across the grid for the locked number
-                        if (number > 0) {
-                            this.highlightNumber(number);
-                        } else {
-                            this.highlightSameNumbers();
-                        }
-                    }
-                } else {
-                    // Single-shot behavior (no sticky lock): place immediately if a cell is selected
-                    if (this.selectedCell && !this.selectedCell.readOnly) {
-                        const r = parseInt(this.selectedCell.dataset.row);
-                        const c = parseInt(this.selectedCell.dataset.col);
-                        const v = number === 0 ? 0 : number;
-                        if (this.isNotesMode && v > 0) {
-                            this.toggleNote(r, c, v);
-                        } else {
-                            this.setCellValue(r, c, v, 'numpad');
-                            this.checkGameComplete();
-                        }
-                    }
-                    this.lockedNumber = null;
-                    document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
-                }
-                this.syncNotesBadgeState();
-            });
-        });
-        // Lock toggle behavior
-        const lockToggle = document.getElementById('pad-lock-toggle');
-        if (lockToggle) {
-            lockToggle.addEventListener('click', () => {
-                const wasPressed = lockToggle.getAttribute('aria-pressed') === 'true';
-                const nowPressed = !wasPressed;
-                lockToggle.setAttribute('aria-pressed', nowPressed.toString());
-                // Toggle icon between locked and unlocked
-                lockToggle.textContent = nowPressed ? '🔒' : '🔓';
-                if (!nowPressed) {
-                    // when turning off, clear any active lock highlight
-                    this.lockedNumber = null;
-                    document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
-                }
-            });
+        // Delegate core UI event wiring
+        if (typeof window !== 'undefined' && window.SudokuEvents && window.SudokuEvents.wireCoreUiEvents) {
+            window.SudokuEvents.wireCoreUiEvents(this);
         }
-        
-        // Modal buttons
-        document.getElementById('modal-new-game').addEventListener('click', () => {
-            document.getElementById('modal').style.display = 'none';
-            this.newGame();
-        });
-        
-        document.getElementById('modal-close').addEventListener('click', () => {
-            document.getElementById('modal').style.display = 'none';
-        });
-        
-        // Close modal when clicking outside
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('modal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-        
-        // Keyboard shortcuts (global)
-        document.addEventListener('keydown', (e) => {
-            // Ignore when a modal is open
-            const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.style.display === 'block');
-            if (anyModalOpen) return;
-            // Undo/Redo with Ctrl/Meta
-            const key = e.key.toLowerCase();
-            if ((e.ctrlKey || e.metaKey) && key === 'z' && !e.shiftKey) { e.preventDefault(); this.undo(); return; }
-            if ((e.ctrlKey || e.metaKey) && ((key === 'y') || (key === 'z' && e.shiftKey))) { e.preventDefault(); this.redo(); return; }
-            // Global Escape clears locked number
-            if (e.key === 'Escape') {
-                this.lockedNumber = null;
-                document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
-                return;
-            }
-            // Secret dev-mode hotkey: Ctrl+Shift+D
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'd') {
-                e.preventDefault();
-                this._toggleDevPanel && this._toggleDevPanel();
-                return;
-            }
-            // Do not handle numeric input globally; rely on focused cell handlers
-        });
 
         // Pointer-based drag painting across cells when a number is locked
         const board = document.getElementById('board');
@@ -3064,7 +3421,7 @@ class SudokuGame {
                     document.body.appendChild(newPopover);
                     newPopover.style.position = 'fixed';
                     newPopover.style.visibility = 'hidden';
-                    newPopover.hidden = false; newPopover.style.display = 'block';
+                    newPopover.hidden = false; newPopover.style.display = 'grid';
                     // measure to align right edge under the caret
                     const width = newPopover.offsetWidth;
                     const left = Math.max(8, Math.min(window.innerWidth - width - 8, rect.right - width));
@@ -3222,7 +3579,7 @@ class SudokuGame {
                         const p = document.getElementById('dev-panel');
                         if (p) {
                             // animate restore
-                            p.style.display = 'block';
+                            p.style.display = 'grid';
                             p.classList.add('is-restoring');
                             requestAnimationFrame(() => { p.classList.remove('is-restoring'); });
                             hideRestore();
@@ -3265,7 +3622,10 @@ class SudokuGame {
                 };
                 panel.addEventListener('transitionend', onEnd, { once: true });
             };
-            const focusFirst = () => { const f = panel && panel.querySelector('.dev-tile, .dev-form input, .dev-form select, .dev-form button'); f && f.focus && f.focus(); };
+            const focusFirst = () => {
+                const f = panel && panel.querySelector('.dev-tile, .dev-seed-group input, .dev-seed-group select, .dev-seed-group button');
+                f && f.focus && f.focus();
+            };
 
             const panelObstructs = (targetEl) => {
                 try {
@@ -3289,7 +3649,7 @@ class SudokuGame {
             if (panel) {
                 const isHidden = panel.style.display === 'none';
                 if (isHidden) {
-                    panel.style.display = 'block';
+                    panel.style.display = 'grid';
                     panel.classList.add('is-restoring');
                     hideRestore();
                     requestAnimationFrame(() => { panel.classList.remove('is-restoring'); focusFirst(); });
@@ -3303,6 +3663,18 @@ class SudokuGame {
             panel = document.createElement('div');
             panel.id = 'dev-panel';
             panel.className = 'dev-panel-window';
+            const sectionStateKey = 'sudoku-dev-sections';
+            const getSectionState = () => {
+                try { return JSON.parse(localStorage.getItem(sectionStateKey) || '{}'); } catch { return {}; }
+            };
+            const setSectionState = (id, open) => {
+                try {
+                    const s = getSectionState();
+                    s[id] = !!open;
+                    localStorage.setItem(sectionStateKey, JSON.stringify(s));
+                } catch {}
+            };
+
             panel.innerHTML = `
               <div class="dev-head">
                 <div class="title">Dev Tools</div>
@@ -3312,23 +3684,23 @@ class SudokuGame {
                 </div>
               </div>
               <div class="dev-content">
-                <div class="dev-section">
-                  <div class="dev-section-title">Themes</div>
+                <details class="dev-section" data-id="themes" open>
+                  <summary class="dev-section-title">Themes</summary>
                   <div class="dev-grid">
-                    <button id="dev-retro-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🕹️</span><span class="label">Retro: Off</span></button>
-                    <button id="dev-pi-toggle" class="dev-tile" aria-pressed="false"><span class="icon">π</span><span class="label">Pi Day: Off</span></button>
-                    <button id="dev-saber-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🔦</span><span class="label">May 4: Off</span></button>
+                    <button id="dev-retro-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🕹️</span><span class="label">Retro</span></button>
+                    <button id="dev-pi-toggle" class="dev-tile" aria-pressed="false"><span class="icon">π</span><span class="label">Pi Day</span></button>
+                    <button id="dev-saber-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🔦</span><span class="label">May 4</span></button>
                   </div>
-                </div>
-                <div class="dev-section">
-                  <div class="dev-section-title">Appearance</div>
+                </details>
+                <details class="dev-section" data-id="appearance">
+                  <summary class="dev-section-title">Appearance</summary>
                   <div class="dev-grid">
                     <button id="dev-accent" class="dev-tile"><span class="icon">🎨</span><span class="label">Random accent</span></button>
-                    <button id="dev-rainbow-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🎯</span><span class="label">Rainbow next: Off</span></button>
+                    <button id="dev-rainbow-toggle" class="dev-tile" aria-pressed="false"><span class="icon">🎯</span><span class="label">Rainbow next</span></button>
                   </div>
-                </div>
-                <div class="dev-section">
-                  <div class="dev-section-title">Effects</div>
+                </details>
+                <details class="dev-section" data-id="effects">
+                  <summary class="dev-section-title">Effects</summary>
                   <div class="dev-grid">
                     <button id="dev-confetti" class="dev-tile"><span class="icon">🎉</span><span class="label">Confetti</span></button>
                     <button id="dev-neon" class="dev-tile"><span class="icon">✨</span><span class="label">Neon trail</span></button>
@@ -3336,20 +3708,113 @@ class SudokuGame {
                     <button id="dev-wiggle" class="dev-tile"><span class="icon">〰️</span><span class="label">Wiggle</span></button>
                     <button id="dev-palin" class="dev-tile"><span class="icon">💬</span><span class="label">Palindrome toast</span></button>
                   </div>
-                </div>
-                <div class="dev-form">
-                  <select id="dev-seed-presets" class="dev-input">
-                    <option value="">Presets…</option>
-                  </select>
-                  <input id="dev-seed" placeholder="seed" class="dev-input" />
-                  <select id="dev-seed-diff" class="dev-input">
-                    <option>easy</option><option selected>medium</option><option>hard</option><option>expert</option><option>master</option><option>extreme</option>
-                  </select>
-                  <button id="dev-seed-go" class="btn btn-secondary btn-small" title="Start seeded game" aria-label="Start seeded">▶ Go</button>
+                </details>
+                <div class="dev-seed-group" role="group" aria-labelledby="dev-seed-heading">
+                  <div class="dev-seed-head">
+                    <div id="dev-seed-heading" class="dev-seed-title">Seeded game</div>
+                    <button id="dev-seed-go" class="btn btn-secondary btn-small" title="Start seeded game" aria-label="Start seeded">▶ Go</button>
+                  </div>
+                  <div class="dev-seed-grid">
+                    <select id="dev-seed-presets" class="dev-input seed-presets">
+                      <option value="">Presets…</option>
+                    </select>
+                    <input id="dev-seed" placeholder="seed" class="dev-input seed-input" />
+                    <select id="dev-seed-diff" class="dev-input seed-diff">
+                      <option>easy</option><option selected>medium</option><option>hard</option><option>expert</option><option>master</option><option>extreme</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             `;
             document.body.appendChild(panel);
+
+            // Restore saved collapse state: Themes default open; others default closed
+            panel.querySelectorAll('details.dev-section').forEach((d) => {
+                const id = d.getAttribute('data-id') || '';
+                const state = getSectionState();
+                if (id === 'themes') {
+                    d.open = state[id] !== false; // default true
+                } else {
+                    d.open = !!state[id]; // default false
+                }
+                d.addEventListener('toggle', () => setSectionState(id, d.open));
+            });
+
+            // Enable click-and-drag repositioning on the header
+            if (!panel._draggableSetup) {
+                panel._draggableSetup = true;
+                const header = panel.querySelector('.dev-head');
+                const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+                const storageKey = 'sudoku-dev-panel-pos';
+                const savePos = () => {
+                    try {
+                        const left = parseFloat(panel.style.left || '0');
+                        const top = parseFloat(panel.style.top || '0');
+                        localStorage.setItem(storageKey, JSON.stringify({ left, top }));
+                    } catch {}
+                };
+                const setInitialPosition = () => {
+                    const rect = panel.getBoundingClientRect();
+                    let left = Math.max(8, window.innerWidth - rect.right);
+                    let top = Math.max(8, rect.top);
+                    try {
+                        const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+                        if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
+                            left = clamp(saved.left, 8, Math.max(8, window.innerWidth - rect.width - 8));
+                            top = clamp(saved.top, 8, Math.max(8, window.innerHeight - rect.height - 8));
+                        }
+                    } catch {}
+                    panel.style.left = `${left}px`;
+                    panel.style.top = `${top}px`;
+                    panel.style.right = 'auto';
+                    savePos();
+                };
+                setInitialPosition();
+
+                let startX = 0, startY = 0, startLeft = 0, startTop = 0, pointerId = null;
+                const onPointerDown = (e) => {
+                    if (e.button !== 0) return; // primary only
+                    if (e.target && (e.target.closest('.window-actions') || e.target.closest('.win-btn'))) return;
+                    pointerId = e.pointerId ?? 'mouse';
+                    const rect = panel.getBoundingClientRect();
+                    startX = e.clientX; startY = e.clientY;
+                    startLeft = rect.left; startTop = rect.top;
+                    panel.classList.add('dragging');
+                    header.setPointerCapture && header.setPointerCapture(pointerId);
+                    window.addEventListener('pointermove', onPointerMove);
+                    window.addEventListener('pointerup', onPointerUp, { once: true });
+                };
+                const onPointerMove = (e) => {
+                    if ((e.pointerId ?? 'mouse') !== pointerId) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    const rect = panel.getBoundingClientRect();
+                    const newLeft = clamp(startLeft + dx, 8, window.innerWidth - rect.width - 8);
+                    const newTop = clamp(startTop + dy, 8, window.innerHeight - rect.height - 8);
+                    panel.style.left = `${newLeft}px`;
+                    panel.style.top = `${newTop}px`;
+                    panel.style.right = 'auto';
+                };
+                const onPointerUp = (e) => {
+                    if ((e.pointerId ?? 'mouse') !== pointerId) return;
+                    panel.classList.remove('dragging');
+                    window.removeEventListener('pointermove', onPointerMove);
+                    savePos();
+                };
+                header.addEventListener('pointerdown', onPointerDown);
+                window.addEventListener('resize', () => {
+                    // Keep panel inside viewport on resize
+                    const rect = panel.getBoundingClientRect();
+                    const left = parseFloat(panel.style.left || '0');
+                    const top = parseFloat(panel.style.top || '0');
+                    const clampedLeft = clamp(left, 8, Math.max(8, window.innerWidth - rect.width - 8));
+                    const clampedTop = clamp(top, 8, Math.max(8, window.innerHeight - rect.height - 8));
+                    panel.style.left = `${clampedLeft}px`;
+                    panel.style.top = `${clampedTop}px`;
+                    panel.style.right = 'auto';
+                    savePos();
+                });
+            }
 
             // Header actions
             panel.querySelector('#dev-minimize')?.addEventListener('click', minimize);
@@ -3366,20 +3831,23 @@ class SudokuGame {
                 panel.addEventListener('transitionend', onEnd, { once: true });
             });
 
-            // Retro toggle tile UI sync
+            // Retro toggle tile UI sync (state via aria-pressed only)
             const retroBtn = panel.querySelector('#dev-retro-toggle');
             const syncRetroUi = () => {
                 const on = document.documentElement.classList.contains('theme-retro');
                 retroBtn?.setAttribute('aria-pressed', on ? 'true' : 'false');
-                const label = retroBtn?.querySelector('.label');
-                if (label) label.textContent = on ? 'Retro: On' : 'Retro: Off';
             };
             syncRetroUi();
             retroBtn?.addEventListener('click', () => {
+                const storageKeyPrev = 'sudoku-retro-prev-dark';
                 const nowOn = document.documentElement.classList.toggle('theme-retro');
-                // Manage theme toggle constraints while Retro is active
                 const themeToggle = document.getElementById('theme-dark-toggle');
                 if (nowOn) {
+                    // Save previous theme state and force dark while retro is active
+                    try {
+                        const prevIsDark = themeToggle ? !!themeToggle.checked : (document.documentElement.dataset.theme === 'dark');
+                        localStorage.setItem(storageKeyPrev, prevIsDark ? '1' : '0');
+                    } catch {}
                     document.documentElement.dataset.theme = 'dark';
                     if (themeToggle) { try { themeToggle.checked = true; themeToggle.disabled = true; } catch {} }
                     try {
@@ -3388,7 +3856,19 @@ class SudokuGame {
                         meta.setAttribute('content', '#0a0a0a');
                     } catch {}
                 } else {
+                    // Restore previous theme and re-enable toggle
                     if (themeToggle) { try { themeToggle.disabled = false; } catch {} }
+                    let prevDark = null;
+                    try { prevDark = localStorage.getItem(storageKeyPrev); } catch {}
+                    const shouldBeDark = prevDark === '1';
+                    document.documentElement.dataset.theme = shouldBeDark ? 'dark' : 'light';
+                    if (themeToggle) { try { themeToggle.checked = shouldBeDark; } catch {} }
+                    try {
+                        let meta = document.querySelector('meta[name="theme-color"]');
+                        if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'theme-color'); document.head.appendChild(meta); }
+                        meta.setAttribute('content', shouldBeDark ? '#0b1220' : '#667eea');
+                    } catch {}
+                    try { localStorage.removeItem(storageKeyPrev); } catch {}
                 }
                 syncRetroUi();
                 this.showStatus && this.showStatus(nowOn ? 'Retro mode on.' : 'Retro mode off.', 'info');
@@ -3417,13 +3897,11 @@ class SudokuGame {
                 runEffectWithOptionalMinimize(toastTarget, () => this.showStatus && this.showStatus('Nice ordering.', 'info'));
             });
 
-            // Pi Day toggle
+            // Pi Day toggle (state via aria-pressed)
             const piBtn = panel.querySelector('#dev-pi-toggle');
             const syncPiUi = () => {
                 const on = document.documentElement.classList.contains('theme-pi');
                 piBtn?.setAttribute('aria-pressed', on ? 'true' : 'false');
-                const label = piBtn?.querySelector('.label');
-                if (label) label.textContent = on ? 'Pi Day: On' : 'Pi Day: Off';
             };
             syncPiUi();
             piBtn?.addEventListener('click', () => {
@@ -3435,13 +3913,11 @@ class SudokuGame {
                 syncSaberUi();
             });
 
-            // May 4 toggle
+            // May 4 toggle (state via aria-pressed)
             const saberBtn = panel.querySelector('#dev-saber-toggle');
             const syncSaberUi = () => {
                 const on = document.documentElement.classList.contains('theme-saber');
                 saberBtn?.setAttribute('aria-pressed', on ? 'true' : 'false');
-                const label = saberBtn?.querySelector('.label');
-                if (label) label.textContent = on ? 'May 4: On' : 'May 4: Off';
             };
             syncSaberUi();
             saberBtn?.addEventListener('click', () => {
@@ -3453,14 +3929,12 @@ class SudokuGame {
                 syncPiUi();
             });
 
-            // Rainbow next toggle
+            // Rainbow next toggle (state via aria-pressed)
             const rainbowBtn = panel.querySelector('#dev-rainbow-toggle');
             const syncRainbowUi = () => {
                 let on = false;
                 try { on = localStorage.getItem('sudoku-rainbow-next') === '1'; } catch {}
                 rainbowBtn?.setAttribute('aria-pressed', on ? 'true' : 'false');
-                const label = rainbowBtn?.querySelector('.label');
-                if (label) label.textContent = on ? 'Rainbow next: On' : 'Rainbow next: Off';
             };
             syncRainbowUi();
             rainbowBtn?.addEventListener('click', () => {
@@ -3531,7 +4005,7 @@ class SudokuGame {
             });
 
             // Show window and focus
-            panel.style.display = 'block';
+            panel.style.display = 'grid';
             hideRestore();
             focusFirst();
         };
@@ -3539,6 +4013,19 @@ class SudokuGame {
         // Landing menu wiring
         const landing = document.getElementById('landing-overlay');
         if (landing) {
+            // Recompute overlay bounds when shown/resized
+            const recalibrateLanding = () => this._positionLandingOverlay();
+            recalibrateLanding();
+            try { window.addEventListener('resize', recalibrateLanding); } catch {}
+            // Cleanup on hide when appropriate
+            const obs = new MutationObserver(() => {
+                if (landing.style.display === 'none') {
+                    try { window.removeEventListener('resize', recalibrateLanding); } catch {}
+                } else {
+                    recalibrateLanding();
+                }
+            });
+            try { obs.observe(landing, { attributes: true, attributeFilter: ['style'] }); } catch {}
             // Greeting and auth state
             const greeting = document.getElementById('landing-greeting');
             const signinBtn = document.getElementById('landing-signin');
@@ -3549,8 +4036,9 @@ class SudokuGame {
                     if (typeof window !== 'undefined' && window.supabase) {
                         const { data: { user } } = await window.supabase.auth.getUser();
                         if (user) {
-                            const name = user.user_metadata?.full_name || user.email || 'Player';
-                            if (greeting) greeting.textContent = `Welcome back, ${name}!`;
+                            const full = user.user_metadata?.full_name || user.email || 'Player';
+                            const first = (full.split?.(' ')?.[0]) || full;
+                            if (greeting) greeting.textContent = `Welcome back, ${first}!`;
                             if (signinBtn) signinBtn.style.display = 'none';
                         } else {
                             if (greeting) greeting.textContent = 'Welcome!';
@@ -3563,7 +4051,11 @@ class SudokuGame {
             };
             refreshGreeting();
             if (typeof window !== 'undefined' && window.supabase) {
-                try { window.supabase.auth.onAuthStateChange(() => refreshGreeting()); } catch {}
+                try {
+                    this._authUnsubLanding?.();
+                    const { data: sub } = window.supabase.auth.onAuthStateChange(() => refreshGreeting());
+                    this._authUnsubLanding = sub?.subscription?.unsubscribe?.bind(sub.subscription);
+                } catch {}
             }
             if (signinBtn) signinBtn.addEventListener('click', () => {
                 // Hide landing while auth flow starts; it may redirect away
@@ -3591,7 +4083,11 @@ class SudokuGame {
             // Calendar opens daily calendar modal (hide landing while open)
             if (calendarBtn) calendarBtn.addEventListener('click', () => {
                 landing.style.display = 'none';
-                this.openCalendar ? this.openCalendar() : this.openDailyModal && this.openDailyModal();
+                // Hard-route to calendar (avoid old daily modal)
+                if (this.openCalendar) this.openCalendar(); else {
+                    const cm = document.getElementById('calendar-modal');
+                    if (cm) cm.style.display = 'grid'; else this.openDailyModal && this.openDailyModal();
+                }
                 const closeBtn = document.getElementById('calendar-close');
                 if (closeBtn) {
                     const onClose = () => {
@@ -3701,7 +4197,7 @@ class SudokuGame {
                 const m = document.getElementById('settings-modal');
                 if (m) {
                     landing.style.display = 'none';
-                    m.style.display = 'block';
+                    m.style.display = 'grid'; this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(m); this._bindOverlayRecalibration && this._bindOverlayRecalibration(m);
                     const closeBtn = document.getElementById('settings-close');
                     if (closeBtn) closeBtn.addEventListener('click', () => {
                         if (!this._hasStarted && !this._pendingStart) landing.style.display = 'flex';
@@ -3715,6 +4211,20 @@ class SudokuGame {
                 const closeBtn = document.getElementById('stats-close');
                 if (closeBtn) closeBtn.addEventListener('click', () => {
                     if (!this._hasStarted && !this._pendingStart) landing.style.display = 'flex';
+                    this._positionLandingOverlay && this._positionLandingOverlay();
+                }, { once: true });
+            });
+
+            // Help opens Help modal (to the left of Settings in UI)
+            const openHelp = document.getElementById('landing-help');
+            if (openHelp) openHelp.addEventListener('click', () => {
+                landing.style.display = 'none';
+                const m = document.getElementById('help-modal');
+                if (m) { m.style.display = 'grid'; this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(m); this._bindOverlayRecalibration && this._bindOverlayRecalibration(m); }
+                const closeBtn = document.getElementById('help-close');
+                if (closeBtn) closeBtn.addEventListener('click', () => {
+                    if (!this._hasStarted && !this._pendingStart) landing.style.display = 'flex';
+                    this._positionLandingOverlay && this._positionLandingOverlay();
                 }, { once: true });
             });
         }
@@ -3779,6 +4289,87 @@ class SudokuGame {
         document.querySelectorAll('[data-tooltip]').forEach(attach);
     }
 
+    /**
+     * Position the landing overlay so it is centered within the live game area
+     * (from controls strip to number pad), ensuring equal top/bottom spacing
+     * relative to that region rather than the whole viewport.
+     */
+    _positionLandingOverlay() {
+        try {
+            const landing = document.getElementById('landing-overlay');
+            if (!landing) return;
+            this._positionOverlayWithinGameArea(landing);
+        } catch {}
+    }
+
+    /**
+     * Center an overlay `.modal` within the live game area (controls → number pad)
+     * by constraining its top/bottom insets. Safe to call multiple times.
+     */
+    _positionOverlayWithinGameArea(overlayEl) {
+        if (!overlayEl) return;
+        try {
+            // Landing: full-viewport mask for dimming, but vertically center content
+            // within the live game area by applying dynamic top/bottom paddings via CSS vars
+            if (overlayEl.classList && overlayEl.classList.contains('landing-overlay')) {
+                overlayEl.style.position = 'fixed';
+                overlayEl.style.top = '0';
+                overlayEl.style.bottom = '0';
+                overlayEl.style.left = '0';
+                overlayEl.style.right = '0';
+                const topEl = document.querySelector('.controls-strip') || document.querySelector('.sudoku-board');
+                const bottomEl = document.querySelector('.number-pad') || document.querySelector('.sudoku-board');
+                const top = topEl && topEl.getBoundingClientRect ? Math.max(0, Math.round(topEl.getBoundingClientRect().top)) : 0;
+                const bottomRect = bottomEl && bottomEl.getBoundingClientRect ? bottomEl.getBoundingClientRect() : null;
+                const bottom = bottomRect ? Math.max(0, Math.round(window.innerHeight - bottomRect.bottom)) : 0;
+                overlayEl.style.setProperty('--landing-top', top + 'px');
+                overlayEl.style.setProperty('--landing-bottom', bottom + 'px');
+                return;
+            }
+
+            // Regular modals: cover full viewport (dimming + centered content is handled via CSS)
+            if (overlayEl.classList && overlayEl.classList.contains('modal')) {
+                overlayEl.style.position = 'fixed';
+                overlayEl.style.top = '0';
+                overlayEl.style.bottom = '0';
+                overlayEl.style.left = '0';
+                overlayEl.style.right = '0';
+                return;
+            }
+
+            // Default: full viewport
+            overlayEl.style.position = 'fixed';
+            overlayEl.style.top = '0';
+            overlayEl.style.bottom = '0';
+            overlayEl.style.left = '0';
+            overlayEl.style.right = '0';
+        } catch {}
+    }
+
+    /** Attach resize/mutation observers to keep overlay positioned while visible */
+    _bindOverlayRecalibration(overlayEl) {
+        if (!overlayEl) return;
+        try {
+            // Cleanup previous binding if any
+            if (overlayEl._recalcCleanup) { overlayEl._recalcCleanup(); }
+            const recalc = () => this._positionOverlayWithinGameArea(overlayEl);
+            recalc();
+            window.addEventListener('resize', recalc);
+            const obs = new MutationObserver(() => {
+                if (overlayEl.style.display === 'none') {
+                    // detach when hidden
+                    window.removeEventListener('resize', recalc);
+                    try { obs.disconnect(); } catch {}
+                    overlayEl._recalcCleanup = null;
+                } else {
+                    recalc();
+                }
+            });
+            obs.observe(overlayEl, { attributes: true, attributeFilter: ['style', 'class'] });
+            overlayEl._recalcCleanup = () => { window.removeEventListener('resize', recalc); try { obs.disconnect(); } catch {}; };
+        } catch {}
+    }
+
     // Accessible confirm modal replacing native confirm()
     showConfirm(message, { title = 'Confirm', okText = 'OK', cancelText = 'Cancel' } = {}) {
         return new Promise(resolve => {
@@ -3797,7 +4388,7 @@ class SudokuGame {
             msgEl.textContent = message;
             okBtn.textContent = okText;
             cancelBtn.textContent = cancelText;
-            modal.style.display = 'block';
+            modal.style.display = 'grid';
             const previouslyFocused = document.activeElement;
             const cleanup = () => {
                 modal.style.display = 'none';
@@ -3830,6 +4421,9 @@ class SudokuGame {
             document.addEventListener('keydown', onKey);
             // Move focus into modal
             setTimeout(() => { cancelBtn.focus(); }, 0);
+            // Ensure confirm respects game-area centering
+            this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(modal);
+            this._bindOverlayRecalibration && this._bindOverlayRecalibration(modal);
         });
     }
 
@@ -3853,7 +4447,7 @@ class SudokuGame {
             okBtn.textContent = okText;
             const prevCancelDisplay = cancelBtn.style.display;
             cancelBtn.style.display = 'none';
-            modal.style.display = 'block';
+            modal.style.display = 'grid';
             const previouslyFocused = document.activeElement;
             const cleanup = () => {
                 modal.style.display = 'none';
@@ -3876,6 +4470,8 @@ class SudokuGame {
             modal.addEventListener('click', onBackdrop);
             document.addEventListener('keydown', onKey);
             setTimeout(() => { okBtn.focus(); }, 0);
+            this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(modal);
+            this._bindOverlayRecalibration && this._bindOverlayRecalibration(modal);
         });
     }
 
@@ -3968,125 +4564,29 @@ class SudokuGame {
 
     // ----- Calendar UI -----
     openCalendar() {
+        // Prefer modular calendar if available
+        if (typeof window !== 'undefined' && window.SudokuCalendar && window.SudokuCalendar.openCalendar) {
+            window.SudokuCalendar.openCalendar(this);
+            return;
+        }
+        // Fallback: show calendar modal directly if present (do NOT open daily modal)
         const modal = document.getElementById('calendar-modal');
-        if (!modal) return this.openDailyModal();
-        // Default ref month is current in local time for UX; comparisons use UTC keys
-        this._calendarRefMonth = this._calendarRefMonth || new Date();
-        this.refreshCalendarHeaders();
-        this.renderCalendar();
-        modal.style.display = 'block';
-        const closeBtn = document.getElementById('calendar-close');
-        const prevBtn = document.getElementById('calendar-prev');
-        const nextBtn = document.getElementById('calendar-next');
-        if (closeBtn && !closeBtn._bound) { closeBtn._bound = true; closeBtn.addEventListener('click', () => { modal.style.display = 'none'; }); }
-        if (prevBtn && !prevBtn._bound) { prevBtn._bound = true; prevBtn.addEventListener('click', () => { this.shiftCalendar(-1); }); }
-        if (nextBtn && !nextBtn._bound) { nextBtn._bound = true; nextBtn.addEventListener('click', () => { this.shiftCalendar(1); }); }
-    }
-
-    shiftCalendar(deltaMonths) {
-        const d = this._calendarRefMonth || new Date();
-        const year = d.getFullYear();
-        const month = d.getMonth();
-        const newDate = new Date(year, month + deltaMonths, 1);
-        this._calendarRefMonth = newDate;
-        this.renderCalendar();
-    }
-
-    renderCalendar() {
-        const grid = document.getElementById('calendar-grid');
-        const label = document.getElementById('calendar-month-label');
-        if (!grid || !label) return;
-        const ref = new Date(this._calendarRefMonth.getFullYear(), this._calendarRefMonth.getMonth(), 1);
-        const monthName = ref.toLocaleString(undefined, { month: 'long', year: 'numeric' });
-        label.textContent = monthName;
-        grid.innerHTML = '';
-
-        // Determine first weekday offset and number of days
-        const baseFirstDow = new Date(ref.getFullYear(), ref.getMonth(), 1).getDay(); // 0..6 local, Sun=0
-        const weekstart = ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
-        const startOffset = weekstart === 'monday' ? ((baseFirstDow + 6) % 7) : baseFirstDow;
-        const daysInMonth = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
-
-        const results = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
-        const nowUtcMidnight = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
-        const todayLocal = new Date();
-        const todayLocalYear = todayLocal.getFullYear();
-        const todayLocalMonth = todayLocal.getMonth();
-        const todayLocalDate = todayLocal.getDate();
-
-        // Leading blank spacers to align weekday columns
-        for (let i = 0; i < startOffset; i++) {
-            const spacer = document.createElement('div');
-            spacer.className = 'calendar-cell empty';
-            spacer.setAttribute('aria-hidden', 'true');
-            grid.appendChild(spacer);
+        if (modal) {
+            modal.style.display = 'grid';
+            this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(modal);
+            this._bindOverlayRecalibration && this._bindOverlayRecalibration(modal);
+            try { if (window.SudokuCalendar && window.SudokuCalendar.renderCalendar) window.SudokuCalendar.renderCalendar(this); } catch {}
+            return;
         }
-
-        for (let d = 1; d <= daysInMonth; d++) {
-            const date = new Date(ref.getFullYear(), ref.getMonth(), d);
-            const cell = document.createElement('div');
-            cell.className = 'calendar-cell';
-
-            const key = this.getUtcDateKey(new Date(Date.UTC(date.getUTCFullYear?.() ?? date.getFullYear(), (date.getUTCMonth?.() ?? date.getMonth()), date.getUTCDate?.() ?? date.getDate())));
-
-            const header = document.createElement('div');
-            header.className = 'date-num';
-            header.textContent = String(d);
-
-            // Difficulty chip
-            const diff = this.getDifficultyForDateKey(key);
-            const chip = document.createElement('span');
-            chip.className = `diff-chip diff-${diff}`;
-            chip.title = diff[0].toUpperCase() + diff.slice(1);
-            chip.innerHTML = this.getDifficultyIcon(diff);
-
-            // Flags
-            const thisUtcMidnight = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const isFuture = thisUtcMidnight.getTime() > nowUtcMidnight.getTime();
-            if (isFuture) cell.classList.add('future');
-            if (results[key]?.completed) {
-                cell.classList.add('completed');
-                const check = document.createElement('span');
-                check.className = 'check-badge';
-                check.textContent = '✓';
-                cell.appendChild(check);
-            }
-            if (date.getFullYear() === todayLocalYear && date.getMonth() === todayLocalMonth && date.getDate() === todayLocalDate) {
-                cell.classList.add('today');
-            }
-
-            if (!isFuture) {
-                cell.addEventListener('click', () => {
-                    const dff = this.getDifficultyForDateKey(key);
-                    this.loadDailyByKey(key, dff);
-                    const modal = document.getElementById('calendar-modal');
-                    if (modal) modal.style.display = 'none';
-                });
-            }
-
-            cell.appendChild(header);
-            cell.appendChild(chip);
-            grid.appendChild(cell);
-        }
-
-        // Trailing blank spacers to complete final week row
-        const used = startOffset + daysInMonth;
-        const trailing = (7 - (used % 7)) % 7;
-        for (let i = 0; i < trailing; i++) {
-            const spacer = document.createElement('div');
-            spacer.className = 'calendar-cell empty';
-            spacer.setAttribute('aria-hidden', 'true');
-            grid.appendChild(spacer);
-        }
+        // As a last resort, fall back to the daily modal
+        this.openDailyModal && this.openDailyModal();
     }
 
-    refreshCalendarHeaders() {
-        const wrap = document.getElementById('calendar-weekdays');
-        if (!wrap) return;
-        const weekstart = ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || (JSON.parse(localStorage.getItem('sudoku-settings')||'{}').weekstart) || 'sunday';
-        const days = weekstart === 'monday' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-        wrap.innerHTML = days.map(d => `<div>${d}</div>`).join('');
-    }
+    shiftCalendar(deltaMonths) { if (typeof window !== 'undefined' && window.SudokuCalendar && window.SudokuCalendar.shiftCalendar) window.SudokuCalendar.shiftCalendar(this, deltaMonths); }
+
+    renderCalendar() { if (typeof window !== 'undefined' && window.SudokuCalendar && window.SudokuCalendar.renderCalendar) window.SudokuCalendar.renderCalendar(this); }
+
+    refreshCalendarHeaders() { if (typeof window !== 'undefined' && window.SudokuCalendar && window.SudokuCalendar.refreshCalendarHeaders) window.SudokuCalendar.refreshCalendarHeaders(this); }
 
     getDifficultyIcon(diff) {
         // Inline SVG for crisp, scalable icons; color inherited via currentColor
@@ -4162,10 +4662,27 @@ class SudokuGame {
         // Escalation stage memory
         if (!this._escalateStage) this._escalateStage = 1;
 
-        const pickFirstEmpty = () => {
-            for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (this.board[r][c] === 0) return [r,c];
+        // Prefer the currently selected empty cell; otherwise choose a random empty cell
+        const getSelectedEmptyPosition = () => {
+            const sel = this.selectedCell;
+            if (!sel) return null;
+            const r = Number(sel?.dataset?.row);
+            const c = Number(sel?.dataset?.col);
+            if (Number.isInteger(r) && Number.isInteger(c) && this.board?.[r]?.[c] === 0) return [r, c];
             return null;
         };
+        const getRandomEmptyPosition = () => {
+            const empties = [];
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0) empties.push([r, c]);
+                }
+            }
+            if (!empties.length) return null;
+            const idx = Math.floor(Math.random() * empties.length);
+            return empties[idx];
+        };
+        const pickTargetEmpty = () => getSelectedEmptyPosition() || getRandomEmptyPosition();
 
         const applyHintPenaltyAndUi = (message) => {
             this.hintsUsed = (this.hintsUsed || 0) + 1;
@@ -4225,7 +4742,7 @@ class SudokuGame {
 
         const mode = hintMode;
         if (mode === 'direct') {
-            const pos = pickFirstEmpty();
+            const pos = pickTargetEmpty();
             if (!pos) { this.showStatus('No empty cells to hint', 'info'); return; }
             const [r,c] = pos;
             this.setCellValue(r, c, this.solution[r][c], 'hint');
@@ -4234,13 +4751,14 @@ class SudokuGame {
         }
 
         if (mode === 'logic') {
-            const res = findSingleCandidateCell() || (() => { const p=pickFirstEmpty(); if(!p) return null; return { r:p[0], c:p[1], value:this.solution[p[0]][p[1]], rule:'Direct reveal (no simple logic found)' }; })();
+            const res = findSingleCandidateCell() || (() => { const p = pickTargetEmpty(); if(!p) return null; return { r:p[0], c:p[1], value:this.solution[p[0]][p[1]], rule:'Try this cell' }; })();
             if (!res) { this.showStatus('No empty cells to hint', 'info'); return; }
             // Show candidates for this cell and explain
             const { r, c, value, rule } = res;
             // Ensure candidates visible for this cell
             this.recomputeAllCandidates();
-            highlightCell(r, c, `${rule}: this cell is ${value}`);
+            // Do not reveal the digit in logic guidance; keep the explanation only
+            highlightCell(r, c, `${rule}: solvable cell`);
             // Do not place the number automatically
             applyHintPenaltyAndUi('Guidance shown');
             return;
@@ -4266,7 +4784,7 @@ class SudokuGame {
             // Stage 1: highlight next solvable cell (logic if possible)
             // Stage 2: show candidates for that cell
             // Stage 3: reveal value
-            const target = findSingleCandidateCell() || (() => { const p=pickFirstEmpty(); if(!p) return null; return { r:p[0], c:p[1], value:this.solution[p[0]][p[1]], rule:'Next cell' }; })();
+            const target = findSingleCandidateCell() || (() => { const p = pickTargetEmpty(); if(!p) return null; return { r:p[0], c:p[1], value:this.solution[p[0]][p[1]], rule:'Next cell' }; })();
             if (!target) { this.showStatus('No empty cells to hint', 'info'); return; }
             const { r, c, value, rule } = target;
             if (this._escalateStage === 1) {
@@ -4289,7 +4807,7 @@ class SudokuGame {
         }
 
         // Fallback: direct
-        const pos = pickFirstEmpty();
+        const pos = pickTargetEmpty();
         if (!pos) { this.showStatus('No empty cells to hint', 'info'); return; }
         this.setCellValue(pos[0], pos[1], this.solution[pos[0]][pos[1]], 'hint');
         applyHintPenaltyAndUi('Hint used');
@@ -4379,18 +4897,21 @@ class SudokuGame {
     }
 
     // Persistence & stats
-    getElapsedSeconds() {
-        if (!this._hasStarted) return 0;
-        if (!this.startTime) return 0;
-        return Math.floor((Date.now() - this.startTime) / 1000);
-    }
+    getElapsedSeconds() { return (window.SudokuStats && window.SudokuStats.getElapsedSeconds) ? window.SudokuStats.getElapsedSeconds(this) : (this._hasStarted && this.startTime ? Math.floor((Date.now() - this.startTime)/1000) : 0); }
     persistToStorage() {
+        if (typeof window !== 'undefined' && window.SudokuStats && window.SudokuStats.persistToStorage) {
+            window.SudokuStats.persistToStorage(this);
+            return;
+        }
         const elapsed = this._hasStarted ? this.getElapsedSeconds() : (this._pendingStart ? this._preStartElapsed : 0);
-        const data = { board: this.board, solution: this.solution, initialBoard: this.initialBoard, elapsed, difficulty: document.getElementById('difficulty').value, hintsUsed: this.hintsUsed, hintsLimit: this.hintsLimit };
+        const data = { board: this.board, solution: this.solution, initialBoard: this.initialBoard, elapsed, difficulty: document.getElementById('difficulty').value, hintsUsed: this.hintsUsed, hintsLimit: this.hintsLimit, gameType: this.gameType || 'classic' };
         try { localStorage.setItem('sudoku-progress', JSON.stringify(data)); } catch {}
     }
     persistSettings() {
-        // Persist slider-chosen lives limit even if we defer applying it mid-game (back-compat ID)
+        if (typeof window !== 'undefined' && window.SudokuStats && window.SudokuStats.persistSettings) {
+            window.SudokuStats.persistSettings(this);
+            return;
+        }
         const mlEl = document.getElementById('lives-limit') || document.getElementById('mistakes-limit');
         let storedMistakeLimit;
         if (mlEl) {
@@ -4412,10 +4933,20 @@ class SudokuGame {
             weekstart: ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || 'sunday',
             accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
             hintMode: (document.getElementById('hint-mode-select')?.value) || 'direct',
+            // Board sizing
+            gridSize: parseInt(document.getElementById('grid-size-slider')?.value || '2', 10),
+            digitSize: parseInt(document.getElementById('digit-size-slider')?.value || '3', 10),
+            noteSize: parseInt(document.getElementById('note-size-slider')?.value || '3', 10),
+            updatedAt: new Date().toISOString(),
         };
         try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
+        try { this.syncRemoteSettings && this.syncRemoteSettings(); } catch {}
     }
     resumeFromStorage() {
+        if (typeof window !== 'undefined' && window.SudokuStats && window.SudokuStats.resumeFromStorage) {
+            window.SudokuStats.resumeFromStorage(this);
+            return;
+        }
         try {
             const raw = localStorage.getItem('sudoku-progress');
             if (!raw) return;
@@ -4423,18 +4954,21 @@ class SudokuGame {
             if (!data || !Array.isArray(data.board)) return;
             this.board = data.board; this.solution = data.solution; this.initialBoard = data.initialBoard;
             if (data.difficulty) document.getElementById('difficulty').value = data.difficulty;
-            // Resume elapsed time but defer actual game start until first interaction
             this._preStartElapsed = Math.max(0, parseInt(data.elapsed || 0, 10));
             this._pendingStart = true;
             this._hasStarted = false;
             this.startTime = null;
-            // Restore hints state if present
             this.hintsUsed = data.hintsUsed || 0;
             this.hintsLimit = (Number.isFinite(data.hintsLimit) ? data.hintsLimit : this.hintsLimit);
+            if (data.gameType) this.gameType = data.gameType;
             this.updateDisplay();
         } catch {}
     }
     resumeSettings() {
+        if (typeof window !== 'undefined' && window.SudokuStats && window.SudokuStats.resumeSettings) {
+            window.SudokuStats.resumeSettings(this);
+            return;
+        }
         try {
             const raw = localStorage.getItem('sudoku-settings');
             if (!raw) return;
@@ -4452,7 +4986,6 @@ class SudokuGame {
                     this.livesLimit = limitValue >= 11 ? Infinity : limitValue;
                     this.livesEnabled = !(limitValue >= 11);
                 } else {
-                    // Defer applying storage-restored limit if game is in progress
                     this._pendingMistakeLimitValue = limitValue;
                 }
             }
@@ -4465,70 +4998,71 @@ class SudokuGame {
                 swatches.forEach(b => b.setAttribute('aria-checked', b.dataset.accent === s.accent ? 'true' : 'false'));
             }
             const hintModeSel = document.getElementById('hint-mode-select'); if (hintModeSel && s.hintMode) hintModeSel.value = s.hintMode;
-            // Apply values to document
             const isDark = !!s.themeDark;
             document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+            // Load board sizing if present (stage only; don't apply to live board until modal close)
+            const gridSlider = document.getElementById('grid-size-slider');
+            const digitSlider = document.getElementById('digit-size-slider');
+            const noteSlider  = document.getElementById('note-size-slider');
+            if (gridSlider && typeof s.gridSize === 'number') gridSlider.value = String(s.gridSize);
+            if (digitSlider && typeof s.digitSize === 'number') digitSlider.value = String(s.digitSize);
+            if (noteSlider && typeof s.noteSize === 'number') noteSlider.value = String(s.noteSize);
+            // Set applied grid for live layout from stored settings; this is the last committed one
+            this._appliedGridSize = (typeof s.gridSize === 'number') ? Math.max(1, Math.min(3, s.gridSize)) : 2;
             try {
                 let meta = document.querySelector('meta[name="theme-color"]');
                 if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', 'theme-color'); document.head.appendChild(meta); }
                 meta.setAttribute('content', isDark ? '#0b1220' : '#667eea');
             } catch {}
-            if (s.accent) { applyAccent(s.accent); }
+            if (s.accent) { this._applyAccent && this._applyAccent(s.accent); }
             if (s.autoCandidates) {
-                // Ensure candidates are visible after restoring settings
                 this.recomputeAllCandidates();
             }
-            // Ensure hearts reflect restored settings and apply Zen
             this.applyZenMode && this.applyZenMode(!!s.zenMode);
             this.renderHealthBar();
-            // Update calendar headers after loading settings
             this.refreshCalendarHeaders && this.refreshCalendarHeaders();
         } catch {}
     }
     recordWin() {
+        if (typeof window !== 'undefined' && window.SudokuStats && window.SudokuStats.recordWin) {
+            return window.SudokuStats.recordWin(this);
+        }
         if (this._zenMode) return false;
         const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
         const elapsed = this.getElapsedSeconds();
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
         stats.totalWins = (stats.totalWins || 0) + 1;
-        stats.totalCompleted = (stats.totalCompleted || 0) + 1; // includes wins and losses
+        stats.totalCompleted = (stats.totalCompleted || 0) + 1;
         stats.bestTimes = stats.bestTimes || {};
-        // per-difficulty counters
         stats.byDifficulty = stats.byDifficulty || {};
         const slot = stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 };
         slot.played += 1;
         slot.wins += 1;
         const best = stats.bestTimes[diff];
-        // Do not update best time if any hint was used (assisted)
         let newBest = false;
         if ((this.hintsUsed || 0) === 0) {
             if (!best || elapsed < best) { stats.bestTimes[diff] = elapsed; newBest = true; }
         }
-        try {
-            stats.updatedAt = new Date().toISOString();
-            localStorage.setItem('sudoku-stats', JSON.stringify(stats));
-        } catch {}
-        // Attempt background sync (non-blocking)
+        try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
         this.syncRemoteStats && this.syncRemoteStats();
         return newBest;
     }
 
     recordLoss() {
+        if (typeof window !== 'undefined' && window.SudokuStats && window.SudokuStats.recordLoss) {
+            window.SudokuStats.recordLoss(this);
+            return;
+        }
         if (this._zenMode) return;
-        // Only count a loss if the user actually made a move in this run
         if (!this._hasMadeMove) return;
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
-        // attribute loss to current mode/difficulty
         const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
         stats.totalLosses = (stats.totalLosses || 0) + 1;
-        stats.totalCompleted = (stats.totalCompleted || 0) + 1; // includes wins and losses
+        stats.totalCompleted = (stats.totalCompleted || 0) + 1;
         stats.byDifficulty = stats.byDifficulty || {};
         const slot = stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 };
         slot.played += 1;
-        try {
-            stats.updatedAt = new Date().toISOString();
-            localStorage.setItem('sudoku-stats', JSON.stringify(stats));
-        } catch {}
+        try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
         this.syncRemoteStats && this.syncRemoteStats();
     }
     showStats() {
@@ -4708,7 +5242,9 @@ class SudokuGame {
             this.updateDailyIconBadge && this.updateDailyIconBadge();
         }); }
 
-        modal.style.display = 'block';
+        modal.style.display = 'grid';
+        this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(modal);
+        this._bindOverlayRecalibration && this._bindOverlayRecalibration(modal);
     }
 
     // Archive feature removed
@@ -4721,6 +5257,14 @@ if (typeof document !== 'undefined') {
         if (!document.getElementById('board')) return;
         const game = new SudokuGame();
         if (typeof window !== 'undefined') { window.SudokuGame = SudokuGame; window.__sudokuGame = game; }
+
+        // Populate app version if available
+        try {
+            const versionEl = document.getElementById('app-version');
+            if (versionEl && typeof window !== 'undefined' && window.APP_VERSION) {
+                versionEl.textContent = window.APP_VERSION;
+            }
+        } catch {}
     };
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', __initSudoku);
@@ -4730,6 +5274,7 @@ if (typeof document !== 'undefined') {
 }
 
 // Export for Node/Jest
+/* global module */
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { SudokuGame };
 }

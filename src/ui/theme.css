@@ -1,0 +1,23 @@
+/* Theme tokens and base surfaces extracted from styles.css for modularity. */
+
+/* This file is not yet linked; kept for future split plans. */
+
+:root {
+  --surface: #fff;
+  --surface-muted: #f7fafc;
+  --border: #e2e8f0;
+  --text: #1f2937;
+  --text-muted: #6b7280;
+  --accent: #6366f1;
+  --accent-600: #5558ee;
+}
+
+[data-theme="dark"] {
+  --surface: #0b1220;
+  --surface-muted: #0f172a;
+  --border: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+}
+
+
