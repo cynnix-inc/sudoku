@@ -61,6 +61,16 @@ export function wireCoreUiEvents(game) {
   const trapFocus = (modal) => {
     if (!modal || modal._trapBound) return;
     modal._trapBound = true;
+    // Move focus to the first focusable when opened
+    const focusFirst = () => {
+      try {
+        const focusables = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const list = Array.from(focusables).filter(el => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+        if (list[0]) list[0].focus();
+      } catch {}
+    };
+    const obs = new MutationObserver(() => { if (modal.style.display !== 'none') { focusFirst(); obs.disconnect(); } });
+    obs.observe(modal, { attributes: true, attributeFilter: ['style'] });
     modal.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         modal.style.display = 'none';

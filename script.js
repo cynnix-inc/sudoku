@@ -949,10 +949,15 @@ class SudokuGame {
             // Keep CSS-dependent sizing (grid tracks, keypad, etc.) in sync
             document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
         };
-        // Initial and on resize/orientation change
+        // Initial and on resize/orientation change (debounced)
         apply();
-        window.addEventListener('resize', apply);
-        window.addEventListener('orientationchange', apply);
+        let __rszTimer = null;
+        const debounced = () => {
+            if (__rszTimer) clearTimeout(__rszTimer);
+            __rszTimer = setTimeout(apply, 80);
+        };
+        window.addEventListener('resize', debounced, { passive: true });
+        window.addEventListener('orientationchange', debounced, { passive: true });
     }
 
     createBoard() {
@@ -1927,10 +1932,9 @@ class SudokuGame {
         if (cell) {
             cell.value = this.board[row][col] === 0 ? '' : this.board[row][col];
             cell.classList.remove('error');
-            
-            if (this.board[row][col] !== 0 && this.board[row][col] !== this.solution[row][col]) {
-                cell.classList.add('error');
-            }
+            const isWrong = (this.board[row][col] !== 0 && this.board[row][col] !== this.solution[row][col]);
+            if (isWrong) cell.classList.add('error');
+            try { cell.setAttribute('aria-invalid', isWrong ? 'true' : 'false'); } catch {}
         }
         this.updateNotesDisplay(row, col);
         this.highlightSameNumbers();
