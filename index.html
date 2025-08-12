@@ -21,7 +21,7 @@
     <div class="container">
         <header>
             <div class="rail app-header">
-                <div class="header-left">
+                <div class="header-left" style="visibility:visible">
                     <div id="user-chip" class="user-chip" style="display:none" aria-live="polite" title="Signed in">
                       <img id="user-avatar" alt="" aria-hidden="true" />
                       <span id="user-name"></span>
@@ -174,7 +174,15 @@
                         <button id="landing-continue-btn" class="btn btn-secondary btn-large" style="display:none">Continue</button>
                         <div class="landing-daily" id="landing-daily-section">
                             <div class="landing-daily-actions">
+                                <!-- Last played (left) -->
                                 <div class="daily-tile-wrap">
+                                    <button id="landing-last-btn" class="btn btn-secondary diff-btn diff-card daily-card static-card" style="display:none" aria-live="polite">
+                                        <span class="diff-text">Last played</span>
+                                        <span id="landing-last-pill"></span>
+                                    </button>
+                                </div>
+                                <!-- Daily (center) -->
+                                <div class="daily-tile-wrap daily-center-wrap">
                                     <button id="landing-daily-btn" class="btn btn-secondary diff-btn diff-card daily-card" aria-live="polite">
                                         <span class="diff-icon" id="landing-daily-icon"></span>
                                         <span class="diff-text">Daily</span>
@@ -185,6 +193,12 @@
                                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                                             <path fill="currentColor" d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Zm12 7H5v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9ZM6 7h12V6a1 1 0 0 0-1-1h-1v1a1 1 0 1 1-2 0V5H8v1a1 1 0 1 1-2 0V5H5a1 1 0 0 0-1 1v1Z"/>
                                         </svg>
+                                    </button>
+                                </div>
+                                <div class="daily-tile-wrap">
+                                    <button id="landing-fav-btn" class="btn btn-secondary diff-btn diff-card daily-card static-card" style="display:none" aria-live="polite">
+                                        <span class="diff-text">Most played</span>
+                                        <span id="landing-fav-pill"></span>
                                     </button>
                                 </div>
                             </div>
@@ -402,17 +416,17 @@ Hold Shift to move backward.">ⓘ</span></span>
                         <span class="control-label">Zen mode <span class="help-tip" data-tooltip="A calmer experience:
 • Hides timer, Lives, difficulty, and status.
 • Runs don’t update stats or best times.
-• Daily puzzles keep fixed Lives.">ⓘ</span></span>
+• Daily puzzles keep fixed Lives.
+• Sets Lives to Unlimited and disables the Lives slider.">ⓘ</span></span>
                         <label class="switch"><input type="checkbox" id="zen-mode-toggle" aria-label="Zen mode"><span class="switch-slider" aria-hidden="true"></span></label>
                     </div>
                      <div class="control-col">
                         <div class="control-label">Lives <span class="help-tip" data-tooltip="Lives limit how many wrong entries you can make.
 Set to 11 for Unlimited.
+Disabled in Zen mode (Lives are Unlimited).
 Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily.">ⓘ</span> <span class="value-pill" id="lives-limit-pill">3</span><span id="lives-limit-value" style="display:none">3</span></div>
                         <input type="range" id="lives-limit" min="0" max="11" step="1" value="3" />
-                        <div class="control-hints">
-                            <small class="hint" id="lives-preview">Hearts: ×3</small>
-                        </div>
+                        <div class="control-hints"></div>
                      <div class="control-row">
                         <span class="control-label">Auto‑pause on idle <span class="help-tip" data-tooltip="Pauses the game after inactivity.">ⓘ</span></span>
                         <label class="switch"><input type="checkbox" id="idle-autopause-toggle"><span class="switch-slider" aria-hidden="true"></span></label>

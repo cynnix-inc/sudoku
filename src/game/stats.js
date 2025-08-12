@@ -46,8 +46,10 @@ export function persistSettings(game) {
     calendarOnlyIncomplete: !!(document.getElementById('calendar-filter-incomplete-settings')?.checked),
     accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
     hintMode: (document.getElementById('hint-mode-select')?.value) || 'direct',
-    idleAutoPause: !!(document.getElementById('idle-autopause-toggle')?.checked),
-    idleTimeoutSec: parseInt(document.getElementById('idle-timeout-slider')?.value || '120', 10),
+    // Board sizing
+    gridSize: parseInt(document.getElementById('grid-size-slider')?.value || '2', 10),
+    digitSize: parseInt(document.getElementById('digit-size-slider')?.value || '3', 10),
+    noteSize: parseInt(document.getElementById('note-size-slider')?.value || '3', 10),
     updatedAt: new Date().toISOString(),
   };
   try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
@@ -59,6 +61,30 @@ export function persistSettings(game) {
     const sec = Number.isFinite(settings.idleTimeoutSec) ? settings.idleTimeoutSec : 120;
     game._idleTimeoutMs = Math.max(30, sec) * 1000;
     if (typeof game._initIdleDetection === 'function') game._initIdleDetection();
+  } catch {}
+  // Apply zen/lives slider UI state immediately as well
+  try {
+    const zenToggle = document.getElementById('zen-mode-toggle');
+    const isZen = !!(zenToggle && zenToggle.checked);
+    const slider = document.getElementById('lives-limit') || document.getElementById('mistakes-limit');
+    const labelEl = slider && slider.previousElementSibling && slider.previousElementSibling.classList && slider.previousElementSibling.classList.contains('control-label') ? slider.previousElementSibling : null;
+    const label = document.getElementById('lives-limit-value') || document.getElementById('mistakes-limit-value');
+    const pill = document.getElementById('lives-limit-pill') || document.getElementById('mistakes-limit-pill');
+    if (isZen) {
+      if (slider) { slider.disabled = true; slider.value = '11'; try { slider.setAttribute('aria-disabled', 'true'); } catch {} }
+      try { if (labelEl) labelEl.setAttribute('data-label-disabled','true'); } catch {}
+      if (label) label.textContent = 'Unlimited';
+      if (pill) pill.textContent = '∞';
+      game.livesEnabled = false; game.livesLimit = Infinity;
+    } else if (slider) {
+      slider.disabled = false; try { slider.setAttribute('aria-disabled', 'false'); } catch {}
+      try { if (labelEl) labelEl.setAttribute('data-label-disabled','false'); } catch {}
+      const v = parseInt(slider.value || '3', 10);
+      if (label) label.textContent = v >= 11 ? 'Unlimited' : String(v);
+      if (pill) pill.textContent = v >= 11 ? '∞' : String(v);
+      if (v >= 11) { game.livesEnabled = false; game.livesLimit = Infinity; }
+      else { game.livesEnabled = true; game.livesLimit = v; }
+    }
   } catch {}
 }
 
@@ -88,6 +114,30 @@ export function resumeSettings(game) {
     if (!raw) return;
     const s = JSON.parse(raw);
     if (!s) return;
+    // Restore appearance → board sizing sliders and labels from persisted settings
+    try {
+      const gridSlider = document.getElementById('grid-size-slider');
+      const digitSlider = document.getElementById('digit-size-slider');
+      const noteSlider  = document.getElementById('note-size-slider');
+      if (gridSlider && typeof s.gridSize === 'number') gridSlider.value = String(s.gridSize);
+      if (digitSlider && typeof s.digitSize === 'number') digitSlider.value = String(s.digitSize);
+      if (noteSlider && typeof s.noteSize === 'number') noteSlider.value = String(s.noteSize);
+      const gridPill = document.getElementById('grid-size-pill');
+      const digitPill = document.getElementById('digit-size-pill');
+      const notePill  = document.getElementById('note-size-pill');
+      if (gridPill && typeof s.gridSize === 'number') gridPill.textContent = String(s.gridSize);
+      if (digitPill && typeof s.digitSize === 'number') digitPill.textContent = String(s.digitSize);
+      if (notePill && typeof s.noteSize === 'number') notePill.textContent = String(s.noteSize);
+      // Ensure live board sizing uses the last applied grid size
+      game._appliedGridSize = (typeof s.gridSize === 'number') ? Math.max(1, Math.min(3, s.gridSize)) : 2;
+      // Apply digit/note CSS scales so the board reflects persisted sizes on load
+      const stepToDigitScale = (v) => ({ 1: 0.36, 2: 0.44, 3: 0.52, 4: 0.60, 5: 0.68 })[v] || 0.52;
+      const stepToNoteScale  = (v) => ({ 1: 0.12, 2: 0.16, 3: 0.20, 4: 0.24, 5: 0.28 })[v] || 0.20;
+      if (typeof s.digitSize === 'number') document.documentElement.style.setProperty('--digit-scale', String(stepToDigitScale(s.digitSize)));
+      if (typeof s.noteSize === 'number')  document.documentElement.style.setProperty('--note-scale',  String(stepToNoteScale(s.noteSize)));
+      // Recompute responsive layout with the applied grid size if available
+      try { game.setupResponsiveSizing && game.setupResponsiveSizing(); } catch {}
+    } catch {}
     const ac = document.getElementById('auto-candidates-toggle'); if (ac) ac.checked = !!s.autoCandidates;
     const aa = document.getElementById('auto-advance-toggle'); if (aa) aa.checked = !!s.autoAdvance;
     const ml = document.getElementById('lives-limit') || document.getElementById('mistakes-limit'); const mlv = document.getElementById('lives-limit-value') || document.getElementById('mistakes-limit-value');
@@ -105,8 +155,40 @@ export function resumeSettings(game) {
     }
     const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = !!s.themeDark;
     const zenToggle = document.getElementById('zen-mode-toggle'); if (zenToggle) zenToggle.checked = !!s.zenMode;
+    // Ensure lives slider UI matches zen state even if there was no transition
+    try {
+      const isZen = !!(zenToggle && zenToggle.checked);
+      const slider = document.getElementById('lives-limit') || document.getElementById('mistakes-limit');
+      const label = document.getElementById('lives-limit-value') || document.getElementById('mistakes-limit-value');
+      const pill = document.getElementById('lives-limit-pill') || document.getElementById('mistakes-limit-pill');
+      if (isZen) {
+        if (slider) { slider.disabled = true; slider.value = '11'; try { slider.setAttribute('aria-disabled', 'true'); } catch {} }
+        if (label) label.textContent = 'Unlimited';
+        if (pill) pill.textContent = '∞';
+        game.livesEnabled = false; game.livesLimit = Infinity;
+      } else if (slider) {
+        slider.disabled = false; try { slider.setAttribute('aria-disabled', 'false'); } catch {}
+        const v = parseInt(slider.value || '3', 10);
+        if (label) label.textContent = v >= 11 ? 'Unlimited' : String(v);
+        if (pill) pill.textContent = v >= 11 ? '∞' : String(v);
+        if (v >= 11) { game.livesEnabled = false; game.livesLimit = Infinity; }
+        else { game.livesEnabled = true; game.livesLimit = v; }
+      }
+    } catch {}
+    // Prevent legacy Zen restore from overriding defaults after a reset
+    try { game._userZenRestoreValue = undefined; game._userLivesRestoreValue = undefined; game._userMistakeRestoreValue = undefined; } catch {}
+    // Align internal zen flag with stored value so applyZenMode does not perform a restore transition
+    try { game._zenMode = !!s.zenMode; } catch {}
     const idleToggle = document.getElementById('idle-autopause-toggle'); if (idleToggle && 'idleAutoPause' in s) idleToggle.checked = !!s.idleAutoPause;
     const idleSlider = document.getElementById('idle-timeout-slider'); if (idleSlider && typeof s.idleTimeoutSec === 'number') idleSlider.value = String(Math.max(10, s.idleTimeoutSec));
+    // Reflect enabled/disabled state of idle timeout slider from toggle
+  if (idleSlider) {
+      const enabled = !!(idleToggle && idleToggle.checked);
+      idleSlider.disabled = !enabled;
+      try { idleSlider.setAttribute('aria-disabled', (!enabled).toString()); } catch {}
+    // Only dim the idle slider's own row label; do not impact other labels
+    try { const row = idleSlider.closest('.control-row'); const lbl = row && row.querySelector('.control-label'); if (lbl) lbl.setAttribute('data-label-disabled', (!enabled).toString()); } catch {}
+    }
     const idlePill = document.getElementById('idle-timeout-pill');
     if (idlePill && (idleSlider || typeof s.idleTimeoutSec === 'number')) {
       const total = parseInt((idleSlider && idleSlider.value) || s.idleTimeoutSec || 0, 10);

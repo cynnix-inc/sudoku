@@ -35,10 +35,37 @@ High-level acceptance criteria for Ultimate Sudoku
 - Settings
   - Settings reflect stored values, can be toggled, and persist across reloads.
   - Lives: dragging the slider to 11 sets Unlimited (∞). Changes made during an active game apply to the next game; otherwise they apply immediately.
+  - Reset to defaults sets Lives back to 3 regardless of whether Zen mode was previously enabled. After a reset, any prior Zen restore value must not override the default 3.
   - Week start switch alters calendar weekday render.
   - When signed in, gameplay and calendar settings (auto‑candidates, auto‑advance, zen mode, lives enabled/limit, week start, hint mode) sync across devices. Appearance (dark mode, accent) remains device‑specific.
-  - Board sizing controls persist and apply after closing Settings; preview inside Settings updates live while sliding.
+
+### Settings UI: Zen mode, Lives, and Idle auto‑pause
+
+- Zen mode behavior in Settings:
+  - Enabling Zen sets Lives to Unlimited (11), disables the Lives slider, and greys the Lives label only.
+  - The Auto‑pause on idle and Idle timeout labels must NOT be greyed by Zen mode.
+  - Daily puzzles may still show Lives visually; Zen does not override Daily fixed Lives.
+
+- Idle auto‑pause behavior in Settings:
+  - When Auto‑pause on idle is disabled, the Idle timeout slider is disabled and the Idle timeout label is greyed.
+  - When Auto‑pause on idle is enabled, the Idle timeout slider is enabled and the Idle timeout label is not greyed.
+  - The Auto‑pause toggle’s own label is not impacted by the Idle timeout control state.
+
+- Reset to defaults:
+  - Resets Lives to 3 and re‑enables the Lives slider even if Zen had been enabled before.
+  - Clears any Zen restore snapshot so subsequent Zen toggles return to defaults rather than stale values.
+  - Board sizing
+    - Preview inside Settings updates live while sliding (without changing the live board until Close).
+    - On Close, the chosen values apply to the live board and are saved.
+    - The three sliders — `Grid size`, `Input number size`, and `Notes size` — persist across page refresh.
+    - On reload, sliders and their value pills reflect the saved values, the live board uses the last applied grid size, and digit/notes scales are reapplied.
   - Calendar cells include readable hover text and aria‑labels with date and difficulty.
+
+- Zen mode UX
+  - Enabling Zen hides the on‑screen timer, Lives (hearts), and status messages while keeping the difficulty chip visible.
+  - Hiding those elements must not collapse layout: the controls strip retains its height/space so the board does not shift vertically and the play area height remains unchanged.
+  - The number pad position and spacing remain unchanged when toggling Zen on/off.
+  - Leaving Zen restores prior Lives preferences (unless Daily is active, which uses fixed Lives by difficulty).
 
 - Accessibility/UI
   - 81 cells render with role grid and gridcell attributes; ARIA attributes update selection and health bar announces remaining lives; number pad visible on mobile; keyboard input supported on desktop.
@@ -73,6 +100,15 @@ Modals and overlays
   - Each quick action opens its modal when clicked while the landing is visible: Stats → `#stats-modal`, Settings → `#settings-modal`, Help → `#help-modal`
   - When a modal is opened from the landing overlay and then closed via Close button, ESC, or backdrop: landing overlay reappears unless a game has started in the meantime
   - The header menu popover shows the compact icons with Settings and Help; order there is not constrained unless specified elsewhere
+
+  - Daily tile behavior:
+    - When today’s Daily is not completed:
+      - The Daily tile shows the difficulty hint text and a difficulty icon chip; clicking starts Daily for today.
+      - A small calendar overlay button is visible on the tile and opens the Daily calendar modal.
+    - When today’s Daily is completed:
+      - The Daily tile switches to a Calendar tile with no difficulty label or hint.
+      - The tile shows a centered monochrome calendar icon with grid, sized to fill the tile cleanly, visually centered.
+      - The small calendar overlay button is hidden; clicking the tile opens the Daily calendar modal.
 
 - Signed‑in name display
   - Header chip and landing greeting use only the user's first name (from Google `full_name`), falling back to email or "Player" when missing.

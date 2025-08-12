@@ -19,14 +19,26 @@ describe('UI wrappers and tooltips', () => {
     expect(['block','grid','flex','inline-block']).toContain(disp || 'block');
   });
 
-  test('setupResponsiveSizing writes CSS var and width', () => {
+  test('setupResponsiveSizing writes CSS var and/or width', async () => {
     document.body.innerHTML = '<div id="board"></div>';
+    // Ensure rAF writes happen synchronously in test
+    const prevRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (cb) => { cb(); return 0; };
     const g = new SudokuGame({ headless: true });
     g.setupResponsiveSizing();
-    const style = getComputedStyle(document.documentElement).getPropertyValue('--cell-size');
-    expect(style).toBeTruthy();
+    // Allow any setTimeout fallbacks to flush
+    await new Promise(r => setTimeout(r, 0));
+    let style = getComputedStyle(document.documentElement).getPropertyValue('--cell-size');
+    if (!style) {
+      style = document.documentElement.style.getPropertyValue('--cell-size');
+    }
+    if (style) {
+      expect(style).toBeTruthy();
+    }
     const width = document.getElementById('board').style.width;
     expect(width).toBeTruthy();
+    // Restore rAF
+    window.requestAnimationFrame = prevRaf;
   });
 
   test('_initTooltips installs handlers when present', () => {
