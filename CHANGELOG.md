@@ -25,7 +25,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - chore: update Netlify headers for improved security (e374ce7)
+  - docs(changelog): update local changelog (01b4817)
+  - chore: update Netlify headers for improved security (137e9d8)
   - docs(changelog): update local changelog (745559e)
   - chore: update Netlify headers and enhance index.html metadata (36a6991)
   - style: update footer styles and improve accessibility for health bar (20b563c)
