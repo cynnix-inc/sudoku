@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -228,8 +228,8 @@
                 </div>
             </div>
             <div class="rail controls-strip">
-                    <div class="controls-left">
-                    <div class="hearts-row"><div id="health-bar" class="health-bar-stack" aria-label="Lives" aria-live="polite"></div></div>
+                <div class="controls-left">
+                    <div class="hearts-row"><div id="health-bar" class="health-bar-stack" role="status" aria-live="polite" aria-atomic="true" aria-label="Lives"></div></div>
                 </div>
                 <div class="controls-center">
                     <div id="toast-container" class="toast-container inline" aria-live="polite" aria-atomic="true"></div>
