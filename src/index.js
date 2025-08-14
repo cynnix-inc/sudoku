@@ -15,6 +15,7 @@ import './utils/devlog.js';
 import './ui/timer.js';
 import './ui/health.js';
 import './ui/modals.js';
+import './ui/toast.js';
 import './ui/hints.js';
 import { APP_VERSION } from './version.js';
 
@@ -56,6 +57,58 @@ if (typeof window !== 'undefined') {
     document.addEventListener('DOMContentLoaded', setVersion, { once: true });
   } else {
     setVersion();
+  }
+
+  // Footer behavior: brand/year and seed copy
+  const wireFooter = () => {
+    try {
+      // Set year directly (fallback independent of game instance)
+      const yearEl = document.getElementById('game-brand-year');
+      if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+      const g = window.__sudokuGame;
+      if (g && g.updateFooterBrand) g.updateFooterBrand();
+      if (g && g.updateFooterSeed) g.updateFooterSeed();
+      const seedBtn = document.getElementById('game-seed');
+      if (seedBtn && !seedBtn._wired) {
+        const notifyMini = (msg, type, anchorEl) => {
+          if (window.SudokuToasts && window.SudokuToasts.showMiniToast) {
+            window.SudokuToasts.showMiniToast(anchorEl, msg, type, { position: 'above', duration: 900 });
+            return;
+          }
+          try {
+            const rect = anchorEl.getBoundingClientRect();
+            const t = document.createElement('div');
+            t.className = `mini-toast ${type || 'info'}`;
+            t.textContent = msg;
+            const x = rect.left + rect.width / 2 + window.scrollX;
+            const y = rect.top - 8 + window.scrollY;
+            t.style.left = `${x}px`;
+            t.style.top = `${y}px`;
+            document.body.appendChild(t);
+            requestAnimationFrame(() => t.classList.add('show'));
+            setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 160); }, 900);
+          } catch {}
+        };
+        seedBtn.addEventListener('click', async () => {
+          const seed = seedBtn.getAttribute('data-seed') || seedBtn.textContent || '';
+          if (!seed) return;
+          try {
+            await navigator.clipboard.writeText(String(seed));
+            notifyMini('Copied', 'success', seedBtn);
+          } catch {
+            notifyMini('Copy failed', 'error', seedBtn);
+          }
+        });
+        seedBtn._wired = true;
+      }
+    } catch {}
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireFooter, { once: true });
+  } else {
+    wireFooter();
   }
 }
 

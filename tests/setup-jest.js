@@ -86,4 +86,10 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
+// Load modal controller (ESM) once so delegated handlers (ESC, data-close-modal)
+// are active in unit tests running under jsdom.
+(async () => {
+  try { await import('../src/ui/modals.js'); } catch {}
+})();
+
 

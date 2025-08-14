@@ -1,6 +1,7 @@
 // Centralized modal controller with ARIA, focus restore, scroll lock, and backdrop handling
 
 let previouslyFocusedElement = null;
+let _closingFromPopstate = false;
 
 function getAllAppContainers() {
   const nodes = [];
@@ -69,6 +70,12 @@ export function openModal(id, options = {}) {
   modal.classList.add('is-open');
   try { modal.setAttribute('aria-hidden', 'false'); } catch {}
 
+  // Push a history entry so browser Back can dismiss
+  try {
+    history.pushState({ modal: true, id }, '', location.href);
+    modal.setAttribute('data-history', '1');
+  } catch {}
+
   // Body scroll lock and app inert
   document.body.classList.add('modal-open');
   setBackgroundInert(true);
@@ -90,6 +97,18 @@ export function closeModal(id) {
   if (!modal) return false;
   modal.classList.remove('is-open');
   try { modal.setAttribute('aria-hidden', 'true'); } catch {}
+
+  // If this modal pushed a history entry and we are not already handling a popstate,
+  // consume that entry so Back behaves intuitively
+  try {
+    if (!_closingFromPopstate && modal.getAttribute('data-history') === '1') {
+      modal.removeAttribute('data-history');
+      // Use a microtask to avoid interfering with current event stack
+      setTimeout(() => { try { history.back(); } catch {} }, 0);
+    } else {
+      modal.removeAttribute('data-history');
+    }
+  } catch {}
 
   // If no other modals open, restore background and scroll
   const anyOpen = !!document.querySelector('.modal.is-open');
@@ -129,8 +148,42 @@ function bindDelegatesOnce() {
   if (_controllerBound) return;
   _controllerBound = true;
   try { document.addEventListener('click', onDocumentClick); } catch {}
+  // Delegate clicks on any element marked to close its parent modal
+  try {
+    document.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('[data-close-modal]') : null;
+      if (!btn) return;
+      const m = btn.closest && btn.closest('.modal');
+      if (m && m.id) closeModal(m.id);
+    });
+  } catch {}
+  // Global ESC to close the topmost open modal
+  try {
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const open = document.querySelector('.modal.is-open') || (() => {
+        try { return Array.from(document.querySelectorAll('.modal')).find((m) => window.getComputedStyle(m).display !== 'none'); }
+        catch { return null; }
+      })();
+      if (open && open.id) { e.preventDefault(); closeModal(open.id); }
+    });
+  } catch {}
 }
 
 bindDelegatesOnce();
+
+// Close any open modal when user presses browser Back
+try {
+  window.addEventListener('popstate', () => {
+    const open = document.querySelector('.modal.is-open') || (() => {
+      try { return Array.from(document.querySelectorAll('.modal')).find((m) => window.getComputedStyle(m).display !== 'none'); }
+      catch { return null; }
+    })();
+    if (open && open.id) {
+      _closingFromPopstate = true;
+      try { closeModal(open.id); } finally { setTimeout(() => { _closingFromPopstate = false; }, 0); }
+    }
+  });
+} catch {}
 
 try { if (typeof window !== 'undefined') window.SudokuModals = { openModal, closeModal }; } catch {}

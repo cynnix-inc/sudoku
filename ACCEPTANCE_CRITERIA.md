@@ -21,7 +21,7 @@ High-level acceptance criteria for Ultimate Sudoku
 
 - Validation and status
   - If mistakes are enabled, wrong entries decrement hearts and show a floater.
-  - When all cells match solution, modal appears and win is recorded; timer stops.
+  - When all cells match solution, the game records a win, stops the timer, and routes to the home screen (landing overlay) with a visible results banner (win), showing difficulty, time, Lives used/total, and Assisted badge when hints were used. No legacy "Game Complete" modal is shown.
   - Pause via `#timer-toggle` shows `#pause-overlay`; toggling resumes timer.
 
 - Daily
@@ -38,7 +38,21 @@ High-level acceptance criteria for Ultimate Sudoku
   - Lives: dragging the slider to 11 sets Unlimited (∞). Changes made during an active game apply to the next game; otherwise they apply immediately.
   - Reset to defaults sets Lives back to 3 regardless of whether Zen mode was previously enabled. After a reset, any prior Zen restore value must not override the default 3.
   - Week start switch alters calendar weekday render.
-  - When signed in, gameplay and calendar settings (auto‑candidates, auto‑advance, zen mode, lives enabled/limit, week start, hint mode) sync across devices. Appearance (dark mode, accent) remains device‑specific.
+  - Sync to Cloud section appears at the bottom of Settings with a combined cloud+sync icon in the title and three toggles:
+    - Gameplay (default ON)
+    - Appearance (default OFF)
+    - Calendar (default ON)
+  - Toggling any Sync switch persists immediately and updates future sync behavior without closing the modal.
+  - When signed in:
+    - Gameplay and Calendar settings (auto‑candidates, auto‑advance, zen mode, lives enabled/limit, week start, hint mode, idle auto‑pause, idle timeout, calendar filters) sync only if their respective toggles are ON.
+    - Appearance (dark mode, accent) syncs only if its toggle is ON; otherwise it is device‑specific.
+    - Field‑wise settings merge uses per‑field timestamps so the newer field wins; appearance fields are included only when Appearance sync is ON.
+  - Stats merge when signed in:
+    - Totals add, best times take the minimum, by‑difficulty counters add per key.
+    - Daily results merge by date key: prefer completed over incomplete; otherwise prefer newer `updatedAt` when present.
+  - “Reset cloud data” in Settings footer deletes remote stats and remote settings for the signed‑in user after double confirmation; local data remains unless explicitly reset elsewhere.
+  - Saving settings on simplified/mobile views (where some controls are not rendered) must merge with previously saved values; missing controls must not reset or overwrite existing preferences.
+  - When signed out (guest), settings persist locally across reloads and navigation on both desktop and mobile.
 
 ### Settings UI: Zen mode, Lives, and Idle auto‑pause
 
@@ -84,6 +98,11 @@ Modals and overlays
     - Restores focus to the opener on close
     - Emits `modalopen`/`modalclose` events for orchestration
     - Supports `data-backdrop-close="false"` to disable backdrop closing (used by Confirm)
+  - Scrolling rules
+    - Modal headers remain fixed while content scrolls; titles and the Close button do not scroll out of view
+    - Vertical scrolling occurs only inside the modal body container (`.modal-body`); the overlay wrapper does not scroll
+    - The page background does not scroll while a modal is open and `body` has `modal-open`
+    - Scrollbars are confined to the modal content area and do not extend to the top of the overlay
 
 - Help modal
   - Displays gameplay guidance as a grid of sections (Lives, Hints, Sync, Zen, Mobile, Keyboard) using consistent `.help-card` styling.
@@ -160,6 +179,15 @@ Mobile unit coverage
 - Double‑tap erase clears a non‑given cell.
 - Notes button press‑and‑hold temporarily enables Notes and restores state on release.
 - Haptics: when in touch mode and supported, navigator.vibrate is called on user actions.
+
+Footer and seed
+
+- Footer displays under gameplay area, aligned to board width (`.rail`):
+  - Center: “© <current year> CYNNIX Studios”
+  - Right: seed in light grey, subtle
+    - Normal games: show randomly generated seed; seeded games: show provided seed; Daily: show UTC date key
+    - Clicking the seed copies it and shows a small inline mini-toast near the button with text “Copied”
+    - Hover styling remains subtle (no underline)
 
 
 

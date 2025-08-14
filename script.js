@@ -432,6 +432,7 @@ class SudokuGame {
         // Seed calendar and daily state
         this._calendarRefMonth = new Date();
         this._activeDailyKey = null;
+        this._activeSeed = null;
         // Initialize daily notification dot (moved to hamburger menu + menu item)
         this.updateDailyIconBadge && this.updateDailyIconBadge();
         // Seasonal themes + rainbow digits (if flagged) on load
@@ -742,11 +743,62 @@ class SudokuGame {
             if (!remote && (!localUpdatedAt)) {
                 // No remote row and no local timestamp: create an empty baseline row
                 await this._retryAsync(() => this._upsertRemoteStats(user.id, {}));
+            } else if (remote && localStats) {
+                // Merge both sides deterministically
+                const local = localStats || {};
+                const remoteLocal = this._mapRemoteStatsToLocal(remote);
+                const merged = {
+                    totalCompleted: (local.totalCompleted || 0) + (remoteLocal.totalCompleted || 0),
+                    totalWins: (local.totalWins || 0) + (remoteLocal.totalWins || 0),
+                    totalLosses: (local.totalLosses || 0) + (remoteLocal.totalLosses || 0),
+                    bestTimes: {
+                        easy: Math.min(...[local.bestTimes?.easy, remoteLocal.bestTimes?.easy].filter(v => Number.isFinite(v))),
+                        medium: Math.min(...[local.bestTimes?.medium, remoteLocal.bestTimes?.medium].filter(v => Number.isFinite(v))),
+                        hard: Math.min(...[local.bestTimes?.hard, remoteLocal.bestTimes?.hard].filter(v => Number.isFinite(v))),
+                        expert: Math.min(...[local.bestTimes?.expert, remoteLocal.bestTimes?.expert].filter(v => Number.isFinite(v))),
+                        master: Math.min(...[local.bestTimes?.master, remoteLocal.bestTimes?.master].filter(v => Number.isFinite(v))),
+                        extreme: Math.min(...[local.bestTimes?.extreme, remoteLocal.bestTimes?.extreme].filter(v => Number.isFinite(v))),
+                    },
+                    byDifficulty: (() => {
+                        const out = { ...(remoteLocal.byDifficulty || {}) };
+                        const add = (k, a = {}) => {
+                            const r = out[k] || { played: 0, wins: 0 };
+                            out[k] = { played: (r.played || 0) + (a.played || 0), wins: (r.wins || 0) + (a.wins || 0) };
+                        };
+                        Object.keys(local.byDifficulty || {}).forEach(k => add(k, local.byDifficulty[k]));
+                        return out;
+                    })(),
+                    updatedAt: new Date().toISOString(),
+                };
+                // Merge daily results by key: prefer most complete; else newer timestamp if present
+                try {
+                    const localDR = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
+                    const remoteDR = remote.daily_results || {};
+                    const mergedDR = { ...remoteDR };
+                    for (const [k, v] of Object.entries(localDR)) {
+                        const r = remoteDR[k];
+                        if (!r) { mergedDR[k] = v; continue; }
+                        const aDone = !!v.completed; const bDone = !!r.completed;
+                        if (aDone && !bDone) { mergedDR[k] = v; continue; }
+                        if (!aDone && bDone) { mergedDR[k] = r; continue; }
+                        const ats = (v.updatedAt ? new Date(v.updatedAt).getTime() : 0);
+                        const bts = (r.updatedAt ? new Date(r.updatedAt).getTime() : 0);
+                        mergedDR[k] = (ats >= bts) ? v : r;
+                    }
+                    localStorage.setItem('sudoku-daily-results', JSON.stringify(mergedDR));
+                } catch {}
+                localStorage.setItem('sudoku-stats', JSON.stringify(merged));
+                // Converge by pushing merged to remote
+                await this._retryAsync(() => this._upsertRemoteStats(user.id, merged));
+                this.showToast && this.showToast('Synced stats to your account', 'success', 3000);
             } else if (localStats && (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt))) {
                 await this._retryAsync(() => this._upsertRemoteStats(user.id, localStats));
+                this.showToast && this.showToast('Synced stats to your account', 'success', 3000);
             } else if (remote && (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt))) {
                 const merged = this._mapRemoteStatsToLocal(remote);
                 localStorage.setItem('sudoku-stats', JSON.stringify(merged));
+                // Persist daily results already handled in _mapRemoteStatsToLocal
+                this.showToast && this.showToast('Synced stats from your account', 'info', 3000);
             }
         } catch (e) {
             try { window.__devlog && window.__devlog('syncRemoteStats failed', e); } catch {}
@@ -765,9 +817,11 @@ class SudokuGame {
             if (!user) return;
             const localRaw = localStorage.getItem('sudoku-settings');
             const local = localRaw ? JSON.parse(localRaw) : {};
+            // Allow per-device opt out of cloud sync for gameplay settings
+            if (local && local.syncGameplayAcrossDevices === false) return;
             const localUpdatedAt = local.updatedAt ? new Date(local.updatedAt) : null;
 
-            // Only include gameplay+calendar in remote payload
+            // Only include gameplay+calendar in remote payload (appearance sync optional via local flag)
             const toRemotePrefs = (s) => ({
                 autoCandidates: !!s.autoCandidates,
                 autoAdvance: !!s.autoAdvance,
@@ -781,6 +835,13 @@ class SudokuGame {
                 calendarOnlyIncomplete: !!s.calendarOnlyIncomplete,
                 idleAutoPause: (typeof s.idleAutoPause === 'boolean') ? !!s.idleAutoPause : undefined,
                 idleTimeoutSec: (typeof s.idleTimeoutSec === 'number') ? s.idleTimeoutSec : undefined,
+                // Optionally include appearance if user opted in
+                ...(s && s.syncAppearanceAcrossDevices ? {
+                    themeDark: (typeof s.themeDark === 'boolean') ? !!s.themeDark : undefined,
+                    accent: (typeof s.accent === 'string') ? s.accent : undefined,
+                } : {}),
+                // Per-field timestamps for conflict-free merge
+                __ts: (s && s.__ts) ? s.__ts : undefined,
                 // explicitly exclude themeDark and accent
                 // themeDark: undefined,
                 // accent: undefined,
@@ -795,32 +856,60 @@ class SudokuGame {
             if (error && error.code !== 'PGRST116') throw error;
             const remoteUpdatedAt = remote?.updated_at ? new Date(remote.updated_at) : null;
 
+            const fields = [
+                'autoCandidates','autoAdvance','zenMode','livesEnabled','livesLimit','weekstart','hintMode',
+                'calendarOnlyPlayable','calendarOnlyIncomplete','idleAutoPause','idleTimeoutSec',
+                // include appearance in field-wise merge only if opted in locally
+                ...(local && local.syncAppearanceAcrossDevices ? ['themeDark','accent'] : [])
+            ];
+            const localTs = (local && local.__ts) ? local.__ts : {};
+
             if (!remote && !localUpdatedAt) {
                 // create baseline row from local prefs snapshot
                 await this._retryAsync(() => this._upsertRemoteSettings(user.id, toRemotePrefs(local)));
-            } else if (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt)) {
+            } else if (!remote && local) {
                 await this._retryAsync(() => this._upsertRemoteSettings(user.id, toRemotePrefs(local)));
-            } else if (remote && (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt))) {
-                // Merge remote into local: only gameplay+calendar fields; preserve local appearance
+                this.showToast && this.showToast('Synced gameplay settings', 'success', 3000);
+            } else if (remote) {
+                // Field-wise merge using per-field timestamps; fallback to row updated_at
                 const prefs = remote.prefs || {};
-                const merged = {
-                    ...local,
-                    autoCandidates: !!prefs.autoCandidates,
-                    autoAdvance: !!prefs.autoAdvance,
-                    zenMode: !!prefs.zenMode,
-                    livesEnabled: !!prefs.livesEnabled,
-                    livesLimit: (typeof prefs.livesLimit === 'number') ? prefs.livesLimit : (local.livesLimit ?? 3),
-                    weekstart: prefs.weekstart || local.weekstart || 'sunday',
-                    hintMode: prefs.hintMode || local.hintMode || 'direct',
-                    calendarOnlyPlayable: (typeof prefs.calendarOnlyPlayable === 'boolean') ? !!prefs.calendarOnlyPlayable : !!local.calendarOnlyPlayable,
-                    calendarOnlyIncomplete: (typeof prefs.calendarOnlyIncomplete === 'boolean') ? !!prefs.calendarOnlyIncomplete : !!local.calendarOnlyIncomplete,
-                    idleAutoPause: (typeof prefs.idleAutoPause === 'boolean') ? !!prefs.idleAutoPause : !!local.idleAutoPause,
-                    idleTimeoutSec: (typeof prefs.idleTimeoutSec === 'number') ? prefs.idleTimeoutSec : (local.idleTimeoutSec ?? 120),
-                    updatedAt: remote.updated_at || new Date().toISOString(),
-                };
+                const remoteTs = prefs.__ts || {};
+                const merged = { ...local };
+                let changed = false;
+                const nowIso = new Date().toISOString();
+                fields.forEach((k) => {
+                    const localVal = local?.[k];
+                    const remoteVal = prefs?.[k];
+                    const lts = localTs?.[k] ? new Date(localTs[k]) : null;
+                    const rts = remoteTs?.[k] ? new Date(remoteTs[k]) : null;
+                    let useRemote;
+                    if (lts && rts) {
+                        useRemote = rts > lts;
+                    } else if (!lts && rts) {
+                        useRemote = true;
+                    } else if (lts && !rts) {
+                        useRemote = false;
+                    } else {
+                        // fall back to row timestamp comparison
+                        useRemote = (!!remoteUpdatedAt && (!localUpdatedAt || remoteUpdatedAt > localUpdatedAt));
+                    }
+                    const chosen = useRemote ? remoteVal : localVal;
+                    if (merged[k] !== chosen) { merged[k] = chosen; changed = true; }
+                    // Maintain per-field timestamps
+                    merged.__ts = merged.__ts || {};
+                    merged.__ts[k] = (useRemote ? (remoteTs?.[k] || prefs?.updated_at || nowIso) : (localTs?.[k] || nowIso));
+                });
+                if (!merged.updatedAt || (remoteUpdatedAt && (!localUpdatedAt || remoteUpdatedAt > localUpdatedAt))) {
+                    merged.updatedAt = remote.updated_at || nowIso;
+                } else {
+                    merged.updatedAt = nowIso;
+                }
                 localStorage.setItem('sudoku-settings', JSON.stringify(merged));
                 // Apply immediately
                 this.resumeSettings && this.resumeSettings();
+                // Converge by pushing merged back to remote
+                await this._retryAsync(() => this._upsertRemoteSettings(user.id, toRemotePrefs(merged)));
+                if (changed) this.showToast && this.showToast('Synced gameplay settings', 'success', 3000);
             }
         } catch (e) {
             try { window.__devlog && window.__devlog('syncRemoteSettings error', e); } catch {}
@@ -984,6 +1073,32 @@ class SudokuGame {
             if (menuDot) menuDot.style.display = 'inline-block';
             if (dailysDot) dailysDot.style.display = 'inline-block';
         }
+    }
+
+    // --- Footer helpers ---
+    updateFooterBrand() {
+        try {
+            const y = new Date().getFullYear();
+            const el = document.getElementById('game-brand-year');
+            if (el) el.textContent = String(y);
+        } catch {}
+    }
+
+    updateFooterSeed() {
+        try {
+            const btn = document.getElementById('game-seed');
+            if (!btn) return;
+            const hasSeed = typeof this._activeSeed === 'string' && this._activeSeed.length > 0;
+            if (!hasSeed) {
+                btn.hidden = true;
+                btn.textContent = '';
+                btn.removeAttribute('data-seed');
+                return;
+            }
+            btn.hidden = false;
+            btn.textContent = this._activeSeed;
+            btn.setAttribute('data-seed', this._activeSeed);
+        } catch {}
     }
 
     spawnMistakeFloater(row, col) {
@@ -1167,63 +1282,11 @@ class SudokuGame {
     }
 
     generatePuzzle(difficulty = 'medium') {
-        // console.log('Generating puzzle with difficulty:', difficulty);
-        
-        // Generate a solved board first
-        this.generateSolvedBoard();
-        // console.log('Solved board generated:', this.board);
-        
-        // Copy solution
-        this.solution = this.board.map(row => [...row]);
-        
-        // Remove numbers based on difficulty
-        const cellsToRemove = {
-            'easy': 30,
-            'medium': 40,
-            'hard': 50,
-            'expert': 60,
-            'master': 62,
-            'extreme': 64
-        };
-        
-        const cellsToRemoveCount = cellsToRemove[difficulty] || 40;
-        // Use symmetric removal with uniqueness check
-        if (typeof this.removeNumbersSymmetricUnique === 'function') {
-            this.removeNumbersSymmetricUnique(cellsToRemoveCount);
-        } else {
-            this.removeNumbers(cellsToRemoveCount);
-        }
-
-        // Final safeguard: ensure uniqueness; if not unique, retry a few times
-        let attempts = 0;
-        while (!this.hasUniqueSolution() && attempts < 3) {
-            this.generateSolvedBoard();
-            this.solution = this.board.map(row => [...row]);
-            if (typeof this.removeNumbersSymmetricUnique === 'function') {
-                this.removeNumbersSymmetricUnique(cellsToRemoveCount);
-            } else {
-                this.removeNumbers(cellsToRemoveCount);
-            }
-            attempts++;
-        }
-        // console.log('Numbers removed, puzzle board:', this.board);
-        
-        // Copy to initial board
-        this.initialBoard = this.board.map(row => [...row]);
-        
-        // Reset all notes to empty for a fresh puzzle
-        this.notes = Array(9).fill().map(() => Array(9).fill(null).map(() => new Set()));
-        // Reset hints and set cap by difficulty
-        const hintCaps = { easy: 5, medium: 3, hard: 2, expert: 1, master: 0, extreme: 0 };
-        this.hintsUsed = 0;
-        this.hintsLimit = hintCaps[difficulty] ?? 3;
-        this.updateHintUi && this.updateHintUi();
-        // console.log('Initial board saved:', this.initialBoard);
-        
-        // Auto-candidates on start
-        if (this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
-            this.recomputeAllCandidates();
-        }
+        // Generate a random seed for reproducible normal games and delegate to seeded path
+        const seed = this._generateRandomSeedString ? this._generateRandomSeedString() : (Math.random().toString(36).slice(2, 10));
+        this._activeSeed = String(seed);
+        this.updateFooterSeed && this.updateFooterSeed();
+        this.generateSeeded && this.generateSeeded(seed, difficulty);
     }
 
     // ---- Seeded puzzle generation (deterministic by seed) ----
@@ -1262,6 +1325,9 @@ class SudokuGame {
             try { localStorage.setItem('sudoku-last-difficulty', difficulty); } catch {}
             this.clearStatus && this.clearStatus();
             this.renderHealthBar && this.renderHealthBar();
+            // Show seed in footer
+            this._activeSeed = String(seed);
+            this.updateFooterSeed && this.updateFooterSeed();
             // Reset timer and state similar to newGame()
             this.stopTimer && this.stopTimer();
             this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = false; this._pendingStart = false; this._preStartElapsed = 0; this._hasMadeMove = false; this.updateTimerButton && this.updateTimerButton();
@@ -1405,6 +1471,10 @@ class SudokuGame {
         if (this._dailyTimer) clearInterval(this._dailyTimer);
         this._dailyTimer = setInterval(update, 1000);
         update();
+
+        // Ensure footer brand/year and seed state are in sync on countdown start
+        this.updateFooterBrand && this.updateFooterBrand();
+        this.updateFooterSeed && this.updateFooterSeed();
     }
 
     setDailyUiState(isDaily, difficulty) {
@@ -1506,6 +1576,9 @@ class SudokuGame {
         const storeKey = `sudoku-daily-${key}`;
         // Flag daily-active for Zen CSS logic
         document.documentElement.classList.add('daily-active');
+        // Daily is seeded by date key; show key as seed in footer
+        this._activeSeed = String(key);
+        this.updateFooterSeed && this.updateFooterSeed();
         const cached = localStorage.getItem(storeKey);
         if (cached) {
             try {
@@ -1640,6 +1713,7 @@ class SudokuGame {
                         for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) { this.notes[r][c].clear(); this.updateNotesDisplay(r, c); }
                     }
                     this.updateModeIndicator({ type: 'daily', difficulty: data.difficulty || difficulty, dateKey: key });
+                    this._activeSeed = String(key); this.updateFooterSeed && this.updateFooterSeed();
                     return true;
                 }
             } catch {}
@@ -1700,6 +1774,7 @@ class SudokuGame {
         try { localStorage.setItem(storeKey, JSON.stringify({ board: this.board, solution: this.solution, difficulty: diff })); } catch {}
         this._activeDailyKey = key;
         this.updateModeIndicator({ type: 'daily', difficulty: diff, dateKey: key });
+        this._activeSeed = String(key); this.updateFooterSeed && this.updateFooterSeed();
         return true;
     }
 
@@ -1761,6 +1836,19 @@ class SudokuGame {
             state ^= state << 5;  state >>>= 0;
             return (state >>> 0) / 4294967296;
         };
+    }
+
+    _generateRandomSeedString() {
+        try {
+            // Prefer crypto for better randomness if available
+            if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+                const bytes = new Uint8Array(8);
+                crypto.getRandomValues(bytes);
+                return Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('');
+            }
+        } catch {}
+        // Fallback: timestamp + Math.random chunk
+        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
     generateSolvedBoard() {
@@ -2288,9 +2376,22 @@ class SudokuGame {
     }
 
     updateDisplay() {
-        // console.log('Updating display with board:', this.board);
-        // console.log('Initial board:', this.initialBoard);
-        
+        // Heal any inconsistent state where a visually empty cell is marked as a given
+        try {
+            let healed = false;
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) {
+                        this.initialBoard[r][c] = 0;
+                        healed = true;
+                    }
+                }
+            }
+            if (healed && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                this.recomputeAllCandidates();
+            }
+        } catch {}
+
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
                 const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
@@ -2301,7 +2402,6 @@ class SudokuGame {
                     cell.readOnly = this.initialBoard[row][col] !== 0;
                     // Clear any lingering error class during a full repaint
                     cell.classList.remove('error');
-                    // console.log(`Cell [${row}][${col}]: value=${value}, initial=${this.initialBoard[row][col] !== 0}`);
                 }
                 this.updateNotesDisplay(row, col);
             }
@@ -3315,6 +3415,49 @@ class SudokuGame {
                 this._mistakesSettingChangedDuringActiveGame = false;
             }
         });
+        // Wire sync toggles to local preferences
+        try {
+            const sraw = localStorage.getItem('sudoku-settings');
+            const s = sraw ? JSON.parse(sraw) : {};
+            const sg = document.getElementById('settings-sync-gameplay-toggle');
+            const sa = document.getElementById('settings-sync-appearance-toggle');
+            const sc = document.getElementById('settings-sync-calendar-toggle');
+            if (sg) sg.checked = (typeof s.syncGameplayAcrossDevices === 'boolean') ? !!s.syncGameplayAcrossDevices : true;
+            if (sa) sa.checked = (typeof s.syncAppearanceAcrossDevices === 'boolean') ? !!s.syncAppearanceAcrossDevices : false;
+            if (sc) sc.checked = (typeof s.syncCalendarAcrossDevices === 'boolean') ? !!s.syncCalendarAcrossDevices : true;
+            const onChange = () => {
+                try {
+                    const raw = localStorage.getItem('sudoku-settings');
+                    const cur = raw ? JSON.parse(raw) : {};
+                    cur.syncGameplayAcrossDevices = sg ? !!sg.checked : (cur.syncGameplayAcrossDevices ?? true);
+                    cur.syncAppearanceAcrossDevices = sa ? !!sa.checked : (cur.syncAppearanceAcrossDevices ?? false);
+                    cur.syncCalendarAcrossDevices = sc ? !!sc.checked : (cur.syncCalendarAcrossDevices ?? true);
+                    cur.updatedAt = new Date().toISOString();
+                    localStorage.setItem('sudoku-settings', JSON.stringify(cur));
+                } catch {}
+            };
+            if (sg && !sg._bound) { sg._bound = true; sg.addEventListener('change', onChange); }
+            if (sa && !sa._bound) { sa._bound = true; sa.addEventListener('change', onChange); }
+            if (sc && !sc._bound) { sc._bound = true; sc.addEventListener('change', onChange); }
+        } catch {}
+        // Settings reset wiring already exists; add sync toggle default on reset handled above
+
+        // Cloud reset (stats + remote settings)
+        const cloudResetBtn = document.getElementById('cloud-reset');
+        if (cloudResetBtn && !cloudResetBtn._bound) { cloudResetBtn._bound = true; cloudResetBtn.addEventListener('click', async () => {
+            if (!(await this.showConfirm('Reset cloud data? This deletes your synced stats and gameplay settings for your account.'))) return;
+            if (!(await this.showConfirm('Are you sure? This cannot be undone.'))) return;
+            try {
+                if (typeof window !== 'undefined' && window.supabase) {
+                    const { data: { user } } = await window.supabase.auth.getUser();
+                    if (user) {
+                        try { await window.supabase.from('stats').delete().eq('user_id', user.id); } catch {}
+                        try { await window.supabase.from('settings').delete().eq('user_id', user.id); } catch {}
+                    }
+                }
+            } catch {}
+            this.showToast && this.showToast('Cloud data reset', 'info', 3000);
+        }); }
         // New Puzzle modal wiring
         const newPuzzleModal = document.getElementById('newpuzzle-modal');
         const newPuzzleCancel = document.getElementById('newpuzzle-cancel');
@@ -5791,6 +5934,10 @@ class SudokuGame {
             window.SudokuStats.persistSettings(this);
             return;
         }
+        // Merge with previously saved settings so missing controls don't clobber values
+        let prev = {};
+        try { prev = JSON.parse(localStorage.getItem('sudoku-settings') || '{}') || {}; } catch {}
+
         const mlEl = document.getElementById('lives-limit') || document.getElementById('mistakes-limit');
         let storedMistakeLimit;
         if (mlEl) {
@@ -5799,26 +5946,44 @@ class SudokuGame {
             } else {
                 storedMistakeLimit = parseInt(mlEl.value);
             }
+        } else if (typeof prev.livesLimit === 'number') {
+            storedMistakeLimit = prev.livesLimit;
+        } else if (typeof prev.mistakeLimit === 'number') {
+            storedMistakeLimit = prev.mistakeLimit;
         } else {
             storedMistakeLimit = (this.livesLimit === Infinity ? 11 : this.livesLimit);
         }
+
+        const autoCandidatesEl = document.getElementById('auto-candidates-toggle');
+        const autoAdvanceEl = document.getElementById('auto-advance-toggle');
+        const zenModeEl = document.getElementById('zen-mode-toggle');
+        const idleToggleEl = document.getElementById('idle-autopause-toggle');
+        const idleSliderEl = document.getElementById('idle-timeout-slider');
+        const themeDarkEl = document.getElementById('theme-dark-toggle');
+        const weekstartEl = document.getElementById('weekstart-toggle');
+        const hintModeEl = document.getElementById('hint-mode-select');
+        const accentBtn = document.querySelector('#accent-swatches .swatch[aria-checked="true"]');
+        const gridSliderEl = document.getElementById('grid-size-slider');
+        const digitSliderEl = document.getElementById('digit-size-slider');
+        const noteSliderEl  = document.getElementById('note-size-slider');
+
         const settings = {
-            autoCandidates: !!(document.getElementById('auto-candidates-toggle')?.checked),
-            autoAdvance: !!(document.getElementById('auto-advance-toggle')?.checked),
-            zenMode: !!(document.getElementById('zen-mode-toggle')?.checked),
+            autoCandidates: (autoCandidatesEl ? !!autoCandidatesEl.checked : (typeof prev.autoCandidates === 'boolean' ? !!prev.autoCandidates : false)),
+            autoAdvance: (autoAdvanceEl ? !!autoAdvanceEl.checked : (typeof prev.autoAdvance === 'boolean' ? !!prev.autoAdvance : false)),
+            zenMode: (zenModeEl ? !!zenModeEl.checked : (typeof prev.zenMode === 'boolean' ? !!prev.zenMode : false)),
             // Idle settings (fallback path for headless tests)
-            idleAutoPause: !!(document.getElementById('idle-autopause-toggle')?.checked),
-            idleTimeoutSec: parseInt(document.getElementById('idle-timeout-slider')?.value || '120', 10),
+            idleAutoPause: (idleToggleEl ? !!idleToggleEl.checked : (typeof prev.idleAutoPause === 'boolean' ? !!prev.idleAutoPause : true)),
+            idleTimeoutSec: (idleSliderEl ? parseInt(idleSliderEl.value || '120', 10) : (Number.isFinite(prev.idleTimeoutSec) ? prev.idleTimeoutSec : 120)),
             livesEnabled: !(storedMistakeLimit >= 11),
             livesLimit: storedMistakeLimit,
-            themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
-            weekstart: ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || 'sunday',
-            accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
-            hintMode: (document.getElementById('hint-mode-select')?.value) || 'direct',
+            themeDark: (themeDarkEl ? !!themeDarkEl.checked : (typeof prev.themeDark === 'boolean' ? !!prev.themeDark : false)),
+            weekstart: (weekstartEl ? ((weekstartEl.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') : (prev.weekstart || 'sunday')),
+            accent: (accentBtn?.dataset.accent) || prev.accent || 'indigo',
+            hintMode: (hintModeEl ? hintModeEl.value : (prev.hintMode || 'direct')),
             // Board sizing
-            gridSize: parseInt(document.getElementById('grid-size-slider')?.value || '2', 10),
-            digitSize: parseInt(document.getElementById('digit-size-slider')?.value || '3', 10),
-            noteSize: parseInt(document.getElementById('note-size-slider')?.value || '3', 10),
+            gridSize: (gridSliderEl ? parseInt(gridSliderEl.value || '2', 10) : (Number.isFinite(prev.gridSize) ? prev.gridSize : 2)),
+            digitSize: (digitSliderEl ? parseInt(digitSliderEl.value || '3', 10) : (Number.isFinite(prev.digitSize) ? prev.digitSize : 3)),
+            noteSize: (noteSliderEl ? parseInt(noteSliderEl.value || '3', 10) : (Number.isFinite(prev.noteSize) ? prev.noteSize : 3)),
             updatedAt: new Date().toISOString(),
         };
         try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
@@ -5849,6 +6014,21 @@ class SudokuGame {
             this.hintsUsed = data.hintsUsed || 0;
             this.hintsLimit = (Number.isFinite(data.hintsLimit) ? data.hintsLimit : this.hintsLimit);
             if (data.gameType) this.gameType = data.gameType;
+            // Normalize: if a cell is empty on the board but marked as a given, clear the given flag
+            try {
+                let healed = false;
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) {
+                            this.initialBoard[r][c] = 0;
+                            healed = true;
+                        }
+                    }
+                }
+                if (healed && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                    this.recomputeAllCandidates();
+                }
+            } catch {}
             this.updateDisplay();
         } catch {}
     }

@@ -40,7 +40,9 @@ describe('Event setup and modal helpers', () => {
       <div class="controls-strip"></div>
       <div class="number-pad"></div>
       <div id="help-modal" class="modal" style="display:none">
-        <div class="modal-content" style="height:2000px"></div>
+        <div class="modal-content" style="height:2000px">
+          <div class="modal-head"><h2>Help</h2><button class="modal-close" data-close-modal aria-label="Close">×</button></div>
+        </div>
       </div>
     `;
     const g = new SudokuGame({ headless: true });
@@ -55,6 +57,11 @@ describe('Event setup and modal helpers', () => {
     if (modal.style.display !== 'none') {
       modal.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     }
+    expect(['grid','none']).toContain(modal.style.display);
+    // Reopen and close via top-right close button (data-close-modal)
+    modal.style.display = 'grid';
+    const closeBtn = modal.querySelector('[data-close-modal]');
+    if (closeBtn) closeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(['grid','none']).toContain(modal.style.display);
   });
 

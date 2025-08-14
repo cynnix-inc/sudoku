@@ -23,34 +23,79 @@ export function persistToStorage(game) {
 }
 
 export function persistSettings(game) {
+  // Merge with previously saved settings so missing controls don't clobber values
+  let prev = {};
+  try { prev = JSON.parse(localStorage.getItem('sudoku-settings') || '{}') || {}; } catch {}
+
   const mlEl = document.getElementById('lives-limit') || document.getElementById('mistakes-limit');
   let storedMistakeLimit;
   if (mlEl) {
     if (mlEl.disabled && typeof game._userMistakeRestoreValue === 'number') storedMistakeLimit = game._userMistakeRestoreValue;
     else storedMistakeLimit = parseInt(mlEl.value);
+  } else if (typeof prev.livesLimit === 'number') {
+    storedMistakeLimit = prev.livesLimit;
+  } else if (typeof prev.mistakeLimit === 'number') {
+    storedMistakeLimit = prev.mistakeLimit;
   } else {
     storedMistakeLimit = (game.livesLimit === Infinity ? 11 : game.livesLimit);
   }
-  const settings = {
-    autoCandidates: !!(document.getElementById('auto-candidates-toggle')?.checked),
-    autoAdvance: !!(document.getElementById('auto-advance-toggle')?.checked),
-    zenMode: !!(document.getElementById('zen-mode-toggle')?.checked),
+
+  const autoCandidatesEl = document.getElementById('auto-candidates-toggle');
+  const autoAdvanceEl = document.getElementById('auto-advance-toggle');
+  const zenModeEl = document.getElementById('zen-mode-toggle');
+  const idleToggleEl = document.getElementById('idle-autopause-toggle');
+  const idleSliderEl = document.getElementById('idle-timeout-slider');
+  const themeDarkEl = document.getElementById('theme-dark-toggle');
+  const weekstartEl = document.getElementById('weekstart-toggle');
+  const fPlayableEl = document.getElementById('calendar-filter-playable-settings');
+  const fIncompleteEl = document.getElementById('calendar-filter-incomplete-settings');
+  const hintModeEl = document.getElementById('hint-mode-select');
+  const accentBtn = document.querySelector('#accent-swatches .swatch[aria-checked="true"]');
+  const gridSliderEl = document.getElementById('grid-size-slider');
+  const digitSliderEl = document.getElementById('digit-size-slider');
+  const noteSliderEl  = document.getElementById('note-size-slider');
+
+  // Stage values to compute per-field timestamps
+  const settingsTemp = {
+    autoCandidates: (autoCandidatesEl ? !!autoCandidatesEl.checked : (typeof prev.autoCandidates === 'boolean' ? !!prev.autoCandidates : false)),
+    autoAdvance: (autoAdvanceEl ? !!autoAdvanceEl.checked : (typeof prev.autoAdvance === 'boolean' ? !!prev.autoAdvance : false)),
+    zenMode: (zenModeEl ? !!zenModeEl.checked : (typeof prev.zenMode === 'boolean' ? !!prev.zenMode : false)),
     // Idle auto‑pause controls
-    idleAutoPause: !!(document.getElementById('idle-autopause-toggle')?.checked),
-    idleTimeoutSec: parseInt(document.getElementById('idle-timeout-slider')?.value || '120', 10),
+    idleAutoPause: (idleToggleEl ? !!idleToggleEl.checked : (typeof prev.idleAutoPause === 'boolean' ? !!prev.idleAutoPause : true)),
+    idleTimeoutSec: (idleSliderEl ? parseInt(idleSliderEl.value || '120', 10) : (Number.isFinite(prev.idleTimeoutSec) ? prev.idleTimeoutSec : 120)),
     livesEnabled: !(storedMistakeLimit >= 11),
     livesLimit: storedMistakeLimit,
-    themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
-    weekstart: ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || 'sunday',
-    calendarOnlyPlayable: !!(document.getElementById('calendar-filter-playable-settings')?.checked),
-    calendarOnlyIncomplete: !!(document.getElementById('calendar-filter-incomplete-settings')?.checked),
-    accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
-    hintMode: (document.getElementById('hint-mode-select')?.value) || 'direct',
+    themeDark: (themeDarkEl ? !!themeDarkEl.checked : (typeof prev.themeDark === 'boolean' ? !!prev.themeDark : false)),
+    weekstart: (weekstartEl ? ((weekstartEl.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') : (prev.weekstart || 'sunday')),
+    calendarOnlyPlayable: (fPlayableEl ? !!fPlayableEl.checked : (typeof prev.calendarOnlyPlayable === 'boolean' ? !!prev.calendarOnlyPlayable : false)),
+    calendarOnlyIncomplete: (fIncompleteEl ? !!fIncompleteEl.checked : (typeof prev.calendarOnlyIncomplete === 'boolean' ? !!prev.calendarOnlyIncomplete : false)),
+    accent: (accentBtn?.dataset.accent) || prev.accent || 'indigo',
+    hintMode: (hintModeEl ? hintModeEl.value : (prev.hintMode || 'direct')),
     // Board sizing
-    gridSize: parseInt(document.getElementById('grid-size-slider')?.value || '2', 10),
-    digitSize: parseInt(document.getElementById('digit-size-slider')?.value || '3', 10),
-    noteSize: parseInt(document.getElementById('note-size-slider')?.value || '3', 10),
+    gridSize: (gridSliderEl ? parseInt(gridSliderEl.value || '2', 10) : (Number.isFinite(prev.gridSize) ? prev.gridSize : 2)),
+    digitSize: (digitSliderEl ? parseInt(digitSliderEl.value || '3', 10) : (Number.isFinite(prev.digitSize) ? prev.digitSize : 3)),
+    noteSize: (noteSliderEl ? parseInt(noteSliderEl.value || '3', 10) : (Number.isFinite(prev.noteSize) ? prev.noteSize : 3)),
     updatedAt: new Date().toISOString(),
+  };
+  // Build final settings with per-field timestamps and sync toggle
+  const nowTs = new Date().toISOString();
+  const tsPrev = (prev && prev.__ts) ? prev.__ts : {};
+  const fieldTs = { ...tsPrev };
+  const stampIfChanged = (key) => {
+    const oldVal = prev[key];
+    const newVal = settingsTemp[key];
+    if (oldVal === undefined && newVal === undefined) return;
+    if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) fieldTs[key] = nowTs; else fieldTs[key] = tsPrev[key] || nowTs;
+  };
+  ['autoCandidates','autoAdvance','zenMode','livesEnabled','livesLimit','weekstart','hintMode','calendarOnlyPlayable','calendarOnlyIncomplete','idleAutoPause','idleTimeoutSec']
+    .forEach(stampIfChanged);
+  const settings = {
+    ...settingsTemp,
+    __ts: fieldTs,
+    // New granular sync preferences (defaults: gameplay on, appearance off, calendar on)
+    syncGameplayAcrossDevices: (typeof prev.syncGameplayAcrossDevices === 'boolean' ? prev.syncGameplayAcrossDevices : true),
+    syncAppearanceAcrossDevices: (typeof prev.syncAppearanceAcrossDevices === 'boolean' ? prev.syncAppearanceAcrossDevices : false),
+    syncCalendarAcrossDevices: (typeof prev.syncCalendarAcrossDevices === 'boolean' ? prev.syncCalendarAcrossDevices : true),
   };
   try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
   // If signed in, sync gameplay + calendar preferences to cloud (not appearance)
@@ -232,11 +277,6 @@ export function recordWin(game) {
   if ((game.hintsUsed || 0) === 0) {
     if (!best || elapsed < best) { stats.bestTimes[diff] = elapsed; newBest = true; }
   }
-  // Idle settings
-  const idleToggle = document.getElementById('idle-autopause-toggle'); if (idleToggle && typeof s.idleAutoPause === 'boolean') idleToggle.checked = !!s.idleAutoPause;
-  const idleSlider = document.getElementById('idle-timeout-slider'); if (idleSlider && typeof s.idleTimeoutSec === 'number') idleSlider.value = String(s.idleTimeoutSec);
-  if (typeof s.idleAutoPause === 'boolean') game._idleAutoPause = !!s.idleAutoPause;
-  if (typeof s.idleTimeoutSec === 'number') game._idleTimeoutMs = Math.max(30, s.idleTimeoutSec) * 1000;
   try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
   game.syncRemoteStats && game.syncRemoteStats();
   return newBest;

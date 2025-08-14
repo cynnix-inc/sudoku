@@ -4,11 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-08-12
+## [Unreleased] - 2025-08-14
 
 ### Changes
 
 - **Added**:
+  - feat: add toast notifications, improve modal scrolling, and enhance test coverage (cb9588d)
   - chore: update CSP, service worker, and icons; add daily results to stats (ecd0629)
   - feat(calendar): add calendar highlight feature and update tests (9c3c34c)
   - test(e2e): make landing visible in automation, add Solve menu item, keep help About collapsed by default; record win on completion in automation; keep board width scaling responsive (766e409)
@@ -23,7 +24,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - docs(changelog): update local changelog (445060d)
+  - docs(changelog): update local changelog (d02ba3b)
   - chore(husky): auto-update CHANGELOG locally on commit and before push (a0ee41c)
   - docs(changelog): update local changelog (ec3d613)
   - Update generate-version.js to improve version generation logic (a9ee91e)

@@ -277,13 +277,23 @@
             <div class="game-status">
                 <div id="status-message" class="status-message"></div>
             </div>
+
+            <div class="rail game-footer" aria-label="Game footer">
+                <div class="footer-left" aria-hidden="true"></div>
+                <div class="footer-center" id="game-brand">© <span id="game-brand-year"></span> CYNNIX Studios</div>
+                <button id="game-seed" class="footer-right footer-seed" type="button" title="Copy seed" aria-label="Copy seed" hidden></button>
+            </div>
         </main>
     </div>
 
     <!-- Quick Help modal (compact, searchable, two-tab overlay) -->
     <div id="quickhelp-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="quickhelp-title" data-backdrop-close="true" style="display:none;">
         <div class="modal-content quickhelp-modal-content" tabindex="-1">
-            <h2 id="quickhelp-title">Quick Help</h2>
+            <div class="modal-head">
+              <h2 id="quickhelp-title">Quick Help</h2>
+              <button class="modal-close" aria-label="Close" data-close-modal>×</button>
+            </div>
+            <div class="modal-body">
             <div class="quickhelp-head">
                 <div class="quickhelp-tabs" role="tablist" aria-label="Quick Help tabs">
                     <button id="qh-tab-basics" class="qh-tab active" role="tab" aria-selected="true" aria-controls="qh-panel-basics">Basics</button>
@@ -322,8 +332,9 @@
                 </section>
                 
             </div>
+            </div>
             <div class="modal-buttons">
-                <button id="quickhelp-close" class="btn btn-secondary">Close</button>
+                <button id="quickhelp-close" class="btn btn-secondary" data-close-modal>Close</button>
             </div>
         </div>
     </div>
@@ -331,7 +342,11 @@
     <!-- New Puzzle modal (game type + difficulty chooser) -->
     <div id="newpuzzle-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="newpuzzle-title" data-backdrop-close="true" style="display:none;">
         <div class="modal-content" tabindex="-1">
-            <h2 id="newpuzzle-title">New Puzzle</h2>
+            <div class="modal-head">
+              <h2 id="newpuzzle-title">New Puzzle</h2>
+              <button class="modal-close" aria-label="Close" data-close-modal>×</button>
+            </div>
+            <div class="modal-body">
             <div class="settings-form">
              <div class="settings-section">
                     <h3 class="section-title">Game type</h3>
@@ -352,29 +367,36 @@
                     </div>
                 </div>
             </div>
+            </div>
             <div class="modal-buttons">
-                <button id="newpuzzle-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="newpuzzle-cancel" class="btn btn-secondary" data-close-modal>Cancel</button>
             </div>
         </div>
     </div>
 
     <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-backdrop-close="true">
         <div class="modal-content" tabindex="-1">
-            <h2 id="modal-title">Game Complete!</h2>
+            <div class="modal-head">
+              <h2 id="modal-title">Game Complete!</h2>
+              <button class="modal-close" aria-label="Close" data-close-modal>×</button>
+            </div>
             <p id="modal-message">Congratulations! You've solved the puzzle!</p>
             <div class="modal-buttons">
                 <button id="modal-new-game" class="btn btn-primary">New Game</button>
-                <button id="modal-close" class="btn btn-secondary">Close</button>
+                <button id="modal-close" class="btn btn-secondary" data-close-modal>Close</button>
             </div>
         </div>
     </div>
 
     <div id="stats-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="stats-title" data-backdrop-close="true">
         <div class="modal-content" tabindex="-1">
-            <h2 id="stats-title">Stats</h2>
-            <div id="stats-content"></div>
+            <div class="modal-head">
+              <h2 id="stats-title">Stats</h2>
+              <button class="modal-close" aria-label="Close" data-close-modal>×</button>
+            </div>
+            <div class="modal-body"><div id="stats-content"></div></div>
             <div class="modal-buttons">
-                <button id="stats-close" class="btn btn-secondary">Close</button>
+                <button id="stats-close" class="btn btn-secondary" data-close-modal>Close</button>
             </div>
             <div class="modal-footer-minor">
                 <button id="stats-reset" class="link-danger" aria-label="Reset all stats">Reset Stats</button>
@@ -384,11 +406,15 @@
 
     <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" data-backdrop-close="true">
         <div class="modal-content settings-modal-content" tabindex="-1">
-            <h2 id="settings-title">Settings</h2>
+            <div class="modal-head">
+              <h2 id="settings-title">Settings</h2>
+              <button class="modal-close" aria-label="Close" data-close-modal>×</button>
+            </div>
             <div id="settings-saved" class="save-toast" role="status" aria-live="polite">Saved ✓</div>
+            <div class="modal-body">
             <div class="settings-form">
                 <div class="settings-section">
-                    <h3 class="section-title">Gameplay</h3>
+                    <h3 class="section-title"><span class="section-icon" aria-hidden="true">🎮</span> Gameplay</h3>
                     <div class="control-row">
                         <span class="control-label">Auto Candidates <span class="help-tip" data-tooltip="Shows pencil‑mark candidates in empty cells.
 Updates automatically as the board changes.">ⓘ</span></span>
@@ -435,10 +461,11 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                         <span class="control-label">Idle timeout <span class="help-tip" data-tooltip="How long to wait before auto‑pause.">ⓘ</span> <span class="value-pill" id="idle-timeout-pill">2:00</span></span>
                         <input type="range" id="idle-timeout-slider" min="30" max="600" step="30" value="120" />
                     </div>
+                    
                     </div>
                 </div>
                 <div class="settings-section">
-                    <h3 class="section-title">Appearance</h3>
+                    <h3 class="section-title"><span class="section-icon" aria-hidden="true">🎨</span> Appearance</h3>
                     <div class="control-row">
                         <span class="control-label">Dark mode <span class="help-tip" data-tooltip="Use a dark theme for low‑light environments.">ⓘ</span></span>
                         <label class="switch"><input type="checkbox" id="theme-dark-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
@@ -481,7 +508,7 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                      </div>
                 </div>
                 <div class="settings-section">
-                    <h3 class="section-title">Calendar</h3>
+                    <h3 class="section-title"><span class="section-icon" aria-hidden="true">📅</span> Calendar</h3>
                     <div class="control-col">
                         <div class="control-label">Week starts on <span class="help-tip" data-tooltip="Sets the first day shown in the Daily calendar.">ⓘ</span></div>
                         <div id="weekstart-toggle" class="toggle-slider" role="switch" aria-checked="false" aria-label="Week start">
@@ -502,19 +529,49 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                         </div>
                     </div>
                 </div>
+
+                <div class="settings-section">
+                    <h3 class="section-title"><span class="section-icon" aria-hidden="true" role="img">
+                        <svg class="icon-cloud-sync" viewBox="0 0 24 24" width="18" height="18" focusable="false" aria-hidden="true">
+                            <!-- Cloud -->
+                            <path fill="currentColor" d="M19 18H6a4 4 0 0 1 0-8 5 5 0 0 1 9.9-1.5A4.5 4.5 0 1 1 19 18z"/>
+                            <!-- Sync arrows -->
+                            <path fill="#fff" d="M9.2 12.5c0 1.55 1.25 2.8 2.8 2.8.88 0 1.67-.4 2.18-1.04l.62.62a3.8 3.8 0 1 1-1.2-5.82v-1.26l2 1.9-2 1.9v-1.06a2.8 2.8 0 0 0-4.4 2.26z"/>
+                            <path fill="#fff" d="M14.8 11.5c0-1.55-1.25-2.8-2.8-2.8-.88 0-1.67.4-2.18 1.04l-.62-.62a3.8 3.8 0 0 1 5.2.36V8.2l2 1.9-2 1.9v-.5z"/>
+                        </svg>
+                    </span> Sync to Cloud</h3>
+                    <div class="control-row">
+                        <span class="control-label">Gameplay</span>
+                        <label class="switch"><input type="checkbox" id="settings-sync-gameplay-toggle" checked><span class="switch-slider" aria-hidden="true"></span></label>
+                    </div>
+                    <div class="control-row">
+                        <span class="control-label">Appearance</span>
+                        <label class="switch"><input type="checkbox" id="settings-sync-appearance-toggle"><span class="switch-slider" aria-hidden="true"></span></label>
+                    </div>
+                    <div class="control-row">
+                        <span class="control-label">Calendar</span>
+                        <label class="switch"><input type="checkbox" id="settings-sync-calendar-toggle" checked><span class="switch-slider" aria-hidden="true"></span></label>
+                    </div>
+                </div>
+            </div>
             </div>
             <div class="modal-buttons">
-                <button id="settings-close" class="btn btn-secondary">Close</button>
+                <button id="settings-close" class="btn btn-secondary" data-close-modal>Close</button>
             </div>
             <div class="modal-footer-minor">
                 <button id="settings-reset" class="link-danger">Reset to defaults</button>
+                <button id="cloud-reset" class="link-danger" title="Delete your cloud stats and synced settings (if signed in)">Reset cloud data</button>
             </div>
         </div>
     </div>
 
     <div id="help-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="help-title" data-backdrop-close="true">
         <div class="modal-content" tabindex="-1">
-            <h2 id="help-title">How to play</h2>
+            <div class="modal-head">
+              <h2 id="help-title">How to play</h2>
+              <button class="modal-close" aria-label="Close" data-close-modal>×</button>
+            </div>
+            <div class="modal-body">
             <div class="help-content with-toc">
                 <nav class="help-toc" aria-label="Help contents">
                     <a href="#help-lives">Lives</a>
@@ -606,50 +663,61 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                     </details>
                 </div>
             </div>
+            </div>
             <div class="modal-buttons">
-                <button id="help-close" class="btn btn-secondary" aria-label="Close help dialog">Close</button>
+                <button id="help-close" class="btn btn-secondary" aria-label="Close help dialog" data-close-modal>Close</button>
             </div>
         </div>
     </div>
 
     <div id="daily-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="daily-title" data-backdrop-close="true">
         <div class="modal-content" tabindex="-1">
-            <h2 id="daily-title">Daily Puzzle</h2>
+            <div class="modal-head">
+              <h2 id="daily-title">Daily Puzzle</h2>
+              <button class="modal-close" aria-label="Close" data-close-modal>×</button>
+            </div>
+            <div class="modal-body">
                  <div class="daily-meta">
                 <div>Date: <span id="daily-date"></span></div>
                  <div>Difficulty: <span id="daily-diff" class="badge"></span></div>
                 <div>Next in: <span id="daily-modal-countdown"></span></div>
             </div>
+            </div>
             <div class="modal-buttons">
                 <button id="daily-start" class="btn btn-primary">Start</button>
                 <button id="daily-reroll" class="btn btn-secondary">Reroll (1/day)</button>
-                <button id="daily-close" class="btn btn-secondary">Close</button>
+                <button id="daily-close" class="btn btn-secondary" data-close-modal>Close</button>
             </div>
         </div>
     </div>
 
      <div id="calendar-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="calendar-title" data-backdrop-close="true">
          <div class="modal-content calendar-modal-content" tabindex="-1">
-             <h2 id="calendar-title">Daily Calendar</h2>
-             <div id="calendar-streaks" class="calendar-streaks" aria-live="polite" aria-atomic="true" style="margin-bottom:6px;"></div>
-             <div class="calendar-header">
-                 <button id="calendar-prev" class="btn btn-secondary" title="Previous month">◀</button>
-                 <div id="calendar-month-label" class="calendar-month-label"></div>
-                 <button id="calendar-next" class="btn btn-secondary" title="Next month">▶</button>
+             <div class="modal-head">
+               <h2 id="calendar-title">Daily Calendar</h2>
+               <button class="modal-close" aria-label="Close" data-close-modal>×</button>
              </div>
-             <div id="calendar-weekdays" class="calendar-weekdays" aria-hidden="true"></div>
-              <div id="calendar-grid" class="calendar-grid" role="grid" aria-label="Daily calendar"></div>
-              <div class="calendar-quick" id="calendar-quick"></div>
-              <div id="calendar-legend" class="calendar-legend" aria-hidden="false" aria-label="Difficulty legend" title="Legend">
-                <span class="legend-chip" data-diff="easy"><span class="legend-icon"></span><span>Easy</span></span>
-                <span class="legend-chip" data-diff="medium"><span class="legend-icon"></span><span>Medium</span></span>
-                <span class="legend-chip" data-diff="hard"><span class="legend-icon"></span><span>Hard</span></span>
-                <span class="legend-chip" data-diff="expert"><span class="legend-icon"></span><span>Expert</span></span>
-                <span class="legend-chip" data-diff="master"><span class="legend-icon"></span><span>Master</span></span>
-                <span class="legend-chip" data-diff="extreme"><span class="legend-icon"></span><span>Extreme</span></span>
+              <div class="modal-body">
+                <div id="calendar-streaks" class="calendar-streaks" aria-live="polite" aria-atomic="true" style="margin-bottom:6px;"></div>
+                <div class="calendar-header">
+                   <button id="calendar-prev" class="btn btn-secondary" title="Previous month">◀</button>
+                   <div id="calendar-month-label" class="calendar-month-label"></div>
+                   <button id="calendar-next" class="btn btn-secondary" title="Next month">▶</button>
+                </div>
+                <div id="calendar-weekdays" class="calendar-weekdays" aria-hidden="true"></div>
+                 <div id="calendar-grid" class="calendar-grid" role="grid" aria-label="Daily calendar"></div>
+                 <div class="calendar-quick" id="calendar-quick"></div>
+                 <div id="calendar-legend" class="calendar-legend" aria-hidden="false" aria-label="Difficulty legend" title="Legend">
+                  <span class="legend-chip" data-diff="easy"><span class="legend-icon"></span><span>Easy</span></span>
+                  <span class="legend-chip" data-diff="medium"><span class="legend-icon"></span><span>Medium</span></span>
+                  <span class="legend-chip" data-diff="hard"><span class="legend-icon"></span><span>Hard</span></span>
+                  <span class="legend-chip" data-diff="expert"><span class="legend-icon"></span><span>Expert</span></span>
+                  <span class="legend-chip" data-diff="master"><span class="legend-icon"></span><span>Master</span></span>
+                  <span class="legend-chip" data-diff="extreme"><span class="legend-icon"></span><span>Extreme</span></span>
+                 </div>
               </div>
              <div class="modal-buttons">
-                 <button id="calendar-close" class="btn btn-secondary">Close</button>
+                 <button id="calendar-close" class="btn btn-secondary" data-close-modal>Close</button>
                  <button id="calendar-play-today" class="btn btn-primary" style="display:none" aria-live="polite">Play today</button>
              </div>
          </div>
@@ -658,10 +726,13 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
     <!-- Reusable confirm modal (replaces native confirm dialogs) -->
     <div id="confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message" data-backdrop-close="false" style="display:none;">
         <div class="modal-content" tabindex="-1">
-            <h2 id="confirm-title">Confirm</h2>
+            <div class="modal-head">
+              <h2 id="confirm-title">Confirm</h2>
+              <button class="modal-close" aria-label="Close" data-close-modal>×</button>
+            </div>
             <p id="confirm-message">Are you sure?</p>
             <div class="modal-buttons">
-                <button id="confirm-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="confirm-cancel" class="btn btn-secondary" data-close-modal>Cancel</button>
                 <button id="confirm-ok" class="btn btn-primary">OK</button>
             </div>
         </div>

@@ -1,6 +1,65 @@
 const exported = require('../../script.js');
 const SudokuGame = exported.SudokuGame || exported.default?.SudokuGame || exported;
 
+describe('Settings sync behavior with per-field timestamps and appearance toggle', () => {
+	beforeEach(() => {
+		document.body.innerHTML = '';
+		try { localStorage.clear(); } catch {}
+	});
+
+	test('appearance fields are excluded from remote upsert when appearance sync is OFF', async () => {
+		// Seed basic settings
+		localStorage.setItem('sudoku-settings', JSON.stringify({
+			updatedAt: new Date().toISOString(),
+			__ts: {},
+			themeDark: true,
+			accent: 'rose',
+			syncAppearanceAcrossDevices: false,
+		}));
+
+		let capturedPayload = null;
+		// Stub supabase
+		window.supabase = {
+			auth: { getUser: async () => ({ data: { user: { id: 'u' } } }) },
+			from: () => ({
+				select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }),
+				upsert: async (payload) => { capturedPayload = payload; return {}; },
+			})
+		};
+
+		const g = new SudokuGame({ headless: true });
+		await g.syncRemoteSettings();
+		expect(capturedPayload).toBeTruthy();
+		expect(capturedPayload.prefs.themeDark).toBeUndefined();
+		expect(capturedPayload.prefs.accent).toBeUndefined();
+	});
+
+	test('appearance fields included when appearance sync is ON', async () => {
+		localStorage.setItem('sudoku-settings', JSON.stringify({
+			updatedAt: new Date().toISOString(),
+			__ts: {},
+			themeDark: true,
+			accent: 'rose',
+			syncAppearanceAcrossDevices: true,
+		}));
+		let capturedPayload = null;
+		window.supabase = {
+			auth: { getUser: async () => ({ data: { user: { id: 'u' } } }) },
+			from: () => ({
+				select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }),
+				upsert: async (payload) => { capturedPayload = payload; return {}; },
+			})
+		};
+		const g = new SudokuGame({ headless: true });
+		await g.syncRemoteSettings();
+		expect(capturedPayload.prefs.themeDark).toBe(true);
+		expect(capturedPayload.prefs.accent).toBe('rose');
+	});
+});
+
+const exported = require('../../script.js');
+const SudokuGame = exported.SudokuGame || exported.default?.SudokuGame || exported;
+
 describe('Settings sync behavior (gameplay/calendar vs appearance)', () => {
   beforeEach(() => {
     document.body.innerHTML = `
@@ -123,6 +182,59 @@ describe('Settings sync behavior (gameplay/calendar vs appearance)', () => {
     // Appearance remains as before
     expect(merged.themeDark).toBe(localBefore.themeDark);
     expect(merged.accent).toBe(localBefore.accent);
+  });
+
+  test('persistSettings merges with previous values when some controls are missing (simplified/mobile view)', () => {
+    try { localStorage.clear(); } catch {}
+    // Seed previous settings with a variety of values
+    const prev = {
+      autoCandidates: true,
+      autoAdvance: true,
+      zenMode: false,
+      idleAutoPause: false,
+      idleTimeoutSec: 150,
+      livesEnabled: true,
+      livesLimit: 5,
+      themeDark: true,
+      weekstart: 'monday',
+      calendarOnlyPlayable: true,
+      calendarOnlyIncomplete: false,
+      accent: 'rose',
+      hintMode: 'logic',
+      gridSize: 3,
+      digitSize: 4,
+      noteSize: 2,
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem('sudoku-settings', JSON.stringify(prev));
+
+    // Render a simplified settings UI (only lives slider present)
+    document.body.innerHTML = `
+      <div>
+        <input type="range" id="lives-limit" min="0" max="11" step="1" value="11" />
+        <span id="lives-limit-value"></span>
+      </div>`;
+    // Ensure production path is used
+    try { global.window.SudokuStats = require('../../src/game/stats.js'); } catch {}
+
+    const g = new SudokuGame({ headless: true });
+    g.persistSettings();
+
+    const merged = JSON.parse(localStorage.getItem('sudoku-settings'));
+    expect(merged).toBeTruthy();
+    // Lives updated from simplified UI
+    expect(merged.livesLimit).toBe(11);
+    expect(merged.livesEnabled).toBe(false);
+    // Unrendered controls keep previous values
+    expect(merged.themeDark).toBe(true);
+    expect(merged.accent).toBe('rose');
+    expect(merged.hintMode).toBe('logic');
+    expect(merged.weekstart).toBe('monday');
+    expect(merged.idleAutoPause).toBe(false);
+    expect(merged.idleTimeoutSec).toBe(150);
+    expect(merged.gridSize).toBe(3);
+    expect(merged.digitSize).toBe(4);
+    expect(merged.noteSize).toBe(2);
   });
 });
 
