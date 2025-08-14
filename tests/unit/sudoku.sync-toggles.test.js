@@ -18,6 +18,8 @@ describe('Settings Sync toggles (defaults and persistence)', () => {
 		document.body.appendChild(sg);
 		document.body.appendChild(sa);
 		document.body.appendChild(sc);
+		// Seed a settings object so change handler has something to merge with
+		localStorage.setItem('sudoku-settings', JSON.stringify({}));
 
 		// Construct game to trigger wiring
 		const g = new SudokuGame({ headless: true });
@@ -39,7 +41,8 @@ describe('Settings Sync toggles (defaults and persistence)', () => {
 		document.body.appendChild(sa);
 		document.body.appendChild(sc);
 		const g = new SudokuGame({ headless: true });
-		void g;
+		// Attach event listeners (headless ctor doesn't call this)
+		if (typeof g.setupEventListeners === 'function') g.setupEventListeners();
 
 		// Flip appearance ON and gameplay OFF
 		sa.checked = true; sa.dispatchEvent(new Event('change'));

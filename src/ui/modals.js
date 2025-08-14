@@ -66,9 +66,12 @@ export function openModal(id, options = {}) {
     }
   } catch {}
 
-  // Open state
+  // Open state (also remove display:none so visibility checks pass across engines)
+  try { modal.style.display = 'grid'; } catch {}
   modal.classList.add('is-open');
   try { modal.setAttribute('aria-hidden', 'false'); } catch {}
+  // Ensure modal content is visible again if it was force-hidden on close
+  try { const content = modal.querySelector('.modal-content'); if (content) content.style.display = ''; } catch {}
 
   // Push a history entry so browser Back can dismiss
   try {
@@ -80,13 +83,17 @@ export function openModal(id, options = {}) {
   document.body.classList.add('modal-open');
   setBackgroundInert(true);
 
+  // Ensure ESC handling uses top-most modal even if display toggled
+  try { modal.setAttribute('data-open-ts', String(Date.now())); } catch {}
+
   // Move focus inside
   setTimeout(() => focusFirstIn(modal), 0);
 
-  // Notify listeners
+  // Notify listeners (both on the modal and document for broader listeners)
   try {
     const evt = new CustomEvent('modalopen', { bubbles: true, detail: { id } });
     modal.dispatchEvent(evt);
+    document.dispatchEvent(evt);
   } catch {}
 
   return true;
@@ -97,6 +104,10 @@ export function closeModal(id) {
   if (!modal) return false;
   modal.classList.remove('is-open');
   try { modal.setAttribute('aria-hidden', 'true'); } catch {}
+  // Ensure hidden state across engines
+  try { modal.style.display = 'none'; } catch {}
+  // Also hide content strictly so strict visibility checks pass on WebKit
+  try { const content = modal.querySelector('.modal-content'); if (content) content.style.display = 'none'; } catch {}
 
   // If this modal pushed a history entry and we are not already handling a popstate,
   // consume that entry so Back behaves intuitively
@@ -120,10 +131,11 @@ export function closeModal(id) {
   // Restore focus to the opener
   restoreFocus();
 
-  // Notify listeners
+  // Notify listeners (both on the modal and document for broader listeners)
   try {
     const evt = new CustomEvent('modalclose', { bubbles: true, detail: { id } });
     modal.dispatchEvent(evt);
+    document.dispatchEvent(evt);
   } catch {}
 
   return true;
@@ -161,7 +173,7 @@ function bindDelegatesOnce() {
   try {
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      const open = document.querySelector('.modal.is-open') || (() => {
+    const open = document.querySelector('.modal.is-open') || (() => {
         try { return Array.from(document.querySelectorAll('.modal')).find((m) => window.getComputedStyle(m).display !== 'none'); }
         catch { return null; }
       })();

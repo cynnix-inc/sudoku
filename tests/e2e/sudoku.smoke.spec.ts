@@ -22,13 +22,11 @@ test.describe('Sudoku smoke regress', () => {
         window.__sudokuGame = new window.SudokuGame();
       }
     });
-    if (!(await page.evaluate(() => !!(window as any).SudokuGame))) {
-      await page.addScriptTag({ path: 'script.js' });
-      await page.evaluate(() => {
-        // @ts-ignore
-        if (window.SudokuGame && !window.__sudokuGame) window.__sudokuGame = new window.SudokuGame();
-      });
-    }
+    await page.waitForFunction(() => !!(window as any).SudokuGame, undefined, { timeout: 5000 });
+    await page.evaluate(() => {
+      // @ts-ignore
+      if (window.SudokuGame && !window.__sudokuGame) window.__sudokuGame = new window.SudokuGame();
+    });
     await expect(page.locator('#board .cell')).toHaveCount(81, { timeout: 15000 });
     const emptyCell = page.locator('#board .cell').filter({ hasText: '' }).first();
     await emptyCell.click();
@@ -49,13 +47,11 @@ test.describe('Sudoku smoke regress', () => {
       const landing = document.getElementById('landing-overlay');
       if (landing) landing.style.display = 'none';
     });
-    if (!(await page.evaluate(() => !!(window as any).__sudokuGame))) {
-      await page.addScriptTag({ path: 'script.js' });
-      await page.evaluate(() => {
-        // @ts-ignore
-        if (window.SudokuGame && !window.__sudokuGame) window.__sudokuGame = new window.SudokuGame();
-      });
-    }
+    await page.waitForFunction(() => !!(window as any).SudokuGame, undefined, { timeout: 5000 });
+    await page.evaluate(() => {
+      // @ts-ignore
+      if (window.SudokuGame && !window.__sudokuGame) window.__sudokuGame = new window.SudokuGame();
+    });
     await page.click('#timer-toggle');
     await expect(page.locator('#pause-overlay')).toBeVisible();
     await page.click('#timer-toggle');

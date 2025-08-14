@@ -57,8 +57,7 @@ describe('Settings sync behavior with per-field timestamps and appearance toggle
 	});
 });
 
-const exported = require('../../script.js');
-const SudokuGame = exported.SudokuGame || exported.default?.SudokuGame || exported;
+// Reuse the same SudokuGame reference for the remainder of this file
 
 describe('Settings sync behavior (gameplay/calendar vs appearance)', () => {
   beforeEach(() => {

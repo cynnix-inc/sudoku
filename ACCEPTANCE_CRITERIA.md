@@ -161,6 +161,11 @@ Mobile usability
   - Board width and cell sizes are computed to avoid sub‑pixel gaps and prevent horizontal scrolling on narrow screens.
   - Touch drag painting does not trigger page scroll (board uses touch-action: none).
 
+  - Mobile layout behavior (landing):
+    - At viewport widths ≤ 640px, the `Last / Daily / Most` tiles wrap to two columns with the Daily tile centered and spanning both columns.
+    - At viewport widths ≤ 380px, the tiles stack to a single column, keeping the Daily tile first.
+    - The Daily tile’s glow/animation must not visually collide with neighbors at any width.
+
 Regression test coverage (baseline)
 
 - Unit core logic

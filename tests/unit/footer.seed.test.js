@@ -8,8 +8,10 @@ describe('Footer brand and seed display', () => {
   beforeAll(() => {
     // Load the game class from global (script.js defines window.SudokuGame in JSDOM via require)
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require('../../script.js');
-    SudokuGame = window.SudokuGame;
+    const exported = require('../../script.js');
+    // Access the class directly from CommonJS export in Jest
+    SudokuGame = exported.SudokuGame;
+    if (!window.SudokuGame && SudokuGame) window.SudokuGame = SudokuGame;
   });
 
   beforeEach(() => {

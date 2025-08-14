@@ -214,6 +214,16 @@
 }
 .mini-board::before { display: none; }
 
+/* Ensure preview board is visible and sized consistently across engines */
+#board-preview.board.mini-board {
+  visibility: visible;
+  opacity: 1;
+  min-width: calc(var(--cell-size) * 3 + 2px);
+  min-height: calc(var(--cell-size) * 3 + 2px);
+  display: grid;
+  grid-template-columns: repeat(3, var(--cell-size));
+}
+
 
 .number-btn {
   /* Prevent grid items from enforcing wide min-content and causing overflow */
