@@ -1,12 +1,21 @@
 #!/usr/bin/env sh
 . "$(dirname "$0")/_/husky.sh"
 
+# Prevent recursive invocation when amending the commit from this hook
+SENTINEL=".git/.husky_post_commit_running"
+if [ -f "$SENTINEL" ]; then
+  exit 0
+fi
+trap 'rm -f "$SENTINEL" >/dev/null 2>&1' EXIT
+: > "$SENTINEL"
+
 # Regenerate CHANGELOG locally after each commit and amend if it changed
 npm run --silent changelog
 if ! git diff --quiet -- CHANGELOG.md; then
   git add CHANGELOG.md
   # Amend the previous commit to include changelog without changing message
-  git commit --amend --no-edit
+  # Use --no-verify to avoid running other hooks; sentinel prevents this hook from looping
+  git commit --amend --no-edit --no-verify
 fi
 
 

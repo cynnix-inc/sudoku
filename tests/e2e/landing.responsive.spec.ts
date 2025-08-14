@@ -44,6 +44,62 @@ test.describe('Landing responsive layout', () => {
     // Single column: center tile width should be ~ tile width, not half the container
     expect(centerW / actionW).toBeGreaterThan(0.4);
   });
+
+  test('no document scroll on landing at common mobile sizes (basic)', async ({ page }) => {
+    const viewports = [
+      { width: 360, height: 640 },
+      { width: 375, height: 667 },
+      { width: 390, height: 844 },
+      { width: 412, height: 915 },
+    ];
+    for (const vp of viewports) {
+      await page.setViewportSize(vp);
+      await page.waitForTimeout(50);
+      const bodyScroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+      expect(bodyScroll.x).toBe(0);
+      expect(bodyScroll.y).toBe(0);
+    }
+  });
+
+  test('landing card stays within viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    const card = page.locator('.landing-card');
+    await expect(card).toBeVisible();
+    const within = await card.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth;
+    });
+    expect(within).toBeTruthy();
+  });
+
+  test('no document scroll on landing at common mobile sizes (strict)', async ({ page }) => {
+    const viewports = [
+      { width: 360, height: 640 }, // small Android
+      { width: 375, height: 667 }, // iPhone 8
+      { width: 390, height: 844 }, // iPhone 12/13/14
+      { width: 412, height: 915 }, // Pixel 7
+    ];
+    for (const vp of viewports) {
+      await page.setViewportSize(vp);
+      await page.waitForTimeout(50);
+      const bodyScroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+      expect(bodyScroll.x).toBe(0);
+      expect(bodyScroll.y).toBe(0);
+      const overflow = await page.evaluate(() => getComputedStyle(document.documentElement).overflowY + ':' + getComputedStyle(document.body).overflowY);
+      expect(overflow).not.toContain('scroll');
+    }
+  });
+
+  test('landing card stays within viewport bounds', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    const card = page.locator('.landing-card');
+    await expect(card).toBeVisible();
+    const within = await card.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth;
+    });
+    expect(within).toBeTruthy();
+  });
 });
 
 

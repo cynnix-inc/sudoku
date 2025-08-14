@@ -1,6 +1,15 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Sudoku smoke regress', () => {
+  test('landing is visible without document scroll on first load', async ({ page }) => {
+    await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.locator('#landing-overlay')).toBeVisible();
+    const bodyScroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+    expect(bodyScroll.x).toBe(0);
+    expect(bodyScroll.y).toBe(0);
+  });
+
   test('opening page renders board and allows a move', async ({ page }) => {
     await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('domcontentloaded');

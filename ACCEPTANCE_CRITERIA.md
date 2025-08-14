@@ -115,11 +115,20 @@ Modals and overlays
   - Be displayed with `display:flex` and centered content card
   - Vertically center relative to the live game area (between `.controls-strip` and `.number-pad`) using dynamic top/bottom padding
   - Maintain equal top/bottom spacing and avoid undimmed bands
+  - Avoid any visible layout shift on first load: the overlay should only be shown after its positioning variables are applied, so the main menu does not "jump" into place
   - Respect Escape/backdrop close behavior consistent with other overlays
   - Quick actions row `.landing-quick` shows three icon buttons in this exact order: Stats | Settings | Help
   - Each quick action opens its modal when clicked while the landing is visible: Stats → `#stats-modal`, Settings → `#settings-modal`, Help → `#help-modal`
   - When a modal is opened from the landing overlay and then closed via Close button, ESC, or backdrop: landing overlay reappears unless a game has started in the meantime
   - The header menu popover shows the compact icons with Settings and Help; order there is not constrained unless specified elsewhere
+  - Never cause page scrolling while visible (no vertical or horizontal scroll on the document)
+  - The landing content card itself must not scroll; all primary items are visible within the viewport without overflow:
+    - App logo/title, greeting/sign-in button
+    - Continue button (when available)
+    - Daily tile with calendar overlay button
+    - Dynamic tiles (Last played / Most played) when available
+    - Difficulty grid and Quick actions row
+  - On short viewports (≤ 680px, 600px, 540px, 480px heights), the layout compresses (reduced gaps, smaller tiles/logo) to keep everything visible without scrolling
 
   - Daily tile behavior:
     - When today’s Daily is not completed:
@@ -165,6 +174,7 @@ Mobile usability
     - At viewport widths ≤ 640px, the `Last / Daily / Most` tiles wrap to two columns with the Daily tile centered and spanning both columns.
     - At viewport widths ≤ 380px, the tiles stack to a single column, keeping the Daily tile first.
     - The Daily tile’s glow/animation must not visually collide with neighbors at any width.
+  - When opened on common mobile viewport sizes (e.g., 360×640, 375×667, 390×844, 412×915), the landing overlay and its content fit entirely within the viewport with no scrollbars
 
 Regression test coverage (baseline)
 
