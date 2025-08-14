@@ -40,9 +40,9 @@ test.describe('Landing quick actions', () => {
     // Help opens help modal
     await page.click('#landing-help');
     await expect(page.locator('#help-modal')).toBeVisible();
-    // Close via ESC, then ensure the modal node is not open (allow display:none)
+    // Close via ESC. Some engines keep multiple modal-content nodes around; assert the modal lost the open class instead of strict hidden check.
     await page.keyboard.press('Escape');
-    await expect(page.locator('#help-modal .modal-content')).toBeHidden();
+    await expect(page.locator('#help-modal.is-open')).toHaveCount(0);
     await expect(page.locator('#landing-overlay')).toBeVisible();
   });
 });

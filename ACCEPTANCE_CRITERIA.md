@@ -12,12 +12,14 @@ High-level acceptance criteria for Ultimate Sudoku
   - Clicking `#new-game-btn` creates a fresh puzzle with 81 cells. Givens vary by difficulty and may be below 20 for higher levels (approximate givens: Easy≈51, Medium≈41, Hard≈31, Expert≈21, Master≈19, Extreme≈17).
   - The `#mode-indicator` updates to show difficulty for normal games, and shows "Daily mmm-DD" in Daily mode.
   - Header layout: user chip appears at far left in `header-left` when signed in, the `#mode-indicator` renders centered within `header-center`, and the hamburger menu button `#menu-btn` remains at far right in `header-right`.
+  - Mode indicator styling: the combined game‑type + difficulty pill visually matches the user chip (bordered, white surface, small shadow), has fully rounded ends, and keeps a consistent footprint with responsive minimums (≈96px wide, ≥30px tall). Labels never clip and internal overflow is visible; long labels truncate with ellipsis.
 
 - Board interactions
   - Clicking a cell focuses it; pressing number pad sets value in that cell (unless it is an initial given).
   - `#notes-toggle` toggles notes mode; number pad updates notes in the cell.
   - `#pad-erase-btn` clears value/notes for the selected cell.
   - Locked number painting: clicking a number on the pad toggles lock; dragging over cells paints that number.
+  - Focusing cells in the first or last column (c1 or c9) must not cause any horizontal shift or resize of the board. Board width and horizontal position remain stable while moving focus between edge columns.
 
 - Validation and status
   - If mistakes are enabled, wrong entries decrement hearts and show a floater.
@@ -93,7 +95,8 @@ Modals and overlays
   - Support backdrop click to close where appropriate (Confirm excluded)
   - Trap focus while open and support Escape to close
   - Use a centralized modal controller that:
-    - Toggles an `is-open` class (no inline `style.display`)
+    - Toggles an `is-open` class as the primary open state
+    - May also set `style.display` for cross‑engine visibility guarantees (WebKit compatibility)
     - Locks body scroll while any modal is open
     - Restores focus to the opener on close
     - Emits `modalopen`/`modalclose` events for orchestration
@@ -112,7 +115,7 @@ Modals and overlays
 
 - Home screen (landing overlay) must:
   - Use the same full‑viewport dimming and blur as other modals
-  - Be displayed with `display:flex` and centered content card
+  - Be displayed with `display:flex` and centered content card, and remain visible after closing any modal opened from it
   - Vertically center relative to the live game area (between `.controls-strip` and `.number-pad`) using dynamic top/bottom padding
   - Maintain equal top/bottom spacing and avoid undimmed bands
   - Avoid any visible layout shift on first load: the overlay should only be shown after its positioning variables are applied, so the main menu does not "jump" into place
@@ -123,7 +126,7 @@ Modals and overlays
   - The header menu popover shows the compact icons with Settings and Help; order there is not constrained unless specified elsewhere
   - Never cause page scrolling while visible (no vertical or horizontal scroll on the document)
   - The landing content card itself must not scroll; all primary items are visible within the viewport without overflow:
-    - App logo/title, greeting/sign-in button
+    - App logo/title, greeting/sign-in button (sign‑in button is shown only when Supabase is configured; otherwise it is hidden to avoid a broken flow)
     - Continue button (when available)
     - Daily tile with calendar overlay button
     - Dynamic tiles (Last played / Most played) when available
@@ -146,7 +149,7 @@ Modals and overlays
     - If Most played equals Last played (same type+difficulty), Most played is hidden.
     - For brand‑new users or when there is no data, both dynamic tiles are hidden.
     - Visual style matches the Daily tile’s footprint but without glow/animated sweep.
-    - The combined pill inside each tile is centered and sized to ~90% of the tile width; text does not clip or overflow at common widths.
+    - The combined pill inside each tile is centered and sized to ~90% of the tile width; text does not clip or overflow at common widths. The pill keeps rounded ends and consistent internal padding on left/right.
     - Spacing between the side tiles and the Daily tile is sufficient so Daily glow never visually touches side tiles.
     - After a game completes (win or loss), the landing overlay refreshes to reflect updated Last/Most tiles without needing a page reload.
 
@@ -210,6 +213,21 @@ Footer and seed
     - Normal games: show randomly generated seed; seeded games: show provided seed; Daily: show UTC date key
     - Clicking the seed copies it and shows a small inline mini-toast near the button with text “Copied”
     - Hover styling remains subtle (no underline)
+
+
+### WIP scaffolding (new game types & representations)
+
+- Game type registry contains WIP variants, discoverable via `window.SudokuTypes` in browser devtools, but no UI exposure yet:
+  - Classic variants: `classic-4`, `classic-6`, `classic-12`, `classic-16`
+  - Most popular (constraints only): `diagonal`, `killer`, `jigsaw`
+  - Rarest (constraints only): `girandola`, `asterisk`, `toroidal`, `fortress`, `clone`
+  - Cult favorites (constraints only): `arrow`, `thermo`, `german-whispers`, `kropki`, `sandwich`
+  - Wordoku/Color/Icon bases: `wordoku-9`, `color-9`, `icons-9`
+- All new types are marked `wip: true`; puzzle generation and UI selection are unchanged.
+- Representation groundwork (non-visual):
+  - Cells annotate `data-repr-mode`, `data-repr-theme`, and `data-repr-digit` to enable future render mapping.
+  - Default stored values (in `sudoku-settings`) are `representationMode: 'numbers'` and `representationTheme: 'pocket-beasts'`.
+  - No on-screen toggle or visible changes at this stage.
 
 
 

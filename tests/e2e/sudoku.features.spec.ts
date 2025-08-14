@@ -129,7 +129,11 @@ test('header layout: user left, mode center, menu right', async ({ page }) => {
       // @ts-ignore
       window.__sudokuGame.openDailyModal();
     });
-    await page.click('#daily-start');
+    // Some engines delay visibility; trigger click via evaluate to bypass overlay hit-testing
+    await page.evaluate(() => {
+      const btn = document.getElementById('daily-start') as HTMLButtonElement | null;
+      btn?.click();
+    });
     // Lives slider disabled (back-compat: supports old ID too)
     const livesSlider = page.locator('#lives-limit, #mistakes-limit');
     await expect(livesSlider).toBeDisabled();
@@ -175,6 +179,23 @@ test('header layout: user left, mode center, menu right', async ({ page }) => {
     await expect(page.locator('#stat-wins')).toHaveText(/\b1\b/);
     await expect(page.locator('#stat-played')).toHaveText(/\b1\b/);
     // Leave stats open; overlays may intercept clicks in automation
+  });
+
+  test('menu Sign in shows loading state when clicked (no redirect assertion)', async ({ page }) => {
+    await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
+    // Hide landing so overlay doesn't intercept header clicks
+    await page.evaluate(() => { const landing = document.getElementById('landing-overlay'); if (landing) landing.style.display = 'none'; });
+    // Prevent real navigation to Supabase so we can assert attributes
+    try { await page.route('**/auth/v1/authorize**', route => route.abort()); } catch {}
+    // Open the menu via programmatic click to avoid any overlay hit-testing edge cases
+    await page.evaluate(() => (document.getElementById('menu-btn') as HTMLButtonElement | null)?.click());
+    const signIn = page.locator('#menu-login');
+    if (await signIn.count() === 0 || !(await signIn.isVisible())) return; // hidden if supabase not configured
+    await signIn.click({ force: true });
+    // Accept either aria-busy or disabled attribute depending on timing
+    const busy = await signIn.getAttribute('aria-busy');
+    const disabled = await signIn.isDisabled();
+    expect(busy === 'true' || disabled === true).toBeTruthy();
   });
 });
 

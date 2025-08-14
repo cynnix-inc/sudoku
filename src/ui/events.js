@@ -106,6 +106,7 @@ export function wireCoreUiEvents(game) {
     }
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'd') { e.preventDefault(); game._toggleDevPanel && game._toggleDevPanel(); return; }
   });
+
 }
 
 try {

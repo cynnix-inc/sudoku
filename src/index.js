@@ -16,6 +16,7 @@ import './ui/timer.js';
 import './ui/health.js';
 import './ui/modals.js';
 import './ui/toast.js';
+import './ui/representation.js';
 import './ui/hints.js';
 import { APP_VERSION } from './version.js';
 

@@ -72,7 +72,9 @@ class SudokuGame {
 			this._maxVisibleToasts = mq && mq.matches ? 2 : 3;
 		} catch { this._maxVisibleToasts = 3; }
 		this._toastsByKey = new Map();
-        
+		// Stagger between auto-dismiss events so they leave sequentially
+		this._toastMinGapMs = 600; // ensure at least 600ms between exits
+		this._toastNextAutoOutAt = 0;
         if (!this._headless) {
             this.initializeGame();
             this.setupEventListeners();
@@ -91,6 +93,15 @@ class SudokuGame {
         }
         // Initialize Supabase-related auth listeners and UI state
         if (!this._headless) {
+            // If Supabase is not configured, hide sign-in affordances so they don't appear "broken".
+            try {
+                if (!window.supabase) {
+                    const loginBtn = document.getElementById('menu-login');
+                    const signinBtn = document.getElementById('landing-signin');
+                    if (loginBtn) loginBtn.style.display = 'none';
+                    if (signinBtn) signinBtn.style.display = 'none';
+                }
+            } catch {}
             this._initSupabaseAuth && this._initSupabaseAuth();
         }
         // Try to resume saved progress and settings
@@ -526,8 +537,31 @@ class SudokuGame {
             if (typeof window === 'undefined' || !window.supabase) return;
             const loginBtn = document.getElementById('menu-login');
             const logoutBtn = document.getElementById('menu-logout');
+            const setSigninUiBusy = (busy, labelText) => {
+                try {
+                    const landingBtn = document.getElementById('landing-signin');
+                    const landingText = landingBtn ? landingBtn.querySelector('.g-text') : null;
+                    if (landingBtn) {
+                        if (busy) { landingBtn.disabled = true; landingBtn.setAttribute('aria-busy','true'); if (landingText) { if (!landingText._orig) landingText._orig = landingText.textContent; landingText.textContent = labelText || 'Finalizing…'; } }
+                        else { landingBtn.disabled = false; landingBtn.removeAttribute('aria-busy'); if (landingText && landingText._orig) { landingText.textContent = landingText._orig; delete landingText._orig; } }
+                    }
+                } catch {}
+                try {
+                    if (loginBtn) { if (busy) { loginBtn.disabled = true; loginBtn.setAttribute('aria-busy','true'); loginBtn.classList.add('loading'); } else { loginBtn.disabled = false; loginBtn.removeAttribute('aria-busy'); loginBtn.classList.remove('loading'); } }
+                } catch {}
+            };
+            // If returning from OAuth and the session hasn't been established yet,
+            // force the code→session exchange explicitly for reliability.
+            try {
+                const url = new URL(window.location.href);
+                const hasOAuthParams = url.searchParams.has('code') || url.searchParams.has('state');
+                if (hasOAuthParams) setSigninUiBusy(true, 'Finalizing…');
+                if (hasOAuthParams && window.supabase?.auth?.exchangeCodeForSession) {
+                    await window.supabase.auth.exchangeCodeForSession(window.location.href);
+                }
+            } catch {}
             // Boot-time helper: wait for auth session after OAuth redirects
-            this._waitForAuthSession = async (timeoutMs = 2500) => {
+            this._waitForAuthSession = async (timeoutMs = 8000) => {
                 try {
                     const start = Date.now();
                     // Fast path: if a session already exists, return it
@@ -627,11 +661,18 @@ class SudokuGame {
                 } catch {}
                 try { await this.syncRemoteStats && this.syncRemoteStats(); } catch {}
                 try { await this.syncRemoteSettings && this.syncRemoteSettings(); } catch {}
+                try { setSigninUiBusy(false); } catch {}
             } else {
                 // After OAuth redirect, Supabase may still be exchanging the code for a session.
                 // Wait briefly for the session to become available, then update UI without requiring a manual refresh.
                 try {
-                    const session = this._waitForAuthSession ? await this._waitForAuthSession(2500) : null;
+                    // If OAuth params are present, allow a longer wait
+                    let waitMs = 4000;
+                    try {
+                        const url = new URL(window.location.href);
+                        if (url.searchParams.has('code') || url.searchParams.has('state')) waitMs = 8000;
+                    } catch {}
+                    const session = this._waitForAuthSession ? await this._waitForAuthSession(waitMs) : null;
                     if (session?.user) {
                         const u = session.user;
                         const chip = document.getElementById('user-chip');
@@ -648,6 +689,17 @@ class SudokuGame {
                             if (src) avatarEl.src = src; else avatarEl.removeAttribute('src');
                         }
                         updateButtons(true);
+                        // Update landing sign-in state immediately
+                        try {
+                            const signinBtn2 = document.getElementById('landing-signin');
+                            const greeting2 = document.getElementById('landing-greeting');
+                            if (signinBtn2) signinBtn2.style.display = 'none';
+                            if (greeting2) {
+                                const full = u.user_metadata?.full_name || u.email || 'Player';
+                                const first = (full.split?.(' ')?.[0]) || full;
+                                greeting2.textContent = `Welcome back, ${first}!`;
+                            }
+                        } catch {}
                         // Clean up OAuth params if present
                         try {
                             const url = new URL(window.location.href);
@@ -659,11 +711,14 @@ class SudokuGame {
                         } catch {}
                         try { await this.syncRemoteStats && this.syncRemoteStats(); } catch {}
                         try { await this.syncRemoteSettings && this.syncRemoteSettings(); } catch {}
+                        try { setSigninUiBusy(false); } catch {}
                     } else {
                         updateButtons(false);
+                        try { setSigninUiBusy(false); } catch {}
                     }
                 } catch {
                     updateButtons(false);
+                    try { setSigninUiBusy(false); } catch {}
                 }
             }
             // Subscribe to auth changes
@@ -687,10 +742,30 @@ class SudokuGame {
                             const src = u.user_metadata?.avatar_url || u.user_metadata?.picture || '';
                             if (src) avatarEl.src = src; else avatarEl.removeAttribute('src');
                         }
+                        // Also reflect on landing immediately
+                        try {
+                            const signinBtn2 = document.getElementById('landing-signin');
+                            const greeting2 = document.getElementById('landing-greeting');
+                            if (signinBtn2) signinBtn2.style.display = 'none';
+                            if (greeting2) {
+                                const full2 = u.user_metadata?.full_name || u.email || 'Player';
+                                const first2 = (full2.split?.(' ')?.[0]) || full2;
+                                greeting2.textContent = `Welcome back, ${first2}!`;
+                            }
+                        } catch {}
                     } catch {}
                     try { this.showToast && this.showToast('Signed in', 'success', 3000); } catch {}
+                    try { setSigninUiBusy(false); } catch {}
                     await this.syncRemoteStats && this.syncRemoteStats();
                     await this.syncRemoteSettings && this.syncRemoteSettings();
+                } else {
+                    // Reflect signed-out state on landing immediately
+                    try {
+                        const signinBtn2 = document.getElementById('landing-signin');
+                        const greeting2 = document.getElementById('landing-greeting');
+                        if (signinBtn2) { signinBtn2.style.display = ''; signinBtn2.disabled = false; signinBtn2.removeAttribute('aria-busy'); }
+                        if (greeting2) greeting2.textContent = 'Welcome!';
+                    } catch {}
                 }
             });
             this._authUnsubMain = sub?.subscription?.unsubscribe?.bind(sub.subscription);
@@ -703,7 +778,15 @@ class SudokuGame {
             return;
         }
         try {
-            const redirectTo = `${window.location.origin}${window.location.pathname}`;
+            // Use exact origin so it matches Supabase Redirect URLs (e.g., http://localhost:5173)
+            const redirectTo = window.location.origin;
+            // Visual feedback on both entry points
+            try {
+                const landingBtn = document.getElementById('landing-signin');
+                if (landingBtn) { landingBtn.disabled = true; landingBtn.setAttribute('aria-busy','true'); const t = landingBtn.querySelector('.g-text'); if (t && !t._orig) { t._orig = t.textContent; t.textContent = 'Opening Google…'; } }
+                const menuBtn = document.getElementById('menu-login');
+                if (menuBtn) { menuBtn.disabled = true; menuBtn.setAttribute('aria-busy','true'); menuBtn.classList.add('loading'); }
+            } catch {}
             await window.supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo, queryParams: { prompt: 'select_account' } }
@@ -711,6 +794,13 @@ class SudokuGame {
         } catch (e) {
             console.error(e);
             await (this.showInfo && this.showInfo('Failed to start Google sign-in.', { title: 'Sign-in Error' }));
+            // Revert visual feedback on failure
+            try {
+                const landingBtn = document.getElementById('landing-signin');
+                if (landingBtn) { landingBtn.disabled = false; landingBtn.removeAttribute('aria-busy'); const t = landingBtn.querySelector('.g-text'); if (t && t._orig) { t.textContent = t._orig; delete t._orig; } }
+                const menuBtn = document.getElementById('menu-login');
+                if (menuBtn) { menuBtn.disabled = false; menuBtn.removeAttribute('aria-busy'); menuBtn.classList.remove('loading'); }
+            } catch {}
         }
     }
 
@@ -720,6 +810,13 @@ class SudokuGame {
             await window.supabase.auth.signOut();
             try { this.showToast && this.showToast('Signed out', 'info', 3000); } catch {}
             try { this._clearRemoteSettingsCache && this._clearRemoteSettingsCache(); } catch {}
+            // Also reset landing UI right away (before the auth event arrives)
+            try {
+                const signinBtn = document.getElementById('landing-signin');
+                const greeting = document.getElementById('landing-greeting');
+                if (signinBtn) { signinBtn.style.display = ''; signinBtn.disabled = false; signinBtn.removeAttribute('aria-busy'); }
+                if (greeting) greeting.textContent = 'Welcome!';
+            } catch {}
         } catch (e) {
             console.error(e);
             try { this.showToast && this.showToast('Sign-out failed', 'error', 4000); } catch {}
@@ -2403,6 +2500,15 @@ class SudokuGame {
                     cell.value = value;
                     cell.classList.toggle('initial', this.initialBoard[row][col] !== 0);
                     cell.readOnly = this.initialBoard[row][col] !== 0;
+                    // Non-invasive: annotate representation hints for future renderer
+                    try {
+                        const s = JSON.parse(localStorage.getItem('sudoku-settings') || '{}') || {};
+                        const repMode = s.representationMode || 'numbers';
+                        const repTheme = s.representationTheme || 'pocket-beasts';
+                        cell.setAttribute('data-repr-mode', repMode);
+                        cell.setAttribute('data-repr-theme', repTheme);
+                        cell.setAttribute('data-repr-digit', value ? String(value) : '');
+                    } catch {}
                     // Clear any lingering error class during a full repaint
                     cell.classList.remove('error');
                 }
@@ -3205,7 +3311,12 @@ class SudokuGame {
 					}, 180);
 				};
 				el._dismiss = dismiss;
-				el._dismissTimer = setTimeout(dismiss, next.duration);
+				// Stagger auto-dismiss so toasts exit with spacing
+				const now = Date.now();
+				const baseDue = now + Math.max(0, next.duration);
+				const scheduled = Math.max(baseDue, this._toastNextAutoOutAt + this._toastMinGapMs);
+				this._toastNextAutoOutAt = scheduled;
+				el._dismissTimer = setTimeout(dismiss, Math.max(0, scheduled - now));
 				el.addEventListener('mouseenter', () => { if (el._dismissTimer) { clearTimeout(el._dismissTimer); el._dismissTimer = null; } });
 				el.addEventListener('mouseleave', () => { if (!el._dismissed && !el._dismissTimer) el._dismissTimer = setTimeout(dismiss, 1500); });
 				el.addEventListener('click', dismiss);
@@ -4798,19 +4909,51 @@ class SudokuGame {
             if (typeof window !== 'undefined' && window.supabase) {
                 try {
                     this._authUnsubLanding?.();
-                    const { data: sub } = window.supabase.auth.onAuthStateChange(() => refreshGreeting());
+                    const { data: sub } = window.supabase.auth.onAuthStateChange((_event, session) => {
+                        // Update immediately on sign-out without waiting for async getUser()
+                        if (!session?.user) {
+                            try {
+                                const signinBtn2 = document.getElementById('landing-signin');
+                                const greeting2 = document.getElementById('landing-greeting');
+                                if (signinBtn2) { signinBtn2.style.display = ''; signinBtn2.disabled = false; signinBtn2.removeAttribute('aria-busy'); }
+                                if (greeting2) greeting2.textContent = 'Welcome!';
+                            } catch {}
+                        } else {
+                            // For sign-in, prefer immediate update from provided session
+                            try {
+                                const user = session?.user;
+                                const full = (user && (user.user_metadata?.full_name || user.email)) || 'Player';
+                                const first = (full.split?.(' ')?.[0]) || full;
+                                const signinBtn2 = document.getElementById('landing-signin');
+                                const greeting2 = document.getElementById('landing-greeting');
+                                const chip2 = document.getElementById('user-chip');
+                                if (greeting2) greeting2.textContent = `Welcome back, ${first}!`;
+                                if (signinBtn2) { signinBtn2.style.display = 'none'; signinBtn2.disabled = false; signinBtn2.removeAttribute('aria-busy'); }
+                                if (chip2) chip2.style.display = '';
+                            } catch {}
+                            // Then reconcile via async fetch in case metadata changed
+                            try { refreshGreeting(); } catch {}
+                        }
+                    });
                     this._authUnsubLanding = sub?.subscription?.unsubscribe?.bind(sub.subscription);
                 } catch {}
             }
             if (signinBtn) signinBtn.addEventListener('click', () => {
-                // Hide landing while auth flow starts; it may redirect away
-                landing.style.display = 'none';
+                // Keep landing visible; show a lightweight loading state on the button until redirect begins
+                try { signinBtn.disabled = true; signinBtn.setAttribute('aria-busy', 'true'); } catch {}
+                try {
+                    const text = signinBtn.querySelector('.g-text');
+                    if (text && !text._orig) { text._orig = text.textContent; text.textContent = 'Opening Google…'; }
+                } catch {}
                 this.loginWithGoogle && this.loginWithGoogle();
-                // If sign-in is not configured and we show an info modal, restore landing after closing
-                const ok = document.getElementById('confirm-ok');
-                if (ok) ok.addEventListener('click', () => {
-                    if (!this._hasStarted && !this._pendingStart) landing.style.display = 'flex';
-                }, { once: true });
+                // Safety: if redirect did not occur (e.g., sign-in not configured), revert state shortly
+                setTimeout(() => {
+                    try {
+                        signinBtn.disabled = false;
+                        signinBtn.removeAttribute('aria-busy');
+                        const text = signinBtn.querySelector('.g-text'); if (text && text._orig) { text.textContent = text._orig; delete text._orig; }
+                    } catch {}
+                }, 5000);
             });
 
             // Continue button visibility and action

@@ -81,6 +81,21 @@ describe('Hamburger menu behavior', () => {
     await Promise.resolve();
     expect(g.showConfirm).toHaveBeenCalled();
   });
+
+  test('Menu Sign in with Google shows loading state on click', async () => {
+    mountBasicDom();
+    // Stub supabase
+    global.window.supabase = { auth: { signInWithOAuth: jest.fn(async () => {}) } };
+    const g = new SudokuGame({ headless: true });
+    g.setupEventListeners();
+    const menuBtn = document.getElementById('menu-login');
+    // Open popover then click sign-in
+    document.getElementById('menu-btn').click();
+    menuBtn.click();
+    expect(window.supabase.auth.signInWithOAuth).toHaveBeenCalled();
+    expect(menuBtn.disabled).toBe(true);
+    expect(menuBtn.getAttribute('aria-busy')).toBe('true');
+  });
 });
 
 
