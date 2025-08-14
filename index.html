@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="src/ui/board.css">
     <link rel="stylesheet" href="src/ui/controls.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script defer src="./sw-init.js"></script>
+    <script defer src="./sw-init.js" nonce="c3Vkb2t1LW5vbmNl"></script>
   </head>
 <body>
     <div class="container">
@@ -233,7 +233,7 @@
                     <div class="hearts-row"><div id="health-bar" class="health-bar-stack" role="status" aria-live="polite" aria-atomic="true" aria-label="Lives"></div></div>
                 </div>
                 <div class="controls-center">
-                    <div id="toast-container" class="toast-container inline" aria-live="polite" aria-atomic="true"></div>
+                    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
                 </div>
                 <div class="controls-right">
                     <button id="timer-toggle" class="timer timer-btn" title="Pause or resume timer" aria-label="Pause or resume"><span id="time">00:00</span><span class="timer-icon">⏸</span></button>
@@ -512,29 +512,6 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                      </div>
                 </div>
                 <div class="settings-section">
-                    <h3 class="section-title"><span class="section-icon" aria-hidden="true">📅</span> Calendar</h3>
-                    <div class="control-col">
-                        <div class="control-label">Week starts on <span class="help-tip" data-tooltip="Sets the first day shown in the Daily calendar.">ⓘ</span></div>
-                        <div id="weekstart-toggle" class="toggle-slider" role="switch" aria-checked="false" aria-label="Week start">
-                            <span class="toggle-label left">Sun</span>
-                            <span class="toggle-thumb" aria-hidden="true"></span>
-                            <span class="toggle-label right">Mon</span>
-                        </div>
-                    </div>
-                    <div class="control-col">
-                        <div class="control-label">Filters</div>
-                        <div class="control-row">
-                            <span class="control-label">Only playable <span class="help-tip" data-tooltip="Hides future days so you only see days you can play now.">ⓘ</span></span>
-                            <label class="switch" title="Hide future days that cannot be played yet."><input type="checkbox" id="calendar-filter-playable-settings"><span class="switch-slider" aria-hidden="true"></span></label>
-                        </div>
-                        <div class="control-row">
-                            <span class="control-label">Only incomplete <span class="help-tip" data-tooltip="Hides days you’ve already completed.">ⓘ</span></span>
-                            <label class="switch" title="Hide days you've already finished."><input type="checkbox" id="calendar-filter-incomplete-settings"><span class="switch-slider" aria-hidden="true"></span></label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-section">
                     <h3 class="section-title"><span class="section-icon" aria-hidden="true" role="img">
                         <svg class="icon-cloud-sync" viewBox="0 0 24 24" width="18" height="18" focusable="false" aria-hidden="true">
                             <!-- Cloud -->
@@ -667,7 +644,6 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
                     </details>
                 </div>
             </div>
-            </div>
             <div class="modal-buttons">
                 <button id="help-close" class="btn btn-secondary" aria-label="Close help dialog" data-close-modal>Close</button>
             </div>
@@ -745,11 +721,11 @@ Daily puzzles use fixed Lives by difficulty; this setting won’t override Daily
 
 
     <!-- Load generated environment variables (creates window.SUPABASE_URL / window.SUPABASE_ANON_KEY if present). -->
-    <script src="env.js"></script>
+    <script src="env.js" nonce="c3Vkb2t1LW5vbmNl"></script>
     <!-- Supabase env defaults and client init moved to external files to tighten CSP -->
-    <script defer src="./supabase-env-fallback.js"></script>
-    <script type="module" src="./supabase-init.js"></script>
-    <script nomodule src="script.js?v=v4" data-sudoku-core="1"></script>
-    <script type="module" src="./src/index.js"></script>
+    <script defer src="./supabase-env-fallback.js" nonce="c3Vkb2t1LW5vbmNl"></script>
+    <script type="module" src="./supabase-init.js" nonce="c3Vkb2t1LW5vbmNl"></script>
+    <script nomodule src="script.js?v=v4" data-sudoku-core="1" nonce="c3Vkb2t1LW5vbmNl"></script>
+    <script type="module" src="./src/index.js" nonce="c3Vkb2t1LW5vbmNl"></script>
   </body>
   </html>

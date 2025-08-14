@@ -27,14 +27,17 @@ function ensureSudokuGameInitialized() {
     if (typeof window === 'undefined') return;
     // If the core class is not present, do nothing (e.g., unit tests)
     if (!window.SudokuGame) {
-      // WebKit fallback: dynamically load classic script bundle, allowed by CSP ('self')
-      const existing = document.querySelector('script[data-sudoku-core]');
-      if (!existing) {
+      // If the legacy core isn't loaded (e.g., existing tag has `nomodule` and didn't execute),
+      // load it programmatically. Guard to avoid duplicate injections.
+      if (!window.__loadingSudokuCore) {
+        window.__loadingSudokuCore = true;
         const s = document.createElement('script');
         s.src = 'script.js?v=v4';
         s.async = false;
         s.setAttribute('data-sudoku-core', '1');
+        try { s.setAttribute('nonce', 'c3Vkb2t1LW5vbmNl'); } catch {}
         s.addEventListener('load', () => {
+          window.__loadingSudokuCore = false;
           try { if (!window.__sudokuGame && window.SudokuGame) window.__sudokuGame = new window.SudokuGame(); } catch {}
         });
         document.head.appendChild(s);

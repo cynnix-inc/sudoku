@@ -176,6 +176,13 @@ Mobile usability
     - The Daily tile’s glow/animation must not visually collide with neighbors at any width.
   - When opened on common mobile viewport sizes (e.g., 360×640, 375×667, 390×844, 412×915), the landing overlay and its content fit entirely within the viewport with no scrollbars
 
+### SEO and metadata
+
+- Document head contains exactly one `<meta name="description">` that succinctly summarizes the app.
+  - Content length is approximately 50–160 characters.
+  - Mentions "Sudoku" and reflects the app brand.
+  - No duplicate `meta[name="description"]` tags are present.
+
 Regression test coverage (baseline)
 
 - Unit core logic

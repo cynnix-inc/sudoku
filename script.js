@@ -64,6 +64,14 @@ class SudokuGame {
         this._isLoggedIn = false;
         // Zen mode flag
         this._zenMode = false;
+		// Toast system state (queue + coalescing)
+		this._toastQueue = [];
+		this._activeToastCount = 0;
+		try {
+			const mq = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(width <= 768px)') : { matches: false };
+			this._maxVisibleToasts = mq && mq.matches ? 2 : 3;
+		} catch { this._maxVisibleToasts = 3; }
+		this._toastsByKey = new Map();
         
         if (!this._headless) {
             this.initializeGame();
@@ -3157,27 +3165,55 @@ class SudokuGame {
         }
     }
 
-    showToast(message, type = 'info', duration = 6000) {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
+	showToast(message, type = 'info', duration = 6000, opts = {}) {
+		const container = document.getElementById('toast-container');
+		if (!container) return;
+		const { key } = opts || {};
 
-        const el = document.createElement('div');
-        el.className = `toast ${type}`;
-        el.textContent = message;
+		// Coalesce: update existing toast with same key
+		if (key && this._toastsByKey && this._toastsByKey.has(key)) {
+			const existing = this._toastsByKey.get(key);
+			try { existing.textContent = message; existing.className = `toast ${type}`; } catch {}
+			if (existing._dismissTimer) clearTimeout(existing._dismissTimer);
+			existing._dismissTimer = setTimeout(existing._dismiss, duration);
+			return;
+		}
 
-        container.appendChild(el);
+		this._toastQueue = this._toastQueue || [];
+		this._toastQueue.push({ message, type, duration, key });
 
-        const timer = setTimeout(() => {
-            el.classList.add('out');
-            setTimeout(() => el.remove(), 180);
-        }, duration);
+		const drain = () => {
+			while (this._activeToastCount < this._maxVisibleToasts && this._toastQueue.length) {
+				const next = this._toastQueue.shift();
+				const el = document.createElement('div');
+				el.className = `toast ${next.type}`;
+				el.setAttribute('role', next.type === 'error' ? 'alert' : 'status');
+				el.textContent = next.message;
+				container.appendChild(el);
+				this._activeToastCount++;
+				if (next.key) this._toastsByKey.set(next.key, el);
 
-        el.addEventListener('click', () => {
-            clearTimeout(timer);
-            el.classList.add('out');
-            setTimeout(() => el.remove(), 180);
-        });
-    }
+				const dismiss = () => {
+					if (el._dismissed) return; el._dismissed = true;
+					if (el._dismissTimer) clearTimeout(el._dismissTimer);
+					el.classList.add('out');
+					setTimeout(() => {
+						try { el.remove(); } catch {}
+						if (next.key) this._toastsByKey.delete(next.key);
+						this._activeToastCount = Math.max(0, this._activeToastCount - 1);
+						drain();
+					}, 180);
+				};
+				el._dismiss = dismiss;
+				el._dismissTimer = setTimeout(dismiss, next.duration);
+				el.addEventListener('mouseenter', () => { if (el._dismissTimer) { clearTimeout(el._dismissTimer); el._dismissTimer = null; } });
+				el.addEventListener('mouseleave', () => { if (!el._dismissed && !el._dismissTimer) el._dismissTimer = setTimeout(dismiss, 1500); });
+				el.addEventListener('click', dismiss);
+			}
+		};
+
+		drain();
+	}
 
     setupEventListeners() {
         // Game control buttons (header new game removed; handled via menu)

@@ -163,7 +163,22 @@ body.modal-open { overflow: hidden; }
 .menu-wrap { position: relative; display: inline-block; }
 .difficulty-display { color: var(--text); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
 .mode-indicator { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; }
-.mode-pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.18rem 0.4rem; border-radius: 999px; border: 0; background: var(--surface-muted); white-space: nowrap; box-shadow: inset 0 0 0 1px var(--border), 0 1px 1px rgb(0 0 0 / 2%); }
+/* Make type+difficulty pill visually match user chip */
+.mode-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 4px 12px; /* align with .user-chip, a bit more space left/right */
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  white-space: nowrap;
+  min-height: 30px; /* consistent height with user chip */
+  min-width: 96px;  /* ensure consistent footprint across labels */
+  box-shadow: var(--shadow-sm);
+}
 .mode-pill .icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; border: 1px solid var(--border); font-size: 0; line-height: 0; font-weight: 800; }
 .mode-label { font-size: 0.9rem; color: var(--text-muted); }
 .mode-date { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 800; }
@@ -173,16 +188,31 @@ body.modal-open { overflow: hidden; }
   flex-direction: column;
   align-items: center; /* center content horizontally */
   gap: 0.12rem; /* a hair more breathing room */
-  padding: 3px 9px; /* add horizontal padding only */
-  border-radius: 12px;
-  max-height: 2.55rem; /* keep at/under timer */
-  overflow: hidden;
+  padding: 4px 12px; /* add a touch more horizontal padding */
+  border-radius: 999px; /* keep true pill shape */
+  max-height: 3rem; /* allow full text rendering without clipping */
+  overflow: visible; /* prevent cutting off ascenders/descenders */
 }
-.mode-combined .mode-type { font-weight: 700; color: var(--text); line-height: 1.05; font-size: 0.9em; text-align: center; }
+.mode-combined .mode-type {
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.05;
+  font-size: 0.9em;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .mode-combined .pill-sep-h { height: 1px; width: 84%; background: var(--border); opacity: 0.45; margin: 1px 0; }
 .mode-combined .mode-diff { display: inline-flex; align-items: center; justify-content: center; gap: 0.22rem; opacity: 0.85; line-height: 1; }
 .mode-combined .mode-diff .icon { width: 12px; height: 12px; }
-.mode-combined .mode-diff .mode-diff-text { font-size: 0.74em; font-weight: 700; }
+.mode-combined .mode-diff .mode-diff-text { font-size: 0.74em; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+/* Tighten on very small widths while preserving a consistent presence */
+@media (width <= 380px) {
+  .mode-pill { min-width: 84px; padding: 3px 10px; min-height: 28px; border-radius: 999px; }
+  .mode-combined { padding: 3px 10px; border-radius: 999px; }
+}
 
 /* Difficulty colors tuned for semantic clarity and progression */
 .mode-easy .icon { color: var(--diff-easy-fg); border-color: var(--diff-easy-border); background: var(--diff-easy-bg); }
@@ -1074,7 +1104,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 .game-footer .footer-left { justify-self: start; }
 .game-footer .footer-center { justify-self: center; font-weight: 800; letter-spacing: 0.2px; opacity: 1; }
 .game-footer .footer-right { justify-self: end; }
-.footer-seed { appearance: none; border: 0; background: transparent; color: var(--text); font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; font-size: 0.75rem; opacity: 0.9; }
+.footer-seed { appearance: none; border: 0; background: transparent; color: var(--text-muted); font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; font-size: 0.75rem; opacity: 0.85; }
 .footer-seed:hover { opacity: 0.85; text-decoration: none; }
 .footer-seed:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -1096,7 +1126,7 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
     top: calc(env(safe-area-inset-top, 0px) + 16px);
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1200;
+    z-index: 1400;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1137,6 +1167,11 @@ h1 { font-size: 2.5rem; font-weight: 700; color: var(--text); margin-bottom: 1re
 .toast.success { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
 .toast.error   { background: #fef2f2; color: #7f1d1d; border-color: #fecaca; }
 .toast.info    { background: var(--accent-12a); color: #3730a3; border-color: #c7d2fe; }
+
+@media (prefers-reduced-motion: reduce) {
+    .toast { animation: none; opacity: 1; transform: none; }
+    .toast.out { animation: none; }
+}
 
 /* Small inline toast near click target */
 .mini-toast {
