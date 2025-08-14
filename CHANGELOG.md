@@ -9,7 +9,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 ### Changes
 
 - **Added**:
-  - chore: add root path header for improved content type handling (e25f9da)
+  - chore: add root path header for improved content type handling (6c40078)
   - chore: update index.html and package-lock.json, add shell scripts for bin files (0c5fe31)
   - feat: add toast notifications, improve modal scrolling, and enhance test coverage (300d6a5)
   - chore: update CSP, service worker, and icons; add daily results to stats (ecd0629)
@@ -26,6 +26,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
+  - docs(changelog): update local changelog (52b4086)
   - docs(changelog): update local changelog (e1b995d)
   - chore: update Netlify headers for improved security (137e9d8)
   - docs(changelog): update local changelog (745559e)
