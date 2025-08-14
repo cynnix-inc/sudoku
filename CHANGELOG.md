@@ -24,6 +24,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
+  - docs(changelog): update local changelog (398c166)
   - docs(changelog): update local changelog (451c812)
   - docs(changelog): update local changelog (d02ba3b)
   - chore(husky): auto-update CHANGELOG locally on commit and before push (a0ee41c)
@@ -53,7 +54,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - grid overhaul (69154ca)
 
 - **Fixed**:
-  - Fix appearance sizing preview and modal interactions (69dc02a)
+  - Fix appearance sizing preview and modal interactions (0d53a1f)
   - ci(changelog): disable auto-update on push; run only via manual dispatch (84690be)
   - env fixes (c1490cc)
   - mobile layout fixes (fb44521)
