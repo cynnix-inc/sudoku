@@ -26,7 +26,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - chore: enhance SEO and toast notification system (aeba98e)
+  - docs(changelog): update local changelog (9ea6877)
+  - chore: enhance SEO and toast notification system (d02542b)
   - docs(changelog): update local changelog (77e4200)
   - docs(changelog): update local changelog (e1b995d)
   - chore: update Netlify headers for improved security (137e9d8)
