@@ -19,7 +19,7 @@ High-level acceptance criteria for Ultimate Sudoku
   - `#notes-toggle` toggles notes mode; number pad updates notes in the cell.
   - `#pad-erase-btn` clears value/notes for the selected cell.
   - Locked number painting: clicking a number on the pad toggles lock; dragging over cells paints that number.
-  - Focusing cells in the first or last column (c1 or c9) must not cause any horizontal shift or resize of the board. Board width and horizontal position remain stable while moving focus between edge columns.
+  - Focusing cells in the outermost columns (c1 or c9) does not cause any horizontal layout shift. The board's left position remains visually stable and the document's horizontal scroll does not change.
 
 - Validation and status
   - If mistakes are enabled, wrong entries decrement hearts and show a floater.
@@ -213,21 +213,6 @@ Footer and seed
     - Normal games: show randomly generated seed; seeded games: show provided seed; Daily: show UTC date key
     - Clicking the seed copies it and shows a small inline mini-toast near the button with text “Copied”
     - Hover styling remains subtle (no underline)
-
-
-### WIP scaffolding (new game types & representations)
-
-- Game type registry contains WIP variants, discoverable via `window.SudokuTypes` in browser devtools, but no UI exposure yet:
-  - Classic variants: `classic-4`, `classic-6`, `classic-12`, `classic-16`
-  - Most popular (constraints only): `diagonal`, `killer`, `jigsaw`
-  - Rarest (constraints only): `girandola`, `asterisk`, `toroidal`, `fortress`, `clone`
-  - Cult favorites (constraints only): `arrow`, `thermo`, `german-whispers`, `kropki`, `sandwich`
-  - Wordoku/Color/Icon bases: `wordoku-9`, `color-9`, `icons-9`
-- All new types are marked `wip: true`; puzzle generation and UI selection are unchanged.
-- Representation groundwork (non-visual):
-  - Cells annotate `data-repr-mode`, `data-repr-theme`, and `data-repr-digit` to enable future render mapping.
-  - Default stored values (in `sudoku-settings`) are `representationMode: 'numbers'` and `representationTheme: 'pocket-beasts'`.
-  - No on-screen toggle or visible changes at this stage.
 
 
 

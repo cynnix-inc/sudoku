@@ -265,13 +265,13 @@ export function recordWin(game) {
   const diff = (game._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${game._activeDailyKey}`)||'{}').difficulty || game.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
   const elapsed = getElapsedSeconds(game);
   const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
-  stats.totalWins = (stats.totalWins || 0) + 1;
-  stats.totalCompleted = (stats.totalCompleted || 0) + 1;
+  stats.totalWins = (Number(stats.totalWins) || 0) + 1;
+  stats.totalCompleted = (Number(stats.totalCompleted) || 0) + 1;
   stats.bestTimes = stats.bestTimes || {};
   stats.byDifficulty = stats.byDifficulty || {};
   const slot = (stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 });
-  slot.played += 1;
-  slot.wins += 1;
+  slot.played = (Number(slot.played) || 0) + 1;
+  slot.wins = (Number(slot.wins) || 0) + 1;
   const best = stats.bestTimes[diff];
   let newBest = false;
   if ((game.hintsUsed || 0) === 0) {
@@ -287,11 +287,11 @@ export function recordLoss(game) {
   if (!game._hasMadeMove) return;
   const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
   const diff = (game._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${game._activeDailyKey}`)||'{}').difficulty || game.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
-  stats.totalLosses = (stats.totalLosses || 0) + 1;
-  stats.totalCompleted = (stats.totalCompleted || 0) + 1;
+  stats.totalLosses = (Number(stats.totalLosses) || 0) + 1;
+  stats.totalCompleted = (Number(stats.totalCompleted) || 0) + 1;
   stats.byDifficulty = stats.byDifficulty || {};
   const slot = (stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 });
-  slot.played += 1;
+  slot.played = (Number(slot.played) || 0) + 1;
   try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
   game.syncRemoteStats && game.syncRemoteStats();
 }

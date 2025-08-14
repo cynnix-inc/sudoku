@@ -128,6 +128,118 @@ if (typeof window !== 'undefined') {
   } else {
     wireFooter();
   }
+
+  // Fallback wiring: ensure reset buttons work even if legacy bindings fail
+  const wireResetButtons = () => {
+    try {
+      const game = window.__sudokuGame;
+      if (!game) return;
+      // Settings: Reset to defaults
+      const settingsReset = document.getElementById('settings-reset');
+      if (settingsReset && !settingsReset._idxBound) {
+        settingsReset._idxBound = true;
+        settingsReset.addEventListener('click', async () => {
+          const ok1 = await (game.showConfirm?.('Reset all settings to defaults?'));
+          if (!ok1) return;
+          const ok2 = await (game.showConfirm?.('Are you sure?'));
+          if (!ok2) return;
+          try { localStorage.removeItem('sudoku-settings'); } catch {}
+          // Defaults — Gameplay
+          try { const ac = document.getElementById('auto-candidates-toggle'); if (ac) ac.checked = false; } catch {}
+          try { const aa = document.getElementById('auto-advance-toggle'); if (aa) aa.checked = true; } catch {}
+          try { const hintSel = document.getElementById('hint-mode-select'); if (hintSel) hintSel.value = 'direct'; } catch {}
+          try { const zen = document.getElementById('zen-mode-toggle'); if (zen) zen.checked = false; } catch {}
+          try { game._userZenRestoreValue = undefined; game._userLivesRestoreValue = undefined; game._userMistakeRestoreValue = undefined; } catch {}
+          // Defaults — Lives
+          try {
+            const ml = document.getElementById('lives-limit') || document.getElementById('mistakes-limit');
+            const mlv = document.getElementById('lives-limit-value') || document.getElementById('mistakes-limit-value');
+            const mlp = document.getElementById('lives-limit-pill') || document.getElementById('mistakes-limit-pill');
+            const mlprev = document.getElementById('lives-preview') || document.getElementById('mistakes-preview');
+            if (ml) { ml.disabled = false; try { ml.setAttribute('aria-disabled', 'false'); } catch {} ml.value = '3'; }
+            if (mlv) mlv.textContent = '3';
+            if (mlp) mlp.textContent = '3';
+            if (mlprev) mlprev.textContent = 'Hearts: ×3';
+            game.livesEnabled = true;
+            game.livesLimit = 3;
+            game.resetMistakes && game.resetMistakes();
+            game.renderHealthBar && game.renderHealthBar();
+          } catch {}
+          // Defaults — Idle
+          try { const idleToggle = document.getElementById('idle-autopause-toggle'); if (idleToggle) idleToggle.checked = true; } catch {}
+          try { const idleSlider = document.getElementById('idle-timeout-slider'); if (idleSlider) { idleSlider.value = '120'; idleSlider.disabled = false; try { idleSlider.setAttribute('aria-disabled', 'false'); } catch {} } } catch {}
+          try { const idlePill = document.getElementById('idle-timeout-pill'); if (idlePill) idlePill.textContent = '2:00'; } catch {}
+          // Defaults — Appearance
+          try { const themeToggle = document.getElementById('theme-dark-toggle'); if (themeToggle) themeToggle.checked = false; } catch {}
+          try { document.querySelectorAll('#accent-swatches .swatch').forEach(b => b.setAttribute('aria-checked', b.dataset.accent === 'indigo' ? 'true' : 'false')); } catch {}
+          // Defaults — Board sizing
+          try { const gs = document.getElementById('grid-size-slider'); if (gs) gs.value = '2'; } catch {}
+          try { const gsp = document.getElementById('grid-size-pill'); if (gsp) gsp.textContent = '2'; } catch {}
+          try { const ds = document.getElementById('digit-size-slider'); if (ds) ds.value = '3'; } catch {}
+          try { const dsp = document.getElementById('digit-size-pill'); if (dsp) dsp.textContent = '3'; } catch {}
+          try { const ns = document.getElementById('note-size-slider'); if (ns) ns.value = '3'; } catch {}
+          try { const nsp = document.getElementById('note-size-pill'); if (nsp) nsp.textContent = '3'; } catch {}
+          // Persist and align internals
+          try { game.persistSettings && game.persistSettings(game); } catch {}
+        });
+      }
+      // Settings: Reset cloud data
+      const cloudReset = document.getElementById('cloud-reset');
+      if (cloudReset && !cloudReset._idxBound) {
+        cloudReset._idxBound = true;
+        cloudReset.addEventListener('click', async () => {
+          const ok1 = await (game.showConfirm?.('Reset cloud data? This deletes your synced stats and gameplay settings for your account.'));
+          if (!ok1) return;
+          const ok2 = await (game.showConfirm?.('Are you sure? This cannot be undone.'));
+          if (!ok2) return;
+          try {
+            if (window.supabase) {
+              const { data: { user } } = await window.supabase.auth.getUser();
+              if (user) {
+                try { await window.supabase.from('stats').delete().eq('user_id', user.id); } catch {}
+                try { await window.supabase.from('settings').delete().eq('user_id', user.id); } catch {}
+              }
+            }
+          } catch {}
+          try { game.showToast && game.showToast('Cloud data reset', 'info', 3000); } catch {}
+        });
+      }
+      // Stats: Reset all
+      const statsReset = document.getElementById('stats-reset');
+      if (statsReset && !statsReset._idxBound) {
+        statsReset._idxBound = true;
+        statsReset.addEventListener('click', async () => {
+          const ok1 = await (game.showConfirm?.('Reset all Sudoku stats (wins, losses, best times, daily results)?'));
+          if (!ok1) return;
+          const ok2 = await (game.showConfirm?.('Are you sure? This cannot be undone.'));
+          if (!ok2) return;
+          try {
+            localStorage.removeItem('sudoku-stats');
+            localStorage.removeItem('sudoku-daily-results');
+            localStorage.removeItem('sudoku-daily-last');
+            localStorage.removeItem('sudoku-daily-streak');
+          } catch {}
+          try {
+            if (window.supabase) {
+              const { data: { user } } = await window.supabase.auth.getUser();
+              if (user) await window.supabase.from('stats').delete().eq('user_id', user.id);
+            }
+          } catch {}
+          try { game.showStats && game.showStats(); } catch {}
+          try { game.updateDailyIconBadge && game.updateDailyIconBadge(); } catch {}
+        });
+      }
+    } catch {}
+  };
+
+  // Bind now and also whenever modals open (ensures elements exist and are current)
+  wireResetButtons();
+  try {
+    document.addEventListener('modalopen', (e) => {
+      const id = e?.detail?.id;
+      if (id === 'settings-modal' || id === 'stats-modal') wireResetButtons();
+    });
+  } catch {}
 }
 
 // Named exports reserved for future browser‑only utilities

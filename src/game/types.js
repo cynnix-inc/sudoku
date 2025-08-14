@@ -5,6 +5,7 @@
 const CLASSIC = {
   id: 'classic',
   name: 'Classic',
+  icon: '🔢',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: Array.from({ length: 9 }, (_, i) => String(i + 1)),
@@ -13,6 +14,7 @@ const CLASSIC = {
 const DAILY = {
   id: 'daily',
   name: 'Daily',
+  icon: '📅',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: Array.from({ length: 9 }, (_, i) => String(i + 1)),
@@ -34,6 +36,7 @@ function alphanumForSize(n) {
 const CLASSIC_4 = {
   id: 'classic-4',
   name: 'Classic 4x4',
+  icon: '4️⃣',
   size: 4,
   box: { rows: 2, cols: 2 },
   symbols: digits(4),
@@ -43,6 +46,7 @@ const CLASSIC_4 = {
 const CLASSIC_6 = {
   id: 'classic-6',
   name: 'Classic 6x6',
+  icon: '6️⃣',
   size: 6,
   box: { rows: 2, cols: 3 },
   symbols: digits(6),
@@ -52,6 +56,7 @@ const CLASSIC_6 = {
 const CLASSIC_12 = {
   id: 'classic-12',
   name: 'Classic 12x12',
+  icon: '🔢',
   size: 12,
   box: { rows: 3, cols: 4 },
   symbols: alphanumForSize(12),
@@ -61,6 +66,7 @@ const CLASSIC_12 = {
 const CLASSIC_16 = {
   id: 'classic-16',
   name: 'Classic 16x16',
+  icon: '🔢',
   size: 16,
   box: { rows: 4, cols: 4 },
   symbols: alphanumForSize(16),
@@ -71,6 +77,7 @@ const CLASSIC_16 = {
 const WORDOKU_9 = {
   id: 'wordoku-9',
   name: 'Wordoku 9x9',
+  icon: '🔠',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: Array.from({ length: 9 }, (_, i) => String.fromCharCode('A'.charCodeAt(0) + i)),
@@ -89,6 +96,7 @@ const WORDOKU_9 = {
 const COLOR_9 = {
   id: 'color-9',
   name: 'Color 9x9',
+  icon: '🎨',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -128,6 +136,7 @@ const COLOR_9 = {
 const ICONS_9 = {
   id: 'icons-9',
   name: 'Icons 9x9',
+  icon: '🔣',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -166,6 +175,7 @@ const ICONS_9 = {
 const DIAGONAL = {
   id: 'diagonal',
   name: 'Diagonal (Sudoku X)',
+  icon: '❌',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -176,6 +186,7 @@ const DIAGONAL = {
 const KILLER = {
   id: 'killer',
   name: 'Killer (Sum Cages)',
+  icon: '🧮',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -187,6 +198,7 @@ const KILLER = {
 const JIGSAW = {
   id: 'jigsaw',
   name: 'Jigsaw / Irregular',
+  icon: '🧩',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -199,6 +211,7 @@ const JIGSAW = {
 const GIRANDOLA = {
   id: 'girandola',
   name: 'Girandola',
+  icon: '🌀',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -210,6 +223,7 @@ const GIRANDOLA = {
 const ASTERISK = {
   id: 'asterisk',
   name: 'Asterisk',
+  icon: '✳️',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -221,6 +235,7 @@ const ASTERISK = {
 const TOROIDAL = {
   id: 'toroidal',
   name: 'Toroidal',
+  icon: '♾️',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -231,6 +246,7 @@ const TOROIDAL = {
 const FORTRESS = {
   id: 'fortress',
   name: 'Fortress',
+  icon: '🏰',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -242,6 +258,7 @@ const FORTRESS = {
 const CLONE = {
   id: 'clone',
   name: 'Clone',
+  icon: '🪞',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -254,6 +271,7 @@ const CLONE = {
 const ARROW = {
   id: 'arrow',
   name: 'Arrow',
+  icon: '➡️',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -265,6 +283,7 @@ const ARROW = {
 const THERMO = {
   id: 'thermo',
   name: 'Thermo',
+  icon: '🌡️',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -276,6 +295,7 @@ const THERMO = {
 const GERMAN_WHISPERS = {
   id: 'german-whispers',
   name: 'German Whispers',
+  icon: '〰️',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -287,6 +307,7 @@ const GERMAN_WHISPERS = {
 const KROPKI = {
   id: 'kropki',
   name: 'Kropki',
+  icon: '⚪⚫',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),
@@ -298,6 +319,7 @@ const KROPKI = {
 const SANDWICH = {
   id: 'sandwich',
   name: 'Sandwich',
+  icon: '🥪',
   size: 9,
   box: { rows: 3, cols: 3 },
   symbols: digits(9),

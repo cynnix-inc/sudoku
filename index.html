@@ -46,7 +46,6 @@
                           <hr/>
                           <button id="menu-restart" class="popover-item" role="menuitem"><span class="menu-icon">↺</span><span>Restart puzzle</span></button>
                           <button id="menu-clear" class="popover-item" role="menuitem"><span class="menu-icon">🧹</span><span>Clear All</span></button>
-                          <button id="menu-solve" class="popover-item" role="menuitem"><span class="menu-icon">✅</span><span>Solve</span></button>
                           <hr/>
                           <button id="menu-stats" class="popover-item" role="menuitem"><span class="menu-icon">📊</span><span>Stats</span></button>
                           <hr/>
@@ -209,15 +208,26 @@
                         </div>
                     </div>
 
-                    <div class="landing-divider">or choose a difficulty</div>
+                    <div class="landing-divider">...or choose a new game type</div>
 
-                    <div class="landing-diff-grid">
-                        <button class="btn btn-secondary diff-btn diff-card" data-diff="easy"><span class="diff-icon"></span><span class="diff-text">Easy</span><span class="diff-hint">Relaxed</span></button>
-                        <button class="btn btn-secondary diff-btn diff-card" data-diff="medium"><span class="diff-icon"></span><span class="diff-text">Medium</span><span class="diff-hint">Balanced</span></button>
-                        <button class="btn btn-secondary diff-btn diff-card" data-diff="hard"><span class="diff-icon"></span><span class="diff-text">Hard</span><span class="diff-hint">Tricky</span></button>
-                        <button class="btn btn-secondary diff-btn diff-card" data-diff="expert"><span class="diff-icon"></span><span class="diff-text">Expert</span><span class="diff-hint">Advanced</span></button>
-                        <button class="btn btn-secondary diff-btn diff-card" data-diff="master"><span class="diff-icon"></span><span class="diff-text">Master</span><span class="diff-hint">Elite</span></button>
-                        <button class="btn btn-secondary diff-btn diff-card" data-diff="extreme"><span class="diff-icon"></span><span class="diff-text">Extreme</span><span class="diff-hint">Insane</span></button>
+                    <div id="landing-types" class="landing-types">
+                        <button id="types-prev" class="carousel-nav" aria-label="Previous type">◀</button>
+                        <div id="types-track" class="type-track" role="listbox" aria-label="Game types"></div>
+                        <button id="types-next" class="carousel-nav" aria-label="Next type">▶</button>
+                    </div>
+
+                    <div id="types-detail" class="types-detail" style="display:none">
+                        <div class="types-detail-head">
+                            <button id="types-back" class="btn btn-tertiary btn-small back-inline" aria-label="Back to game types">← Back</button>
+                        </div>
+                        <div class="detail-section">
+                            <h3 class="detail-title">Variants</h3>
+                            <div id="variants-grid" class="variants-grid"></div>
+                        </div>
+                        <div class="detail-section">
+                            <h3 class="detail-title">Difficulty</h3>
+                            <div id="diffs-grid" class="diffs-grid"></div>
+                        </div>
                     </div>
 
                     <div class="landing-quick">

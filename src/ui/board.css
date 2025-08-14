@@ -6,6 +6,8 @@
   margin-bottom: 1rem;
   width: 100%;
   position: relative;
+  /* Isolate layout/repaint from page to avoid tiny recentering on focus */
+  contain: layout paint;
 }
 
 .board {
@@ -18,8 +20,13 @@
   border: var(--sep-thickness) solid var(--separator-color);
   box-shadow: var(--shadow);
   overflow: hidden;
-  /* Lock board width to prevent subpixel track reflow on focus at edges */
+  /* Ensure content width equals 9*cell + 8 gaps; border sits outside */
+  box-sizing: content-box;
   width: var(--board-size);
+  /* Promote to its own layer to reduce subpixel jitter */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: layout paint;
   margin-left: auto;
   margin-right: auto;
 }
@@ -29,7 +36,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 0; /* render separators behind cells to avoid covering digits */
   border-radius: inherit;
   background-image:
     linear-gradient(var(--separator-color), var(--separator-color)),
@@ -53,6 +60,7 @@
   position: relative;
   width: var(--cell-size);
   height: var(--cell-size);
+  z-index: 1; /* ensure cell/notes sit above board grid */
 }
 
 .cell {
@@ -70,6 +78,10 @@
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   color: var(--text);
+  text-shadow: 0 0 1px rgba(0,0,0,0.35); /* improve contrast against overlays */
+  will-change: box-shadow, background-color, color;
+  position: relative;
+  z-index: 2; /* ensure digit renders above candidates and grid lines */
 }
 
 .notes {
@@ -81,6 +93,7 @@
   grid-template-rows: repeat(3, 1fr);
   gap: 1px;
   pointer-events: none;
+  z-index: 0;
 }
 
 .note-item {
@@ -109,17 +122,15 @@
 .cell.initial {
   background: var(--surface-muted);
   color: var(--text);
+  text-shadow: 0 0 1px rgba(0,0,0,0.4);
   font-weight: 700;
+  z-index: 2; /* keep given digits above any backgrounds */
 }
 
 
 .cell.selected {
   background: var(--selected-bg);
-  color: #1d4ed8;
-}
-
-[data-theme="dark"] .cell.selected {
-  color: #e7eafc;
+  color: var(--text); /* keep high contrast on selection */
 }
 
 .cell.highlighted {

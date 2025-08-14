@@ -854,8 +854,8 @@ class SudokuGame {
                 const remoteLocal = this._mapRemoteStatsToLocal(remote);
                 const merged = {
                     totalCompleted: (local.totalCompleted || 0) + (remoteLocal.totalCompleted || 0),
-                    totalWins: (local.totalWins || 0) + (remoteLocal.totalWins || 0),
-                    totalLosses: (local.totalLosses || 0) + (remoteLocal.totalLosses || 0),
+                    totalWins: (Number(local.totalWins) || 0) + (Number(remoteLocal.totalWins) || 0),
+                    totalLosses: (Number(local.totalLosses) || 0) + (Number(remoteLocal.totalLosses) || 0),
                     bestTimes: {
                         easy: Math.min(...[local.bestTimes?.easy, remoteLocal.bestTimes?.easy].filter(v => Number.isFinite(v))),
                         medium: Math.min(...[local.bestTimes?.medium, remoteLocal.bestTimes?.medium].filter(v => Number.isFinite(v))),
@@ -1230,24 +1230,24 @@ class SudokuGame {
         const landingOverlay = document.getElementById('landing-overlay');
         if (landingOverlay) {
             // Always prepare a puzzle behind the landing overlay for fast interactions across engines
-            try {
-                const saved = localStorage.getItem('sudoku-last-difficulty');
-                const diff = saved || 'medium';
-                this.updateModeIndicator({ type: 'normal', difficulty: diff });
-                this.generatePuzzle(diff);
-                if (this.initialBoard && this.initialBoard[0] && this.initialBoard[0][0] !== 0) {
-                    this.initialBoard[0][0] = 0;
-                    this.board[0][0] = 0;
+                try {
+                    const saved = localStorage.getItem('sudoku-last-difficulty');
+                    const diff = saved || 'medium';
+                    this.updateModeIndicator({ type: 'normal', difficulty: diff });
+                    this.generatePuzzle(diff);
+                    if (this.initialBoard && this.initialBoard[0] && this.initialBoard[0][0] !== 0) {
+                        this.initialBoard[0][0] = 0;
+                        this.board[0][0] = 0;
+                    }
+                } catch {
+                    this.generatePuzzle('medium');
+                    this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
                 }
-            } catch {
-                this.generatePuzzle('medium');
-                this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
-            }
-            this.updateDisplay();
+                this.updateDisplay();
             // Ensure full board cells are present before tests assert
             try { const board = document.getElementById('board'); if (board && board.children.length < 81) { this.createBoard(); this.updateDisplay(); } } catch {}
             // Keep landing visible for welcome UI
-            landingOverlay.style.display = 'flex';
+                landingOverlay.style.display = 'flex';
         } else {
             // Fallback to previous behavior when landing overlay is not present (e.g., tests)
             try {
@@ -1407,6 +1407,26 @@ class SudokuGame {
                 this.solution = this.board.map(row => [...row]);
                 this.removeNumbersSymmetricUniqueSeeded(cellsToRemoveCount, rng);
                 attempts++;
+            }
+        // Sanity: ensure no empty-but-given cells and every empty cell has at least one candidate; else retry once
+        const ensureConsistent = () => {
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0) {
+                        if (this.initialBoard[r][c] !== 0) this.initialBoard[r][c] = 0;
+                            const s = this.computeCandidates(r, c);
+                            if (!s || s.size === 0) return false;
+                        }
+                    }
+                }
+                return true;
+            };
+            if (!ensureConsistent()) {
+                // Rebuild once with the same seed path
+                this.generateSolvedBoardSeeded(rng);
+                this.solution = this.board.map(row => [...row]);
+                this.removeNumbersSymmetricUniqueSeeded(cellsToRemoveCount, rng);
+                // If still inconsistent, proceed; downstream self-heal will mitigate
             }
             // 4) Initialize gameplay state as in generatePuzzle
             this.initialBoard = this.board.map(row => [...row]);
@@ -1748,6 +1768,27 @@ class SudokuGame {
         };
         const cellsToRemove = { easy: 30, medium: 40, hard: 50, expert: 60, master: 62, extreme: 64 };
         removeSymUnique(cellsToRemove[difficulty] || 40);
+        // Sanity: ensure no empty-but-given cells and every empty cell has at least one candidate; else retry once
+        const ensureConsistentDaily = () => {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0) {
+                        if (this.initialBoard[r][c] !== 0) this.initialBoard[r][c] = 0;
+                        const s = this.computeCandidates(r, c);
+                        if (!s || s.size === 0) return false;
+                    }
+                }
+            }
+            return true;
+        };
+        if (!ensureConsistentDaily()) {
+            // Rebuild once with same key/seed path
+            this.board = Array(9).fill().map(() => Array(9).fill(0));
+            fillBox(0,0); fillBox(3,3); fillBox(6,6);
+            this.solveBoard();
+            this.solution = this.board.map(r => [...r]);
+            removeSymUnique(cellsToRemove[difficulty] || 40);
+        }
         // Final uniqueness guard for freshly generated daily
         if (!this.hasUniqueSolution()) {
             // Regenerate once using the same seed but different shuffle approach
@@ -2101,10 +2142,37 @@ class SudokuGame {
             if (cell.setSelectionRange) cell.setSelectionRange(len, len);
             cell.setAttribute('aria-selected', 'true');
         } catch {}
+        // Inline heal for selected cell: if empty but marked as a given, clear now so input works
+        try {
+            if (this.board[row][col] === 0 && this.initialBoard[row][col] !== 0) {
+                this.initialBoard[row][col] = 0;
+                cell.classList.remove('initial');
+                cell.readOnly = false;
+                if (this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                    this.notes[row][col] = this.computeCandidates(row, col);
+                    this.updateNotesDisplay(row, col);
+                }
+            }
+            // If Auto Candidates is on and this empty cell has no notes yet, compute them now
+            if (this.board[row][col] === 0 && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                const set = this.notes?.[row]?.[col];
+                if (!(set && set.size > 0)) {
+                    this.notes[row][col] = this.computeCandidates(row, col);
+                    this.updateNotesDisplay(row, col);
+                }
+            }
+        } catch {}
         
         // In lock mode: selecting a cell that already contains a number should
         // auto-select the same number on the number pad (update lockedNumber/UI)
         try {
+            // Enforce readOnly for givens to avoid caret/input confusion
+            try {
+                if (this.initialBoard[row][col] !== 0) {
+                    cell.readOnly = true;
+                    cell.classList.add('initial');
+                }
+            } catch {}
             const lockToggle = document.getElementById('pad-lock-toggle');
             const lockEnabled = !lockToggle || lockToggle.getAttribute('aria-pressed') === 'true';
             const currentVal = parseInt(cell.value || '0');
@@ -2180,6 +2248,11 @@ class SudokuGame {
 
     handleCellInput(event, row, col) {
         const value = event.target.value;
+        // If a recent keydown already placed in this cell, ignore the echoing input event
+        if (this._suppressNextInputForCell === `${row},${col}`) {
+            this._suppressNextInputForCell = null;
+            return;
+        }
         
         if (this.isNotesMode && (value >= '1' && value <= '9')) {
             const v = parseInt(value);
@@ -2211,6 +2284,9 @@ class SudokuGame {
                 this.toggleNote(row, col, parseInt(k));
             } else {
                 this.setCellValue(row, col, parseInt(k), 'keydown');
+                // Prevent duplicate placement from subsequent input event on some browsers
+                this._suppressNextInputForCell = `${row},${col}`;
+                try { event.preventDefault(); } catch {}
             }
             this.checkGameComplete();
             // Auto-advance after keyboard entry if enabled
@@ -2294,6 +2370,15 @@ class SudokuGame {
     }
 
     setCellValue(row, col, value, source = 'api') {
+        // Per-cell heal: if the UI shows this cell empty but it's marked as a given,
+        // clear the given flag so input is accepted and candidates can compute.
+        try {
+            if (this.board[row][col] === 0 && this.initialBoard[row][col] !== 0) {
+                this.initialBoard[row][col] = 0;
+                const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                if (cell) { cell.classList.remove('initial'); cell.readOnly = false; }
+            }
+        } catch {}
         if (this.initialBoard[row][col] !== 0) return; // Don't change givens
         if (this.mistakesEnabled && this.isGameOver) return;
         // First real interaction should start the game/timer
@@ -2491,7 +2576,7 @@ class SudokuGame {
                 this.recomputeAllCandidates();
             }
         } catch {}
-
+        
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
                 const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
@@ -2518,6 +2603,24 @@ class SudokuGame {
         this.highlightSameNumbers();
         this.updateNumberPadAvailability();
         this.updateHintUi && this.updateHintUi();
+
+        // Extra safety: if any cell remains empty but readOnly, clear that state and refresh notes
+        try {
+            let repaired = false;
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) {
+                        this.initialBoard[r][c] = 0;
+                        const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                        if (cell) { cell.classList.remove('initial'); cell.readOnly = false; }
+                        repaired = true;
+                    }
+                }
+            }
+            if (repaired && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                this.recomputeAllCandidates();
+            }
+        } catch {}
     }
 
     highlightSameNumbers() {
@@ -3190,10 +3293,22 @@ class SudokuGame {
     }
 
     async restartPuzzle() {
-        if (this.isGameInProgress && this.isGameInProgress()) {
+		if (!this._zenMode && (this.isGameInProgress && this.isGameInProgress())) {
             const proceed = await (this.showConfirm?.('Restart this puzzle from the beginning? Your time and progress will reset.'));
             if (!proceed) return;
+            // Count as a loss for non‑Zen runs when a game has started
+            try { this.recordLoss && this.recordLoss(); } catch {}
         }
+        // Clear any overlays and reset end-state flags so UI is interactive
+        try {
+            this.isGameComplete = false;
+            this.isGameOver = false;
+            const go = document.getElementById('gameover-overlay'); if (go) go.style.display = 'none';
+            const po = document.getElementById('pause-overlay'); if (po) po.style.display = 'none';
+            // In case a prior modal left background inert, forcibly restore interactivity
+            document.querySelectorAll('header, main, footer').forEach(el => { try { if ('inert' in el) el.inert = false; el.removeAttribute('aria-hidden'); } catch {} });
+            document.body.classList.remove('modal-open');
+        } catch {}
         // Reset board to initial givens
         this.board = this.initialBoard.map(row => [...row]);
         // Clear notes
@@ -3219,18 +3334,20 @@ class SudokuGame {
         // Reset hints count UI
         this.hintsUsed = 0;
         this.updateHintUi && this.updateHintUi();
-        // Reset timer
+        // Reset timer and clear any pause state; do not defer start until interaction here
         this.stopTimer && this.stopTimer();
-        this.startTime = null;
+        this.startTime = Date.now();
         this.isPaused = false;
         this._pauseStartedAt = null;
         this._elapsedBeforePause = 0;
-        this._hasStarted = false;
+        this._hasStarted = true;
         this._pendingStart = false;
         this._preStartElapsed = 0;
         this.updateTimerButton && this.updateTimerButton();
         // Apply to UI
         this.updateDisplay && this.updateDisplay();
+        // Kick the timer immediately so UI shows running state
+        this.startTimer && this.startTimer();
         this.clearStatus && this.clearStatus();
         this.showStatus && this.showStatus('Puzzle restarted', 'info');
     }
@@ -3272,8 +3389,8 @@ class SudokuGame {
     }
 
 	showToast(message, type = 'info', duration = 6000, opts = {}) {
-		const container = document.getElementById('toast-container');
-		if (!container) return;
+        const container = document.getElementById('toast-container');
+        if (!container) return;
 		const { key } = opts || {};
 
 		// Coalesce: update existing toast with same key
@@ -3295,14 +3412,14 @@ class SudokuGame {
 				el.className = `toast ${next.type}`;
 				el.setAttribute('role', next.type === 'error' ? 'alert' : 'status');
 				el.textContent = next.message;
-				container.appendChild(el);
+        container.appendChild(el);
 				this._activeToastCount++;
 				if (next.key) this._toastsByKey.set(next.key, el);
 
 				const dismiss = () => {
 					if (el._dismissed) return; el._dismissed = true;
 					if (el._dismissTimer) clearTimeout(el._dismissTimer);
-					el.classList.add('out');
+            el.classList.add('out');
 					setTimeout(() => {
 						try { el.remove(); } catch {}
 						if (next.key) this._toastsByKey.delete(next.key);
@@ -3324,7 +3441,7 @@ class SudokuGame {
 		};
 
 		drain();
-	}
+    }
 
     setupEventListeners() {
         // Game control buttons (header new game removed; handled via menu)
@@ -3479,13 +3596,6 @@ class SudokuGame {
                 const ok = await (this.showConfirm?.('Clear all your entries? Lives, timer, and stats remain.'));
                 if (!ok) return;
                 this.clearBoard();
-            }],
-            ['menu-solve', async () => {
-                if (this.solvePuzzle) this.solvePuzzle();
-                // Immediately record win for strict stats assertions (test-driven path)
-                try { this.recordWin && this.recordWin(); } catch {}
-                // Open stats to show updated counters
-                this.showStats && this.showStats();
             }],
             ['menu-stats', () => this.showStats && this.showStats()],
             ['menu-login', () => this.loginWithGoogle && this.loginWithGoogle()],
@@ -4441,6 +4551,15 @@ class SudokuGame {
                 </div>
               </div>
               <div class="dev-content">
+                <details class="dev-section" data-id="cell-debug" open>
+                  <summary class="dev-section-title">Cell Debug</summary>
+                  <div class="dev-grid" style="grid-template-columns: 1fr;">
+                    <button id="dev-debug-overlay" class="dev-tile"><span class="icon">🔎</span><span class="label">Toggle overlay</span></button>
+                    <div id="dev-debug-readout" class="dev-readout" style="font: 12px/1.4 system-ui, sans-serif; white-space: pre; background: var(--surface, #fff); border: 1px solid var(--border, #e5e7eb); border-radius: 8px; padding: 6px; max-width: 300px; overflow:auto;">
+                      Tap a cell to inspect…
+                    </div>
+                  </div>
+                </details>
                 <details class="dev-section" data-id="themes" open>
                   <summary class="dev-section-title">Themes</summary>
                   <div class="dev-grid">
@@ -4650,6 +4769,81 @@ class SudokuGame {
             const boardEl = document.getElementById('board');
             panel.querySelector('#dev-confetti')?.addEventListener('click', () => {
                 runEffectWithOptionalMinimize(boardEl, () => this._burstConfetti && this._burstConfetti());
+            });
+            // Debug overlay wiring
+            const dbgBtn = panel.querySelector('#dev-debug-overlay');
+            const dbgOut = panel.querySelector('#dev-debug-readout');
+            let dbgOn = false;
+            let dbgBox = null;
+            const fmt = (o) => {
+                try { return JSON.stringify(o, null, 2); } catch { return String(o); }
+            };
+            const paintOverlay = () => {
+                try {
+                    const b = document.getElementById('board'); if (!b) return;
+                    if (!dbgOn) { if (dbgBox) { dbgBox.remove(); dbgBox = null; } return; }
+                    if (!dbgBox) {
+                        dbgBox = document.createElement('div');
+                        dbgBox.id = 'dev-cell-overlay';
+                        dbgBox.style.position = 'absolute';
+                        dbgBox.style.inset = '0';
+                        dbgBox.style.pointerEvents = 'none';
+                        dbgBox.style.zIndex = '30';
+                        b.appendChild(dbgBox);
+                    }
+                } catch {}
+            };
+            const updateOutFor = (r, c) => {
+                try {
+                    const data = {
+                        row: r, col: c,
+                        board: this.board?.[r]?.[c] ?? null,
+                        initial: this.initialBoard?.[r]?.[c] ?? null,
+                        solution: this.solution?.[r]?.[c] ?? null,
+                        readOnly: !!document.querySelector(`[data-row="${r}"][data-col="${c}"]`)?.readOnly,
+                        notes: Array.from(this.notes?.[r]?.[c] || []),
+                        lockedNumber: this.lockedNumber,
+                        touchMode: !!this.touchMode,
+                    };
+                    if (dbgOut) dbgOut.textContent = fmt(data);
+                } catch {}
+            };
+            const onCellTap = (e) => {
+                if (!dbgOn) return;
+                const target = e.target.closest && e.target.closest('.cell');
+                if (!target) return;
+                const r = parseInt(target.dataset.row), c = parseInt(target.dataset.col);
+                updateOutFor(r, c);
+                // also draw a subtle outline box
+                try {
+                    paintOverlay();
+                    if (!dbgBox) return;
+                    dbgBox.innerHTML = '';
+                    const rect = target.getBoundingClientRect();
+                    const hostRect = target.parentElement?.parentElement?.getBoundingClientRect?.() || document.getElementById('board')?.getBoundingClientRect?.() || { left:0, top:0 };
+                    const hl = document.createElement('div');
+                    hl.style.position = 'absolute';
+                    hl.style.left = (rect.left - hostRect.left) + 'px';
+                    hl.style.top = (rect.top - hostRect.top) + 'px';
+                    hl.style.width = rect.width + 'px';
+                    hl.style.height = rect.height + 'px';
+                    hl.style.outline = '2px solid rgba(14,165,233,0.9)';
+                    hl.style.borderRadius = '6px';
+                    hl.style.pointerEvents = 'none';
+                    dbgBox.appendChild(hl);
+                } catch {}
+            };
+            dbgBtn?.addEventListener('click', () => {
+                dbgOn = !dbgOn;
+                dbgBtn.classList.toggle('active', dbgOn);
+                paintOverlay();
+                if (dbgOn) {
+                    document.getElementById('board')?.addEventListener('pointerdown', onCellTap);
+                } else {
+                    document.getElementById('board')?.removeEventListener('pointerdown', onCellTap);
+                    if (dbgBox) { try { dbgBox.remove(); } catch {} dbgBox = null; }
+                    if (dbgOut) dbgOut.textContent = 'Tap a cell to inspect…';
+                }
             });
             panel.querySelector('#dev-accent')?.addEventListener('click', () => {
                 // Pure state change; do not minimize
@@ -5258,21 +5452,209 @@ class SudokuGame {
                 });
             }
 
-            // Difficulty selections
-            // Normalize landing grid icons to use SVGs for perfect centering
-            document.querySelectorAll('.diff-btn[data-diff]').forEach(btn => {
+            // Types carousel + flip-to-modes
+            const typesTrack = document.getElementById('types-track');
+            const typesPrev = document.getElementById('types-prev');
+            const typesNext = document.getElementById('types-next');
+            const typesBack = document.getElementById('types-back');
+            const typesDetail = document.getElementById('types-detail');
+            const variantsGrid = document.getElementById('variants-grid');
+            const diffsGrid = document.getElementById('diffs-grid');
+            if (typesTrack && typesPrev && typesNext) {
+                const TYPES = [
+                    // Active
+                    { id: 'classic', name: 'Classic', wip: false },
+                    // Popular
+                    { id: 'diagonal', name: 'Diagonal X', wip: true },
+                    { id: 'killer', name: 'Killer', wip: true },
+                    { id: 'jigsaw', name: 'Jigsaw', wip: true },
+                    // Representation
+                    { id: 'wordoku-9', name: 'Wordoku', wip: true },
+                    { id: 'color-9', name: 'Color', wip: true },
+                    { id: 'icons-9', name: 'Icons', wip: true },
+                    // Rare
+                    { id: 'girandola', name: 'Girandola', wip: true },
+                    { id: 'asterisk', name: 'Asterisk', wip: true },
+                    { id: 'toroidal', name: 'Toroidal', wip: true },
+                    { id: 'fortress', name: 'Fortress', wip: true },
+                    { id: 'clone', name: 'Clone', wip: true },
+                    // Cult favorites
+                    { id: 'arrow', name: 'Arrow', wip: true },
+                    { id: 'thermo', name: 'Thermo', wip: true },
+                    { id: 'german-whispers', name: 'German Whispers', wip: true },
+                    { id: 'kropki', name: 'Kropki', wip: true },
+                    { id: 'sandwich', name: 'Sandwich', wip: true },
+                ];
+
+                const createMiniTile = (diff) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'mini-tile';
+                    btn.setAttribute('data-diff', diff);
+                    const icon = document.createElement('span');
+                    icon.className = 'diff-icon';
+                    icon.innerHTML = this.getDifficultyIcon(diff);
+                    const label = document.createElement('span');
+                    label.className = 'label';
+                    label.textContent = diff[0].toUpperCase() + diff.slice(1);
+                    const hint = document.createElement('span');
+                    hint.className = 'hint';
+                    const hints = { easy: 'Relaxed', medium: 'Balanced', hard: 'Tricky', expert: 'Advanced', master: 'Elite', extreme: 'Insane' };
+                    hint.textContent = hints[diff] || '';
+                    btn.appendChild(icon);
+                    btn.appendChild(label);
+                    btn.appendChild(hint);
+                    return btn;
+                };
+
+                const buildTypeCard = (t) => {
+                    const card = document.createElement('div');
+                    card.className = 'type-card' + (t.wip ? ' wip' : '');
+                    card.setAttribute('role', 'option');
+                    card.setAttribute('data-type', t.id);
+
+                    const front = document.createElement('div');
+                    front.className = 'type-face type-front';
+                    const title = document.createElement('div');
+                    title.className = 'type-title';
+                    title.textContent = t.name;
+                    front.appendChild(title);
+
+                    const back = document.createElement('div');
+                    back.className = 'type-face type-back';
+
+                    if (t.wip) {
+                        const coming = document.createElement('div');
+                        coming.className = 'coming';
+                        coming.textContent = 'Coming soon';
+                        back.appendChild(coming);
+                    } else {
+                        const mini = document.createElement('div');
+                        mini.className = 'mini-grid';
+                        ['easy','medium','hard','expert','master','extreme'].forEach(d => mini.appendChild(createMiniTile(d)));
+                        back.appendChild(mini);
+                    }
+
+                    card.appendChild(front);
+                    card.appendChild(back);
+
+                    // Click behavior
+                    card.addEventListener('click', (e) => {
+                        const isBack = card.classList.contains('flip');
+                        if (!isBack) {
+                            if (t.wip) {
+                                // Flip only this WIP card; others stay front
+                                typesTrack.querySelectorAll('.type-card').forEach(el => el.classList.remove('flip'));
+                                card.classList.add('flip');
+                                if (typesBack) typesBack.style.display = '';
+                            } else {
+                                // Active type: flip all, then transition to detail panel
+                                typesTrack.querySelectorAll('.type-card').forEach(el => el.classList.add('flip'));
+                                if (typesBack) typesBack.style.display = '';
+                                setTimeout(() => {
+                                    // Hide hero/greeting, sign-in, subtitle, Last/Daily/Most, and the divider row
+                                    const greetingEl = document.getElementById('landing-greeting');
+                                    const signinEl = document.getElementById('landing-signin');
+                                    const subtitleEl = document.querySelector('.landing-subtitle');
+                                    const dailySectionEl = document.getElementById('landing-daily-section');
+                                    const dividers = Array.from(document.querySelectorAll('.landing-divider'));
+                                    if (greetingEl) greetingEl.style.display = 'none';
+                                    if (signinEl) signinEl.style.display = 'none';
+                                    if (subtitleEl) subtitleEl.style.display = 'none';
+                                    if (dailySectionEl) dailySectionEl.style.display = 'none';
+                                    dividers.forEach(d => { d.style.display = 'none'; });
+
+                                    const carousel = document.getElementById('landing-types');
+                                    if (carousel) carousel.style.display = 'none';
+                                    if (typesDetail) typesDetail.style.display = '';
+                                    if (variantsGrid) {
+                                        variantsGrid.innerHTML = '';
+                                        const classicVariants = [
+                                            { id: 'classic-4', label: 'Classic 4×4', rows: 4, cols: 4 },
+                                            { id: 'classic-6', label: 'Classic 6×6', rows: 6, cols: 6 },
+                                            { id: 'classic-9', label: 'Classic 9×9', rows: 9, cols: 9, default: true },
+                                            { id: 'classic-12', label: 'Classic 12×12', rows: 12, cols: 12 },
+                                            { id: 'classic-16', label: 'Classic 16×16', rows: 16, cols: 16 },
+                                        ];
+                                        const makeGridIcon = (rows, cols) => {
+                                            const size = 40;
+                                            return `\n<svg class="grid-icon" viewBox="0 0 ${size} ${size}" width="40" height="40" aria-hidden="true" focusable="false">\n  <rect x="0" y="0" width="${size}" height="${size}" rx="6" ry="6" fill="var(--surface-muted)" stroke="var(--border)"/>\n  ${Array.from({length: rows-1}, (_,i)=>`<line x1=\"0\" y1=\"${(i+1)*(size/rows)}\" x2=\"${size}\" y2=\"${(i+1)*(size/rows)}\" stroke=\"var(--border)\" stroke-width=\"1\" />`).join('')}\n  ${Array.from({length: cols-1}, (_,i)=>`<line x1=\"${(i+1)*(size/cols)}\" y1=\"0\" x2=\"${(i+1)*(size/cols)}\" y2=\"${size}\" stroke=\"var(--border)\" stroke-width=\"1\" />`).join('')}\n</svg>`;
+                                        };
+                                        classicVariants.forEach(vt => {
+                                            const btn = document.createElement('button');
+                                            btn.className = 'variant-tile' + (vt.default ? ' selected' : '');
+                                            btn.setAttribute('data-variant', vt.id);
+                                            btn.innerHTML = `${makeGridIcon(vt.rows, vt.cols)}<div class=\"variant-label\">${vt.label}</div>${vt.default ? '<div class=\"badge-default\">Default</div>' : ''}`;
+                                            btn.addEventListener('click', () => {
+                                                variantsGrid.querySelectorAll('.variant-tile').forEach(el => el.classList.remove('selected'));
+                                                btn.classList.add('selected');
+                                            });
+                                            variantsGrid.appendChild(btn);
+                                        });
+                                    }
+                                    if (diffsGrid) {
+                                        diffsGrid.innerHTML = '';
+                                        ['easy','medium','hard','expert','master','extreme'].forEach(d => diffsGrid.appendChild(createMiniTile(d)));
+                                        diffsGrid.onclick = async (ev) => {
+                                            const btn = ev.target.closest && ev.target.closest('.mini-tile');
+                                            if (!btn) return;
                 const diff = btn.getAttribute('data-diff') || 'medium';
-                const iconHost = btn.querySelector('.diff-icon');
-                if (iconHost) iconHost.innerHTML = this.getDifficultyIcon(diff);
-                    btn.addEventListener('click', async () => {
+                                            // Only classic supported for now
+                                            if (this.isGameInProgress && this.isGameInProgress()) {
+                                                const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
+                                                if (!proceed) return;
+                                                this.recordLoss();
+                                            }
+                                            try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
+                                            try {
+                                                const raw = localStorage.getItem('sudoku-recent');
+                                                const arr = Array.isArray(JSON.parse(raw || '[]')) ? JSON.parse(raw || '[]') : [];
+                                                const entry = { type: 'classic', difficulty: diff, ts: Date.now() };
+                                                arr.unshift(entry);
+                                                const pruned = arr.slice(0, 50);
+                                                localStorage.setItem('sudoku-recent', JSON.stringify(pruned));
+                                            } catch {}
+                                            try { await this._updateRemotePrefs && this._updateRemotePrefs({ lastPlayed: { type: 'classic', difficulty: diff, ts: Date.now() } }); } catch {}
+                                            this.setDailyUiState && this.setDailyUiState(false);
+                                            this._activeDailyKey = null;
+                                            this.updateModeIndicator({ type: 'normal', difficulty: diff });
+                                            this.isGameComplete = false;
+                                            this.isGameOver = false;
+                                            const go = document.getElementById('gameover-overlay'); if (go) go.style.display = 'none';
+                                            const po = document.getElementById('pause-overlay'); if (po) po.style.display = 'none';
+                                            this.lockedNumber = null;
+                                            document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
+                                            if (this.selectedCell) { this.selectedCell.classList.remove('selected'); this.selectedCell = null; }
+                                            document.querySelectorAll('.cell.highlighted').forEach(cell => cell.classList.remove('highlighted'));
+                                            this.stopTimer();
+                                            this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = false; this._pendingStart = false; this._preStartElapsed = 0;
+                                            this.history = []; this.redoStack = [];
+                                            this._hasStarted = true;
+                                            this.startTime = Date.now();
+                                            this.generatePuzzle(diff);
+                                            this.updateDisplay();
+                                            landing.style.display = 'none';
+                                            this.startTimer();
+                                        };
+                                    }
+                                }, 220);
+                            }
+                        }
+                    });
+
+                    // Delegate mini-tile clicks to start game
+                    card.addEventListener('click', async (e) => {
+                        const btn = e.target.closest && e.target.closest('.mini-tile');
+                        if (!btn) return;
                     const diff = btn.getAttribute('data-diff') || 'medium';
+                        // Only classic supported now
+                        const type = card.getAttribute('data-type') || 'classic';
+                        if (type !== 'classic') return;
                     if (this.isGameInProgress && this.isGameInProgress()) {
                         const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
                         if (!proceed) return;
                         this.recordLoss();
                     }
                     try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
-                    // Record this non-daily selection in recent history
                     try {
                         const raw = localStorage.getItem('sudoku-recent');
                         const arr = Array.isArray(JSON.parse(raw || '[]')) ? JSON.parse(raw || '[]') : [];
@@ -5281,7 +5663,6 @@ class SudokuGame {
                         const pruned = arr.slice(0, 50);
                         localStorage.setItem('sudoku-recent', JSON.stringify(pruned));
                     } catch {}
-                        // Update cloud settings with lastPlayed for cross-device landing tiles
                         try { await this._updateRemotePrefs && this._updateRemotePrefs({ lastPlayed: { type: 'classic', difficulty: diff, ts: Date.now() } }); } catch {}
                     this.setDailyUiState && this.setDailyUiState(false);
                     this._activeDailyKey = null;
@@ -5297,7 +5678,6 @@ class SudokuGame {
                     this.stopTimer();
                     this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = false; this._pendingStart = false; this._preStartElapsed = 0;
                     this.history = []; this.redoStack = [];
-                    // Starting from landing counts as game start (timer on immediate interaction)
                     this._hasStarted = true;
                     this.startTime = Date.now();
                     this.generatePuzzle(diff);
@@ -5305,7 +5685,48 @@ class SudokuGame {
                     landing.style.display = 'none';
                     this.startTimer();
                 });
-            });
+
+                    return card;
+                };
+
+                // Populate track and enable wrap-around
+                typesTrack.innerHTML = '';
+                TYPES.forEach(t => typesTrack.appendChild(buildTypeCard(t)));
+                const rotate = (dir) => {
+                    const items = Array.from(typesTrack.children);
+                    if (!items.length) return;
+                    if (dir < 0) {
+                        typesTrack.insertBefore(items[items.length - 1], items[0]);
+                    } else {
+                        typesTrack.appendChild(items[0]);
+                    }
+                };
+                typesPrev.addEventListener('click', () => rotate(-1));
+                typesNext.addEventListener('click', () => rotate(1));
+
+                // Back button: return to carousel
+                if (typesBack) {
+                    typesBack.addEventListener('click', () => {
+                        const carousel = document.getElementById('landing-types');
+                        if (typesDetail) typesDetail.style.display = 'none';
+                        if (carousel) carousel.style.display = '';
+                        // Restore hero/greeting, sign-in, subtitle, Last/Daily/Most, and the divider row
+                        const greetingEl = document.getElementById('landing-greeting');
+                        const signinEl = document.getElementById('landing-signin');
+                        const subtitleEl = document.querySelector('.landing-subtitle');
+                        const dailySectionEl = document.getElementById('landing-daily-section');
+                        const dividers = Array.from(document.querySelectorAll('.landing-divider'));
+                        if (greetingEl) greetingEl.style.display = '';
+                        if (signinEl) signinEl.style.display = '';
+                        if (subtitleEl) subtitleEl.style.display = '';
+                        if (dailySectionEl) dailySectionEl.style.display = '';
+                        dividers.forEach(d => { d.style.display = ''; });
+
+                        typesTrack.querySelectorAll('.type-card').forEach(el => el.classList.remove('flip'));
+                        typesBack.style.display = 'none';
+                    });
+                }
+            }
 
             // Bottom shortcuts
             const openSettings = document.getElementById('landing-settings');
@@ -5530,10 +5951,23 @@ class SudokuGame {
             msgEl.textContent = message;
             okBtn.textContent = okText;
             cancelBtn.textContent = cancelText;
+            const usingController = !!(window.SudokuModals && window.SudokuModals.openModal && window.SudokuModals.closeModal);
+            if (usingController) {
+                try { window.SudokuModals.openModal('confirm-modal'); } catch { modal.style.display = 'grid'; modal.classList.add('is-open'); }
+            } else {
             modal.style.display = 'grid';
+                modal.classList.add('is-open');
+                try { document.body.classList.add('modal-open'); } catch {}
+            }
             const previouslyFocused = document.activeElement;
             const cleanup = () => {
+                if (usingController) {
+                    try { window.SudokuModals.closeModal('confirm-modal'); } catch { modal.style.display = 'none'; modal.classList.remove('is-open'); }
+                } else {
                 modal.style.display = 'none';
+                    modal.classList.remove('is-open');
+                    try { document.body.classList.remove('modal-open'); } catch {}
+                }
                 okBtn.removeEventListener('click', onOk);
                 cancelBtn.removeEventListener('click', onCancel);
                 modal.removeEventListener('click', onBackdrop);
@@ -5595,10 +6029,23 @@ class SudokuGame {
             okBtn.textContent = okText;
             const prevCancelDisplay = cancelBtn.style.display;
             cancelBtn.style.display = 'none';
+            const usingController = !!(window.SudokuModals && window.SudokuModals.openModal && window.SudokuModals.closeModal);
+            if (usingController) {
+                try { window.SudokuModals.openModal('confirm-modal'); } catch { modal.style.display = 'grid'; modal.classList.add('is-open'); }
+            } else {
             modal.style.display = 'grid';
+                modal.classList.add('is-open');
+                try { document.body.classList.add('modal-open'); } catch {}
+            }
             const previouslyFocused = document.activeElement;
             const cleanup = () => {
+                if (usingController) {
+                    try { window.SudokuModals.closeModal('confirm-modal'); } catch { modal.style.display = 'none'; modal.classList.remove('is-open'); }
+                } else {
                 modal.style.display = 'none';
+                    modal.classList.remove('is-open');
+                    try { document.body.classList.remove('modal-open'); } catch {}
+                }
                 okBtn.removeEventListener('click', onOk);
                 modal.removeEventListener('click', onBackdrop);
                 document.removeEventListener('keydown', onKey);
@@ -5756,6 +6203,18 @@ class SudokuGame {
             default:
                 return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>';
         }
+    }
+
+    // Provide a type icon for tiles/menus based on the game type registry
+    getTypeIcon(typeId) {
+        try {
+            if (typeof window !== 'undefined' && window.SudokuTypes && typeof window.SudokuTypes.getGameType === 'function') {
+                const t = window.SudokuTypes.getGameType(String(typeId || ''));
+                const icon = t && t.icon ? String(t.icon) : '';
+                return icon ? `<span class="menu-icon" aria-hidden="true">${icon}</span>` : '';
+            }
+        } catch {}
+        return '';
     }
 
     // ----- Daily results tracking -----
@@ -6152,6 +6611,10 @@ class SudokuGame {
     recomputeAllCandidates() {
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
+                // If board says empty but initialBoard marks as given, repair before computing
+                if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) {
+                    this.initialBoard[r][c] = 0;
+                }
                 if (this.board[r][c] === 0) this.notes[r][c] = this.computeCandidates(r, c); else this.notes[r][c].clear();
             }
         }
@@ -6169,6 +6632,8 @@ class SudokuGame {
         const dirty = [];
         peers.forEach(key => {
             const [r, c] = key.split(',').map(Number);
+            // Repair per-peer before computing
+            if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) this.initialBoard[r][c] = 0;
             if (this.board[r][c] === 0) {
                 this.notes[r][c] = this.computeCandidates(r, c);
                 dirty.push([r, c]);
@@ -6377,13 +6842,13 @@ class SudokuGame {
         const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
         const elapsed = this.getElapsedSeconds();
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
-        stats.totalWins = (stats.totalWins || 0) + 1;
-        stats.totalCompleted = (stats.totalCompleted || 0) + 1;
+        stats.totalWins = (Number(stats.totalWins) || 0) + 1;
+        stats.totalCompleted = (Number(stats.totalCompleted) || 0) + 1;
         stats.bestTimes = stats.bestTimes || {};
         stats.byDifficulty = stats.byDifficulty || {};
         const slot = stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 };
-        slot.played += 1;
-        slot.wins += 1;
+        slot.played = (Number(slot.played) || 0) + 1;
+        slot.wins = (Number(slot.wins) || 0) + 1;
         const best = stats.bestTimes[diff];
         let newBest = false;
         if ((this.hintsUsed || 0) === 0) {
@@ -6413,11 +6878,11 @@ class SudokuGame {
         if (!this._hasMadeMove) return;
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
         const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
-        stats.totalLosses = (stats.totalLosses || 0) + 1;
-        stats.totalCompleted = (stats.totalCompleted || 0) + 1;
+        stats.totalLosses = (Number(stats.totalLosses) || 0) + 1;
+        stats.totalCompleted = (Number(stats.totalCompleted) || 0) + 1;
         stats.byDifficulty = stats.byDifficulty || {};
         const slot = stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 };
-        slot.played += 1;
+        slot.played = (Number(slot.played) || 0) + 1;
         try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
         this.syncRemoteStats && this.syncRemoteStats();
         // Record non-daily loss in recent history (for dynamic tiles)
@@ -6440,9 +6905,9 @@ class SudokuGame {
         // Recompute stats immediately before paint so tests can assert strict values
         try { if (typeof window !== 'undefined' && window.SudokuStats && window.SudokuStats.refresh) { window.SudokuStats.refresh(this); } } catch {}
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
-        const totalWins = stats.totalWins || 0;
-        const totalLosses = stats.totalLosses || 0;
-        const totalCompleted = stats.totalCompleted || (totalWins + totalLosses);
+        const totalWins = Number(stats.totalWins) || 0;
+        const totalLosses = Number(stats.totalLosses) || 0;
+        const totalCompleted = Number(stats.totalCompleted) || (totalWins + totalLosses);
         const best = stats.bestTimes || {};
         // Ensure keys for all difficulties exist for display
         ['easy','medium','hard','expert','master','extreme'].forEach(k => { if (!(k in best)) best[k] = null; });

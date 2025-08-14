@@ -44,7 +44,22 @@ export function renderBoard(game, boardElement) {
         notes.appendChild(note);
       }
 
-      cell.addEventListener('click', () => game.selectCell(cell, row, col));
+      // Prevent native focus scrolling which can create subtle horizontal jiggle on edge columns
+      cell.addEventListener('mousedown', (e) => {
+        try { e.preventDefault(); } catch {}
+        try { cell.focus({ preventScroll: true }); } catch { try { cell.focus(); } catch {} }
+        try { game.selectCell && game.selectCell(cell, row, col); } catch {}
+      });
+      cell.addEventListener('click', (e) => {
+        try { e.preventDefault(); } catch {}
+        try { if (document.activeElement !== cell) cell.focus({ preventScroll: true }); } catch { try { cell.focus(); } catch {} }
+        try { game.selectCell && game.selectCell(cell, row, col); } catch {}
+      });
+      cell.addEventListener('touchstart', (e) => {
+        try { e.preventDefault(); } catch {}
+        try { cell.focus({ preventScroll: true }); } catch { try { cell.focus(); } catch {} }
+        try { game.selectCell && game.selectCell(cell, row, col); } catch {}
+      }, { passive: false });
       cell.addEventListener('input', (e) => game.handleCellInput(e, row, col));
       cell.addEventListener('keydown', (e) => game.handleKeyDown(e, row, col));
 

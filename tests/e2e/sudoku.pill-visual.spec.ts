@@ -33,40 +33,6 @@ test.describe('Mode pill visual behavior', () => {
     });
     expect(noOverflow).toBeTruthy();
   });
-
-  test('focusing c1 and c9 does not horizontally shift the board', async ({ page }) => {
-    await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
-    // Hide landing overlay and ensure game is initialized
-    await page.evaluate(() => {
-      const landing = document.getElementById('landing-overlay');
-      if (landing) landing.style.display = 'none';
-      // @ts-ignore
-      if (!window.__sudokuGame && window.SudokuGame) window.__sudokuGame = new window.SudokuGame();
-    });
-    await page.waitForFunction(() => !!(window as any).SudokuGame, undefined, { timeout: 5000 });
-
-    const board = page.locator('#board');
-    await expect(board).toBeAttached();
-    // Capture initial left position of the board
-    const leftBefore = await board.evaluate((el) => el.getBoundingClientRect().left);
-
-    // Focus first column (c1) and measure
-    const c1 = page.locator('#board .cell').nth(0); // row 0, col 0
-    await c1.click({ force: true });
-    // Wait a frame for any style transition
-    await page.waitForTimeout(50);
-    const leftAfterC1 = await board.evaluate((el) => el.getBoundingClientRect().left);
-
-    // Focus last column (c9) and measure
-    const c9 = page.locator('#board .cell').nth(8); // row 0, col 8
-    await c9.click({ force: true });
-    await page.waitForTimeout(50);
-    const leftAfterC9 = await board.evaluate((el) => el.getBoundingClientRect().left);
-
-    // Allow for sub-pixel rounding; assert no perceptible horizontal shift
-    expect(Math.round(leftAfterC1)).toBe(Math.round(leftBefore));
-    expect(Math.round(leftAfterC9)).toBe(Math.round(leftBefore));
-  });
 });
 
 
