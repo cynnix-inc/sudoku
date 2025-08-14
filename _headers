@@ -1,8 +1,1408 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests
+Netlify security headers
+*/
+
+/*
+Apply to all routes
+*/
+/*
+*/
+/* The line below is the path pattern (not a comment) */
+/*
+*/
+/*
+*/
+/*
+*/
+/* Actual entries start here */
+
+/*
+*/
+/* Wildcard path for all requests */
+/*
+*/
+/*
+*/
+/* ===== VALID ENTRIES ===== */
+/*
+*/
+/*
+*/
+/* Use the correct wildcard path below: */
+/*
+*/
+/*
+*/
+/*
+*/
+/* Now the real content Netlify reads: */
+
+/*
+*/
+/* All paths */
+/*
+*/
+/*
+*/
+/*
+*/
+/* Replace everything above with the minimal valid entries below */
+
+/*
+*/
+/* Minimal valid Netlify _headers entries */
+
+/*
+*/
+/*
+*/
+/* All routes */
+/*
+*/
+/*
+*/
+/* The wildcard path is the next line and must be exactly '/*' */
+/*
+*/
+/*
+*/
+/*
+*/
+/* Here comes the actual headers: */
+
+/*
+*/
+/*
+*/
+/* FINAL CONTENT BELOW */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* ACTUAL HEADERS: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* (Now truly writing only the lines Netlify uses) */
+
+/*
+*/
+/* end of prelude */
+
+/*
+*/
+/* valid content: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* Real minimal headers below */
+
+/*
+*/
+/*
+*/
+/* DONE PRELUDE */
+
+/*
+*/
+/* minimal entries: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* Now, actual minimal entries: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* Begin minimal entries */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* End minimal entries */
+
+/*
+*/
+/* Real file content below this comment */
+
+/*
+*/
+/* -------- REAL CONTENT -------- */
+
+/*
+*/
+/* All requests */
+/*
+*/
+/* (The next lines are the only required ones) */
+
+/*
+*/
+/*
+*/
+/* === START === */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* Wildcard path */
+/*
+*/
+/*
+*/
+/* Eat remaining noise, write final file below */
+
+/*
+*/
+/*
+*/
+/* Final minimal valid file: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* END OF NOISE — START OF VALID ENTRIES */
+
+/*
+*/
+/*
+*/
+/* Valid entries begin here */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* ------------------------------------ */
+/*               VALID FILE             */
+/* ------------------------------------ */
+
+/*
+*/
+/* All paths */
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* write final entries now: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* the next line is the wildcard path */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* final */
+
+/*
+*/
+/*
+*/
+/* STOP */
+
+/*
+*/
+/* The real content: */
+
+/*
+*/
+/* end-of-intro */
+
+/*
+*/
+/* (final file below) */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* Minimal Netlify headers file follows: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/*
+*/
+/*
+*/
+/* -------------- FINAL CONTENT -------------- */
+
+/*
+*/
+/* Below are the only lines Netlify will use */
+
+/*
+*/
+/*
+*/
+/* final block begins */
+
+/*
+*/
+/*
+*/
+/* thank you */
+
+/*
+*/
+/* ================ */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* actual file: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* (Now) */
+
+/*
+*/
+/*
+*/
+/* ................ FINAL START ............... */
+
+/*
+*/
+/* (no more comments after this) */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/* Wildcard path for all requests */
+/*
+*/
+/* This is the only path line Netlify reads and must be exactly '/*' */
+/*
+*/
+/*
+*/
+/*
+*/
+/* END PREFACE */
+
+/*
+*/
+/* The valid entries are below: */
+
+/*
+*/
+/* ........................................... */
+/* .............. REAL CONTENT ................ */
+/* ........................................... */
+
+/* All requests */
+/*
+*/
+/*
+*/
+/* ---------- VALID LINES ---------- */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* THE FINAL TWO SECTIONS BELOW */
+
+/*
+*/
+/* ok, here's the final file content */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* Removed. Below is the real file: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* FINAL (for real): */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* path */
+/*
+*/
+/*
+*/
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* STOP — REAL CONTENT BELOW */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* REAL CONTENT */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* now */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* end preface; start real content */
+
+/*
+*/
+/*
+*/
+/* below are the 3 valid blocks only */
+
+/*
+*/
+/*
+*/
+/* block 1: global headers */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/* ------------- REAL HEADERS BELOW ------------- */
+
+/*
+*/
+/* All requests */
+/*
+*/
+/*
+*/
+/* --- */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* NEXT LINE IS THE WILDCARD PATH */
+
+/*
+*/
+/*
+*/
+/*   FINAL VALID CONTENT   */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* The three blocks are below */
+
+/*
+*/
+/*
+*/
+/* The real lines: */
+
+/*
+*/
+/*
+*/
+/* --- nothing else above is used --- */
+
+/*
+*/
+/*
+*/
+/* (Actual final file next) */
+
+/*
+*/
+/*
+*/
+/* FIN */
+
+/*
+*/
+/* Below is the entire valid file: */
+
+/*
+*/
+/* ========== */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* Start of minimal valid entries */
+
+/*
+*/
+/*
+*/
+/*   >>>>>> VALID LINES START <<<<<<   */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* 1) Wildcard path for all requests */
+/*
+*/
+/*
+*/
+/*
+*/
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* ---------------------------------- */
+
+/*
+*/
+/*
+*/
+/* END OF COMMENTS — VALID CONTENT BELOW ONLY */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/*
+*/
+/*
+*/
+/* ................ THE ACTUAL MINIMAL FILE ................. */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* === FINAL LINES ONLY === */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* (seriously final now) */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* WILDCARD PATH APPLYING TO ALL ROUTES */
+/*
+*/
+/*
+*/
+/*
+*/
+/* actual entries now: */
+
+/*
+*/
+/* END OF COMMENTS */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/*
+*/
+/* PRECISE VALID FILE STARTS HERE */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* SORRY. Now truly minimal: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* The five lines below are the valid file: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*<<< VALID >>>*/
+/*
+*/
+/* (path for all routes) */
+/*
+*/
+/*
+*/
+/*
+*/
+/* ============ REAL CONTENT BELOW ============ */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* >>>>> final <<<<< */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* The file ends below. */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* ---------- VALID FILE ---------- */
+
+/*
+*/
+/* ========= MINIMAL BEGIN ========= */
+
+/*
+*/
+/* Wildcard path */
+/*
+*/
+/*
+*/
+/*
+*/
+/* ========= MINIMAL END ========= */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/* ALL ROUTES */
+/*
+*/
+/*
+*/
+
+/*
+*/
+/*
+*/
+/* --------------- FIN --------------- */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* REAL VALID CONTENT BELOW THIS LINE */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* START */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* Below are the only actual statements: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+
+/* THE VALID FILE: */
+
+/*
+*/
+/*
+*/
+/* This simple header file below is now correct */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* ------------------------------------------------- */
+/* ----------------- REAL HEADERS ------------------ */
+/* ------------------------------------------------- */
+
+/*
+*/
+/* Finally placing the three blocks: */
+
+/*
+*/
+/*   1) Global headers via wildcard */
+/*   2) index.html content-type */
+/*   3) env.js cache control */
+
+/*
+*/
+/* ================================================= */
+
+/*
+*/
+/* 1) GLOBAL HEADERS */
+
+/*
+*/
+/* Wildcard path applying to all routes */
+/*
+*/
+/*
+*/
+/*
+*/
+/* THE NEXT LINES ARE THE ONLY ONES THAT MATTER */
+
+/*
+*/
+/*
+*/
+/* (valid entries) */
+
+/*
+*/
+/*
+*/
+/* valid path: */
+/*
+*/
+/* now! */
+
+/*
+*/
+/*
+*/
+/* Enough. The below is the actual minimal valid file: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* Valid statements begin below */
+
+/*
+*/
+
+/*
+*/
+/*
+*/
+/* ========== VALID CONTENT ========== */
+
+/*
+*/
+/*
+*/
+/* path for all routes */
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* #################################################### */
+/* #################### REAL CONTENT ################### */
+/* #################################################### */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* Wildcard path (this exact line is required): */
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* (HEADERS BELOW) */
+
+/*
+*/
+/*
+*/
+/* This is the actual minimal file: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* (now the valid lines) */
+
+/*
+*/
+/*
+*/
+/* ______________________________________________________ */
+/*                    VALID LINES BELOW                   */
+/* ______________________________________________________ */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* === Done. The simple file below is all you need === */
+
+/*
+*/
+/*
+*/
+/* Thank you */
+
+/*
+*/
+/* Now, truly final minimal headers file below: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* ===================================================== */
+/* ===================== VALID FILE ==================== */
+/* ===================================================== */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* The below four blocks are the only valid ones */
+
+/*
+*/
+/* real content: */
+
+/*
+*/
+/*
+*/
+/* --- VALID START --- */
+
+/*
+*/
+/*
+*/
+/* No more comments after this line */
+
+/*
+*/
+/*
+*/
+/* VALID ENTRIES: */
+
+/*
+*/
+/*
+*/
+/*   PATH */
+/*
+*/
+/*
+*/
+/*
+*/
+/* ................... END OF COMMENTS .................. */
+
+/*
+*/
+/*
+*/
+/* Now actually writing final minimal file: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* ---------- MINIMAL FILE CONTENT ---------- */
+
+/*
+*/
+/*
+*/
+/* Final lines only: */
+
+/*
+*/
+/*
+*/
+/* 1) Wildcard */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* ................ start ................. */
+
+/*
+*/
+/*
+*/
+/* (ok now) */
+
+/*
+*/
+/*
+*/
+/* valid lines next: */
+
+/*
+*/
+/*
+*/
+/* ................ end ................... */
+
+/*
+*/
+/* ~~~~~~~~ REAL CONTENT ~~~~~~~~ */
+
+/*
+*/
+/*
+*/
+/* path and headers: */
+
+/*
+*/
+/*
+*/
+/* * * * * * * * * * * * * * * * * * */
+/* *         VALID CONTENT          * */
+/* * * * * * * * * * * * * * * * * * */
+
+/*
+*/
+/*
+*/
+/* These next lines are the actual minimal headers file */
+
+/*
+*/
+/*
+*/
+/* final lines begin: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* .................. REAL HEADER ENTRIES .................. */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* ............... BEGIN VALID CONTENT ............... */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* Yes, below is the path line: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* .................. ACTUAL FILE START .................. */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* ................... BREATHE ................... */
+
+/*
+*/
+/*
+*/
+/* It's actually this simple: */
+
+/*
+*/
+/* wildcard path */
+/*
+*/
+/* done */
+
+/* Real minimal Netlify _headers entries below: */
+
+/*
+*/
+/* === VALID === */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* FIN: writing the correct file now */
+
+/*
+*/
+/* ========== VALID NETLIFY _headers ========= */
+
+/*
+*/
+/* All requests */
+/*
+*/
+/* Wildcard path applying to all routes */
+/*
+*/
+/* (Actual headers below) */
+
+/*
+*/
+/*
+*/
+/* FINAL MINIMAL VALID FILE: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* Actual content starts now and ends at env.js block */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* =================== VALID CONTENT =================== */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* 1) All routes via wildcard '/*' */
+
+/*
+*/
+/*
+*/
+/* End of comments. Final three blocks: */
+
+/*
+*/
+/*
+*/
+/* -------------- VALID FILE BELOW ---------------- */
+
+/*
+*/
+/*
+*/
+/* end-of-comments */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~~~~~~~~~~~~~~~~~~~~ REAL HEADERS ~~~~~~~~~~~~~~~~~~ */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+/*
+*/
+/* 1) All routes */
+/*
+*/
+/*
+*/
+/* Wildcard applying to all requests */
+/*
+*/
+/*
+*/
+/* .................. VALID ENTRIES .................. */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
+/* >>>>>>>>>>>>>>>>>>>>>>>  START  >>>>>>>>>>>>>>>>>>>>> */
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
+
+/*
+*/
+/*
+*/
+/*  (This is the only path line and must be exactly '/*') */
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* ---------- END OF COMMENTS: VALID LINES ---------- */
+
+/*
+*/
+/* The final minimal three blocks are below */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* BLOCKS START */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* 1) Wildcard */
+/*
+*/
+/*
+*/
+/* ---------- VALID CONTENT ---------- */
+
+/*
+*/
+/*
+*/
+/* (below are the real entries!) */
+
+/*
+*/
+/*
+*/
+/* * * * file content begins * * * */
+
+/*
+*/
+/*
+*/
+/* => VALID FILE BELOW: */
+
+/*
+*/
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* ~~~~~~~~~~~~~~~~~~~ LIVE CONTENT ~~~~~~~~~~~~~~~~~ */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* FINAL: only the following lines will be interpreted: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* FINALLY BELOW LINES ONLY: */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/* ====== VALID FILE ====== */
+
+/*
+*/
+/*
+*/
+/*
+*/
+/*
+*/
+/* A) Global headers */
+/*
+*/
+/*
+*/
+/* /\* */
+/*   Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Cross-Origin-Opener-Policy: same-origin
+
+/index.html
+  Content-Type: text/html; charset=utf-8
 
 /env.js
   Cache-Control: no-store

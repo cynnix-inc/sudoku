@@ -25,7 +25,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - style: update footer styles and improve accessibility for health bar (d937dcf)
+  - chore: update Netlify headers and enhance index.html metadata (bfabb6b)
+  - style: update footer styles and improve accessibility for health bar (20b563c)
   - full screen home on mobile (0028837)
   - feat: enhance mobile experience and improve landing overlay behavior (074aeb4)
   - docs(changelog): update local changelog (235f330)
