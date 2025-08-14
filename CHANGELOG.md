@@ -24,7 +24,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - docs(changelog): update local changelog (adf6c10)
+  - docs(changelog): update local changelog (3273aa2)
+  - docs(changelog): update local changelog (e436aca)
   - docs(changelog): update local changelog (b2d473a)
   - docs(changelog): update local changelog (451c812)
   - docs(changelog): update local changelog (d02ba3b)
