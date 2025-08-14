@@ -24,7 +24,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - docs(changelog): update local changelog (398c166)
+  - docs(changelog): update local changelog (b2d473a)
   - docs(changelog): update local changelog (451c812)
   - docs(changelog): update local changelog (d02ba3b)
   - chore(husky): auto-update CHANGELOG locally on commit and before push (a0ee41c)
@@ -75,6 +75,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - mobile grid fixes (2e0037b)
 
 - **Tests**:
+  - chore: ignore and untrack test artifacts (test-results/, test-report/) (2c2ce2a)
   - Remove completed tests from todo list in UI and help text: always use "Lives" instead of "Mistakes" (74ba79e)
   - feat: idle controls in settings, headless idle init, help interactions; adjust tests for idle display variants; persist idle settings; wire DOM bindings (1e0cf4e)
   - mobile unit tests (b849163)
