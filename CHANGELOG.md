@@ -27,7 +27,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - feat: improve board focus stability and enhance game type UI (d92b66c)
+  - docs(changelog): update local changelog (f5b9964)
+  - feat: improve board focus stability and enhance game type UI (63d2d52)
   - docs(changelog): update local changelog (9af5ff9)
   - docs(changelog): update local changelog (5fe69e9)
   - chore: enhance SEO and toast notification system (d02542b)
