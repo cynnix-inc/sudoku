@@ -4713,7 +4713,17 @@ class SudokuGame {
         const landing = document.getElementById('landing-overlay');
         if (landing) {
             // Recompute overlay bounds when shown/resized
-            const recalibrateLanding = () => this._positionLandingOverlay();
+            const recalibrateLanding = () => {
+                this._positionLandingOverlay();
+                // Prevent scroll: ensure landing card never exceeds viewport
+                try {
+                    const card = landing.querySelector('.landing-card');
+                    if (card) {
+                        const gap = Math.max(12, Math.min(window.innerWidth * 0.04, 28));
+                        card.style.maxHeight = Math.max(200, Math.floor(window.innerHeight - gap * 2)) + 'px';
+                    }
+                } catch {}
+            };
             recalibrateLanding();
             try { window.addEventListener('resize', recalibrateLanding); } catch {}
             // Cleanup on hide when appropriate

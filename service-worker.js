@@ -1,5 +1,5 @@
 // Version tokens should align with app version for predictable updates
-const VERSION = 'v1.0.1';
+const VERSION = 'v1.0.2';
 const STATIC_CACHE = `sudoku-static-${VERSION}`;
 const RUNTIME_CACHE = `sudoku-runtime-${VERSION}`;
 // Precache core assets for first-visit offline reliability

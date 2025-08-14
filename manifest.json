@@ -3,6 +3,7 @@
   "short_name": "Ultimate Sudoku",
   "start_url": "./",
   "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
   "background_color": "#ffffff",
   "theme_color": "#667eea",
   "icons": [

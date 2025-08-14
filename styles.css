@@ -347,6 +347,7 @@ body.modal-open { overflow: hidden; }
     backdrop-filter: blur(5px);
     display: none; /* JS toggles to flex */
     z-index: 1200;
+    overflow: hidden;
 
     /* Even spacing and perfect centering when shown (flex) */
     --landing-gap: clamp(12px, 4vw, 28px);
@@ -371,7 +372,7 @@ body.modal-open { overflow: hidden; }
     position: relative; /* anchor confetti bits */
     /* Keep card within overlay height */
     max-height: calc(100dvh - 2 * var(--landing-gap));
-    overflow: auto;
+    overflow: hidden;
 
     /* Tile sizing tokens (adjust for responsiveness below) */
     --diff-tile-size: 102px;
@@ -572,6 +573,25 @@ details.dev-section[open] > summary.dev-section-title::after { transform: transl
     max-width: min(calc(var(--board-size) - 24px), 92vw);
 }
 
+/* Prevent landing card from causing page scroll on short heights */
+@media (height <= 680px) {
+  .landing-card { --diff-tile-size: 88px; --daily-tile-size: calc(var(--diff-tile-size) * 1.12); padding: 0.75rem; }
+  .landing-hero { margin-bottom: 0.4rem; }
+  .cta-row { margin: 0.35rem 0 0.6rem; }
+  .landing-divider { margin: 0.45rem 0; }
+}
+
+@media (height <= 600px) {
+  .landing-card { --diff-tile-size: 80px; --daily-tile-size: calc(var(--diff-tile-size) * 1.1); }
+  .landing-logo .logo-svg { width: clamp(110px, 30vw, 200px); }
+  #landing-signin { padding: 8px 12px; }
+}
+
+@media (height <= 540px) {
+  .landing-card { --diff-tile-size: 72px; --daily-tile-size: calc(var(--diff-tile-size) * 1.08); }
+  .landing-quick { padding-top: 0.35rem; margin-top: 0.5rem; }
+}
+
 /* Narrow screens: reduce columns to prevent overflow */
 @media (width <= 520px) {
   .landing-diff-grid { grid-template-columns: repeat(2, var(--diff-tile-size)); }
@@ -581,6 +601,17 @@ details.dev-section[open] > summary.dev-section-title::after { transform: transl
   .landing-diff-grid { grid-template-columns: repeat(1, var(--diff-tile-size)); }
 }
 .landing-bottom { display: flex; gap: 0.5rem; justify-content: center; }
+
+/* On very short screens, reduce gaps further and keep everything in view */
+@media (height <= 480px) {
+  .landing-card { --diff-tile-size: 64px; --daily-tile-size: calc(var(--diff-tile-size) * 1.06); padding: 0.6rem; }
+  .landing-hero { gap: 0.25rem; }
+  .landing-logo { margin-bottom: 0.2rem; }
+  .landing-logo .logo-svg { width: clamp(96px, 28vw, 180px); }
+  .landing-daily { gap: 0.45rem; margin-bottom: 0.45rem; }
+  .landing-diff-grid { gap: 0.45rem; margin-bottom: 0.45rem; }
+  .landing-quick { margin-top: 0.4rem; }
+}
 
 /* New landing sections */
 .landing-hero { display: grid; gap: 0.4rem; justify-items: center; margin-bottom: 0.6rem; max-width: min(calc(var(--board-size) - 24px), 92vw); }
