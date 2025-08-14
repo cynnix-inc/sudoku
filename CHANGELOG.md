@@ -9,7 +9,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 ### Changes
 
 - **Added**:
-  - feat: add toast notifications, improve modal scrolling, and enhance test coverage (cb9588d)
+  - feat: add toast notifications, improve modal scrolling, and enhance test coverage (300d6a5)
   - chore: update CSP, service worker, and icons; add daily results to stats (ecd0629)
   - feat(calendar): add calendar highlight feature and update tests (9c3c34c)
   - test(e2e): make landing visible in automation, add Solve menu item, keep help About collapsed by default; record win on completion in automation; keep board width scaling responsive (766e409)
@@ -24,6 +24,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
+  - docs(changelog): update local changelog (0ac4bc4)
   - docs(changelog): update local changelog (d02ba3b)
   - chore(husky): auto-update CHANGELOG locally on commit and before push (a0ee41c)
   - docs(changelog): update local changelog (ec3d613)
