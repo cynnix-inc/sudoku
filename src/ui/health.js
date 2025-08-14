@@ -3,11 +3,18 @@ export function renderHealthBar(game) {
   try {
     const host = document.getElementById('health-bar');
     if (!host) return;
+    host.setAttribute('role', 'status');
+    host.setAttribute('aria-live', 'polite');
+    host.setAttribute('aria-atomic', 'true');
     host.innerHTML = '';
     const unlimited = !game.livesEnabled || !Number.isFinite(game.livesLimit) || game.livesLimit >= 11;
     const total = unlimited ? 1 : Math.max(0, Number(game.livesLimit) || 0);
     const used = unlimited ? 0 : Math.max(0, Number(game.mistakesCount) || 0);
     const remaining = unlimited ? Infinity : Math.max(0, total - used);
+    try {
+      const label = unlimited ? 'Lives: Unlimited' : `Lives: ${remaining} remaining of ${total}`;
+      host.setAttribute('aria-label', label);
+    } catch {}
     const row = document.createElement('div');
     row.className = 'health-bar-row';
     if (!unlimited && total > 5) row.classList.add('stack');

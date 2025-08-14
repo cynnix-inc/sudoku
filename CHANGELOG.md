@@ -9,6 +9,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 ### Changes
 
 - **Added**:
+  - chore: update index.html and package-lock.json, add shell scripts for bin files (0c5fe31)
   - feat: add toast notifications, improve modal scrolling, and enhance test coverage (300d6a5)
   - chore: update CSP, service worker, and icons; add daily results to stats (ecd0629)
   - feat(calendar): add calendar highlight feature and update tests (9c3c34c)
@@ -24,7 +25,12 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - feat: enhance mobile experience and improve landing overlay behavior (1a6b94d)
+  - style: update footer styles and improve accessibility for health bar (d937dcf)
+  - full screen home on mobile (0028837)
+  - feat: enhance mobile experience and improve landing overlay behavior (074aeb4)
+  - docs(changelog): update local changelog (235f330)
+  - docs(changelog): update local changelog (e265cb1)
+  - docs(changelog): update local changelog (e436aca)
   - docs(changelog): update local changelog (b2d473a)
   - docs(changelog): update local changelog (451c812)
   - docs(changelog): update local changelog (d02ba3b)
