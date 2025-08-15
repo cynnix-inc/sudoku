@@ -9,6 +9,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 ### Changes
 
 - **Added**:
+  - Add gitleaks report to archive (01c20cc)
   - feat: introduce new game types and enhance UI responsiveness (580288b)
   - chore: add root path header for improved content type handling (6c40078)
   - chore: update index.html and package-lock.json, add shell scripts for bin files (0c5fe31)
@@ -27,7 +28,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - docs(changelog): update local changelog (bcedafd)
+  - docs(changelog): update local changelog (8cd6d63)
   - Remove env.js and ignore local env files (ee2bc5f)
   - feat: confirmation dialogs and related updates (e9bad31)
   - docs(changelog): update local changelog (66fe831)
