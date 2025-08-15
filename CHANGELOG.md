@@ -9,6 +9,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 ### Changes
 
 - **Added**:
+  - Chore: add .editorconfig and .gitattributes (4ff3dba)
   - CI: add minimal placeholder workflow (db53c58)
   - Add gitleaks report to archive (f84c75e)
   - feat: introduce new game types and enhance UI responsiveness (580288b)
@@ -29,7 +30,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - docs(changelog): update local changelog (3e30fc6)
+  - docs(changelog): update local changelog (fbdd2f4)
   - docs(changelog): update local changelog (7226a8a)
   - docs(changelog): update local changelog (8cd6d63)
   - Remove env.js and ignore local env files (ee2bc5f)
