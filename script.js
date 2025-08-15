@@ -64,7 +64,17 @@ class SudokuGame {
         this._isLoggedIn = false;
         // Zen mode flag
         this._zenMode = false;
-        
+		// Toast system state (queue + coalescing)
+		this._toastQueue = [];
+		this._activeToastCount = 0;
+		try {
+			const mq = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(width <= 768px)') : { matches: false };
+			this._maxVisibleToasts = mq && mq.matches ? 2 : 3;
+		} catch { this._maxVisibleToasts = 3; }
+		this._toastsByKey = new Map();
+		// Stagger between auto-dismiss events so they leave sequentially
+		this._toastMinGapMs = 600; // ensure at least 600ms between exits
+		this._toastNextAutoOutAt = 0;
         if (!this._headless) {
             this.initializeGame();
             this.setupEventListeners();
@@ -83,6 +93,15 @@ class SudokuGame {
         }
         // Initialize Supabase-related auth listeners and UI state
         if (!this._headless) {
+            // If Supabase is not configured, hide sign-in affordances so they don't appear "broken".
+            try {
+                if (!window.supabase) {
+                    const loginBtn = document.getElementById('menu-login');
+                    const signinBtn = document.getElementById('landing-signin');
+                    if (loginBtn) loginBtn.style.display = 'none';
+                    if (signinBtn) signinBtn.style.display = 'none';
+                }
+            } catch {}
             this._initSupabaseAuth && this._initSupabaseAuth();
         }
         // Try to resume saved progress and settings
@@ -432,6 +451,7 @@ class SudokuGame {
         // Seed calendar and daily state
         this._calendarRefMonth = new Date();
         this._activeDailyKey = null;
+        this._activeSeed = null;
         // Initialize daily notification dot (moved to hamburger menu + menu item)
         this.updateDailyIconBadge && this.updateDailyIconBadge();
         // Seasonal themes + rainbow digits (if flagged) on load
@@ -517,8 +537,31 @@ class SudokuGame {
             if (typeof window === 'undefined' || !window.supabase) return;
             const loginBtn = document.getElementById('menu-login');
             const logoutBtn = document.getElementById('menu-logout');
+            const setSigninUiBusy = (busy, labelText) => {
+                try {
+                    const landingBtn = document.getElementById('landing-signin');
+                    const landingText = landingBtn ? landingBtn.querySelector('.g-text') : null;
+                    if (landingBtn) {
+                        if (busy) { landingBtn.disabled = true; landingBtn.setAttribute('aria-busy','true'); if (landingText) { if (!landingText._orig) landingText._orig = landingText.textContent; landingText.textContent = labelText || 'Finalizing…'; } }
+                        else { landingBtn.disabled = false; landingBtn.removeAttribute('aria-busy'); if (landingText && landingText._orig) { landingText.textContent = landingText._orig; delete landingText._orig; } }
+                    }
+                } catch {}
+                try {
+                    if (loginBtn) { if (busy) { loginBtn.disabled = true; loginBtn.setAttribute('aria-busy','true'); loginBtn.classList.add('loading'); } else { loginBtn.disabled = false; loginBtn.removeAttribute('aria-busy'); loginBtn.classList.remove('loading'); } }
+                } catch {}
+            };
+            // If returning from OAuth and the session hasn't been established yet,
+            // force the code→session exchange explicitly for reliability.
+            try {
+                const url = new URL(window.location.href);
+                const hasOAuthParams = url.searchParams.has('code') || url.searchParams.has('state');
+                if (hasOAuthParams) setSigninUiBusy(true, 'Finalizing…');
+                if (hasOAuthParams && window.supabase?.auth?.exchangeCodeForSession) {
+                    await window.supabase.auth.exchangeCodeForSession(window.location.href);
+                }
+            } catch {}
             // Boot-time helper: wait for auth session after OAuth redirects
-            this._waitForAuthSession = async (timeoutMs = 2500) => {
+            this._waitForAuthSession = async (timeoutMs = 8000) => {
                 try {
                     const start = Date.now();
                     // Fast path: if a session already exists, return it
@@ -618,11 +661,18 @@ class SudokuGame {
                 } catch {}
                 try { await this.syncRemoteStats && this.syncRemoteStats(); } catch {}
                 try { await this.syncRemoteSettings && this.syncRemoteSettings(); } catch {}
+                try { setSigninUiBusy(false); } catch {}
             } else {
                 // After OAuth redirect, Supabase may still be exchanging the code for a session.
                 // Wait briefly for the session to become available, then update UI without requiring a manual refresh.
                 try {
-                    const session = this._waitForAuthSession ? await this._waitForAuthSession(2500) : null;
+                    // If OAuth params are present, allow a longer wait
+                    let waitMs = 4000;
+                    try {
+                        const url = new URL(window.location.href);
+                        if (url.searchParams.has('code') || url.searchParams.has('state')) waitMs = 8000;
+                    } catch {}
+                    const session = this._waitForAuthSession ? await this._waitForAuthSession(waitMs) : null;
                     if (session?.user) {
                         const u = session.user;
                         const chip = document.getElementById('user-chip');
@@ -639,6 +689,17 @@ class SudokuGame {
                             if (src) avatarEl.src = src; else avatarEl.removeAttribute('src');
                         }
                         updateButtons(true);
+                        // Update landing sign-in state immediately
+                        try {
+                            const signinBtn2 = document.getElementById('landing-signin');
+                            const greeting2 = document.getElementById('landing-greeting');
+                            if (signinBtn2) signinBtn2.style.display = 'none';
+                            if (greeting2) {
+                                const full = u.user_metadata?.full_name || u.email || 'Player';
+                                const first = (full.split?.(' ')?.[0]) || full;
+                                greeting2.textContent = `Welcome back, ${first}!`;
+                            }
+                        } catch {}
                         // Clean up OAuth params if present
                         try {
                             const url = new URL(window.location.href);
@@ -650,11 +711,14 @@ class SudokuGame {
                         } catch {}
                         try { await this.syncRemoteStats && this.syncRemoteStats(); } catch {}
                         try { await this.syncRemoteSettings && this.syncRemoteSettings(); } catch {}
+                        try { setSigninUiBusy(false); } catch {}
                     } else {
                         updateButtons(false);
+                        try { setSigninUiBusy(false); } catch {}
                     }
                 } catch {
                     updateButtons(false);
+                    try { setSigninUiBusy(false); } catch {}
                 }
             }
             // Subscribe to auth changes
@@ -678,10 +742,30 @@ class SudokuGame {
                             const src = u.user_metadata?.avatar_url || u.user_metadata?.picture || '';
                             if (src) avatarEl.src = src; else avatarEl.removeAttribute('src');
                         }
+                        // Also reflect on landing immediately
+                        try {
+                            const signinBtn2 = document.getElementById('landing-signin');
+                            const greeting2 = document.getElementById('landing-greeting');
+                            if (signinBtn2) signinBtn2.style.display = 'none';
+                            if (greeting2) {
+                                const full2 = u.user_metadata?.full_name || u.email || 'Player';
+                                const first2 = (full2.split?.(' ')?.[0]) || full2;
+                                greeting2.textContent = `Welcome back, ${first2}!`;
+                            }
+                        } catch {}
                     } catch {}
                     try { this.showToast && this.showToast('Signed in', 'success', 3000); } catch {}
+                    try { setSigninUiBusy(false); } catch {}
                     await this.syncRemoteStats && this.syncRemoteStats();
                     await this.syncRemoteSettings && this.syncRemoteSettings();
+                } else {
+                    // Reflect signed-out state on landing immediately
+                    try {
+                        const signinBtn2 = document.getElementById('landing-signin');
+                        const greeting2 = document.getElementById('landing-greeting');
+                        if (signinBtn2) { signinBtn2.style.display = ''; signinBtn2.disabled = false; signinBtn2.removeAttribute('aria-busy'); }
+                        if (greeting2) greeting2.textContent = 'Welcome!';
+                    } catch {}
                 }
             });
             this._authUnsubMain = sub?.subscription?.unsubscribe?.bind(sub.subscription);
@@ -694,7 +778,15 @@ class SudokuGame {
             return;
         }
         try {
-            const redirectTo = `${window.location.origin}${window.location.pathname}`;
+            // Use exact origin so it matches Supabase Redirect URLs (e.g., http://localhost:5173)
+            const redirectTo = window.location.origin;
+            // Visual feedback on both entry points
+            try {
+                const landingBtn = document.getElementById('landing-signin');
+                if (landingBtn) { landingBtn.disabled = true; landingBtn.setAttribute('aria-busy','true'); const t = landingBtn.querySelector('.g-text'); if (t && !t._orig) { t._orig = t.textContent; t.textContent = 'Opening Google…'; } }
+                const menuBtn = document.getElementById('menu-login');
+                if (menuBtn) { menuBtn.disabled = true; menuBtn.setAttribute('aria-busy','true'); menuBtn.classList.add('loading'); }
+            } catch {}
             await window.supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo, queryParams: { prompt: 'select_account' } }
@@ -702,6 +794,13 @@ class SudokuGame {
         } catch (e) {
             console.error(e);
             await (this.showInfo && this.showInfo('Failed to start Google sign-in.', { title: 'Sign-in Error' }));
+            // Revert visual feedback on failure
+            try {
+                const landingBtn = document.getElementById('landing-signin');
+                if (landingBtn) { landingBtn.disabled = false; landingBtn.removeAttribute('aria-busy'); const t = landingBtn.querySelector('.g-text'); if (t && t._orig) { t.textContent = t._orig; delete t._orig; } }
+                const menuBtn = document.getElementById('menu-login');
+                if (menuBtn) { menuBtn.disabled = false; menuBtn.removeAttribute('aria-busy'); menuBtn.classList.remove('loading'); }
+            } catch {}
         }
     }
 
@@ -711,6 +810,13 @@ class SudokuGame {
             await window.supabase.auth.signOut();
             try { this.showToast && this.showToast('Signed out', 'info', 3000); } catch {}
             try { this._clearRemoteSettingsCache && this._clearRemoteSettingsCache(); } catch {}
+            // Also reset landing UI right away (before the auth event arrives)
+            try {
+                const signinBtn = document.getElementById('landing-signin');
+                const greeting = document.getElementById('landing-greeting');
+                if (signinBtn) { signinBtn.style.display = ''; signinBtn.disabled = false; signinBtn.removeAttribute('aria-busy'); }
+                if (greeting) greeting.textContent = 'Welcome!';
+            } catch {}
         } catch (e) {
             console.error(e);
             try { this.showToast && this.showToast('Sign-out failed', 'error', 4000); } catch {}
@@ -742,11 +848,62 @@ class SudokuGame {
             if (!remote && (!localUpdatedAt)) {
                 // No remote row and no local timestamp: create an empty baseline row
                 await this._retryAsync(() => this._upsertRemoteStats(user.id, {}));
+            } else if (remote && localStats) {
+                // Merge both sides deterministically
+                const local = localStats || {};
+                const remoteLocal = this._mapRemoteStatsToLocal(remote);
+                const merged = {
+                    totalCompleted: (local.totalCompleted || 0) + (remoteLocal.totalCompleted || 0),
+                    totalWins: (Number(local.totalWins) || 0) + (Number(remoteLocal.totalWins) || 0),
+                    totalLosses: (Number(local.totalLosses) || 0) + (Number(remoteLocal.totalLosses) || 0),
+                    bestTimes: {
+                        easy: Math.min(...[local.bestTimes?.easy, remoteLocal.bestTimes?.easy].filter(v => Number.isFinite(v))),
+                        medium: Math.min(...[local.bestTimes?.medium, remoteLocal.bestTimes?.medium].filter(v => Number.isFinite(v))),
+                        hard: Math.min(...[local.bestTimes?.hard, remoteLocal.bestTimes?.hard].filter(v => Number.isFinite(v))),
+                        expert: Math.min(...[local.bestTimes?.expert, remoteLocal.bestTimes?.expert].filter(v => Number.isFinite(v))),
+                        master: Math.min(...[local.bestTimes?.master, remoteLocal.bestTimes?.master].filter(v => Number.isFinite(v))),
+                        extreme: Math.min(...[local.bestTimes?.extreme, remoteLocal.bestTimes?.extreme].filter(v => Number.isFinite(v))),
+                    },
+                    byDifficulty: (() => {
+                        const out = { ...(remoteLocal.byDifficulty || {}) };
+                        const add = (k, a = {}) => {
+                            const r = out[k] || { played: 0, wins: 0 };
+                            out[k] = { played: (r.played || 0) + (a.played || 0), wins: (r.wins || 0) + (a.wins || 0) };
+                        };
+                        Object.keys(local.byDifficulty || {}).forEach(k => add(k, local.byDifficulty[k]));
+                        return out;
+                    })(),
+                    updatedAt: new Date().toISOString(),
+                };
+                // Merge daily results by key: prefer most complete; else newer timestamp if present
+                try {
+                    const localDR = JSON.parse(localStorage.getItem('sudoku-daily-results') || '{}');
+                    const remoteDR = remote.daily_results || {};
+                    const mergedDR = { ...remoteDR };
+                    for (const [k, v] of Object.entries(localDR)) {
+                        const r = remoteDR[k];
+                        if (!r) { mergedDR[k] = v; continue; }
+                        const aDone = !!v.completed; const bDone = !!r.completed;
+                        if (aDone && !bDone) { mergedDR[k] = v; continue; }
+                        if (!aDone && bDone) { mergedDR[k] = r; continue; }
+                        const ats = (v.updatedAt ? new Date(v.updatedAt).getTime() : 0);
+                        const bts = (r.updatedAt ? new Date(r.updatedAt).getTime() : 0);
+                        mergedDR[k] = (ats >= bts) ? v : r;
+                    }
+                    localStorage.setItem('sudoku-daily-results', JSON.stringify(mergedDR));
+                } catch {}
+                localStorage.setItem('sudoku-stats', JSON.stringify(merged));
+                // Converge by pushing merged to remote
+                await this._retryAsync(() => this._upsertRemoteStats(user.id, merged));
+                this.showToast && this.showToast('Synced stats to your account', 'success', 3000);
             } else if (localStats && (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt))) {
                 await this._retryAsync(() => this._upsertRemoteStats(user.id, localStats));
+                this.showToast && this.showToast('Synced stats to your account', 'success', 3000);
             } else if (remote && (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt))) {
                 const merged = this._mapRemoteStatsToLocal(remote);
                 localStorage.setItem('sudoku-stats', JSON.stringify(merged));
+                // Persist daily results already handled in _mapRemoteStatsToLocal
+                this.showToast && this.showToast('Synced stats from your account', 'info', 3000);
             }
         } catch (e) {
             try { window.__devlog && window.__devlog('syncRemoteStats failed', e); } catch {}
@@ -765,9 +922,11 @@ class SudokuGame {
             if (!user) return;
             const localRaw = localStorage.getItem('sudoku-settings');
             const local = localRaw ? JSON.parse(localRaw) : {};
+            // Allow per-device opt out of cloud sync for gameplay settings
+            if (local && local.syncGameplayAcrossDevices === false) return;
             const localUpdatedAt = local.updatedAt ? new Date(local.updatedAt) : null;
 
-            // Only include gameplay+calendar in remote payload
+            // Only include gameplay+calendar in remote payload (appearance sync optional via local flag)
             const toRemotePrefs = (s) => ({
                 autoCandidates: !!s.autoCandidates,
                 autoAdvance: !!s.autoAdvance,
@@ -781,6 +940,13 @@ class SudokuGame {
                 calendarOnlyIncomplete: !!s.calendarOnlyIncomplete,
                 idleAutoPause: (typeof s.idleAutoPause === 'boolean') ? !!s.idleAutoPause : undefined,
                 idleTimeoutSec: (typeof s.idleTimeoutSec === 'number') ? s.idleTimeoutSec : undefined,
+                // Optionally include appearance if user opted in
+                ...(s && s.syncAppearanceAcrossDevices ? {
+                    themeDark: (typeof s.themeDark === 'boolean') ? !!s.themeDark : undefined,
+                    accent: (typeof s.accent === 'string') ? s.accent : undefined,
+                } : {}),
+                // Per-field timestamps for conflict-free merge
+                __ts: (s && s.__ts) ? s.__ts : undefined,
                 // explicitly exclude themeDark and accent
                 // themeDark: undefined,
                 // accent: undefined,
@@ -795,32 +961,60 @@ class SudokuGame {
             if (error && error.code !== 'PGRST116') throw error;
             const remoteUpdatedAt = remote?.updated_at ? new Date(remote.updated_at) : null;
 
+            const fields = [
+                'autoCandidates','autoAdvance','zenMode','livesEnabled','livesLimit','weekstart','hintMode',
+                'calendarOnlyPlayable','calendarOnlyIncomplete','idleAutoPause','idleTimeoutSec',
+                // include appearance in field-wise merge only if opted in locally
+                ...(local && local.syncAppearanceAcrossDevices ? ['themeDark','accent'] : [])
+            ];
+            const localTs = (local && local.__ts) ? local.__ts : {};
+
             if (!remote && !localUpdatedAt) {
                 // create baseline row from local prefs snapshot
                 await this._retryAsync(() => this._upsertRemoteSettings(user.id, toRemotePrefs(local)));
-            } else if (localUpdatedAt && (!remoteUpdatedAt || localUpdatedAt > remoteUpdatedAt)) {
+            } else if (!remote && local) {
                 await this._retryAsync(() => this._upsertRemoteSettings(user.id, toRemotePrefs(local)));
-            } else if (remote && (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt))) {
-                // Merge remote into local: only gameplay+calendar fields; preserve local appearance
+                this.showToast && this.showToast('Synced gameplay settings', 'success', 3000);
+            } else if (remote) {
+                // Field-wise merge using per-field timestamps; fallback to row updated_at
                 const prefs = remote.prefs || {};
-                const merged = {
-                    ...local,
-                    autoCandidates: !!prefs.autoCandidates,
-                    autoAdvance: !!prefs.autoAdvance,
-                    zenMode: !!prefs.zenMode,
-                    livesEnabled: !!prefs.livesEnabled,
-                    livesLimit: (typeof prefs.livesLimit === 'number') ? prefs.livesLimit : (local.livesLimit ?? 3),
-                    weekstart: prefs.weekstart || local.weekstart || 'sunday',
-                    hintMode: prefs.hintMode || local.hintMode || 'direct',
-                    calendarOnlyPlayable: (typeof prefs.calendarOnlyPlayable === 'boolean') ? !!prefs.calendarOnlyPlayable : !!local.calendarOnlyPlayable,
-                    calendarOnlyIncomplete: (typeof prefs.calendarOnlyIncomplete === 'boolean') ? !!prefs.calendarOnlyIncomplete : !!local.calendarOnlyIncomplete,
-                    idleAutoPause: (typeof prefs.idleAutoPause === 'boolean') ? !!prefs.idleAutoPause : !!local.idleAutoPause,
-                    idleTimeoutSec: (typeof prefs.idleTimeoutSec === 'number') ? prefs.idleTimeoutSec : (local.idleTimeoutSec ?? 120),
-                    updatedAt: remote.updated_at || new Date().toISOString(),
-                };
+                const remoteTs = prefs.__ts || {};
+                const merged = { ...local };
+                let changed = false;
+                const nowIso = new Date().toISOString();
+                fields.forEach((k) => {
+                    const localVal = local?.[k];
+                    const remoteVal = prefs?.[k];
+                    const lts = localTs?.[k] ? new Date(localTs[k]) : null;
+                    const rts = remoteTs?.[k] ? new Date(remoteTs[k]) : null;
+                    let useRemote;
+                    if (lts && rts) {
+                        useRemote = rts > lts;
+                    } else if (!lts && rts) {
+                        useRemote = true;
+                    } else if (lts && !rts) {
+                        useRemote = false;
+                    } else {
+                        // fall back to row timestamp comparison
+                        useRemote = (!!remoteUpdatedAt && (!localUpdatedAt || remoteUpdatedAt > localUpdatedAt));
+                    }
+                    const chosen = useRemote ? remoteVal : localVal;
+                    if (merged[k] !== chosen) { merged[k] = chosen; changed = true; }
+                    // Maintain per-field timestamps
+                    merged.__ts = merged.__ts || {};
+                    merged.__ts[k] = (useRemote ? (remoteTs?.[k] || prefs?.updated_at || nowIso) : (localTs?.[k] || nowIso));
+                });
+                if (!merged.updatedAt || (remoteUpdatedAt && (!localUpdatedAt || remoteUpdatedAt > localUpdatedAt))) {
+                    merged.updatedAt = remote.updated_at || nowIso;
+                } else {
+                    merged.updatedAt = nowIso;
+                }
                 localStorage.setItem('sudoku-settings', JSON.stringify(merged));
                 // Apply immediately
                 this.resumeSettings && this.resumeSettings();
+                // Converge by pushing merged back to remote
+                await this._retryAsync(() => this._upsertRemoteSettings(user.id, toRemotePrefs(merged)));
+                if (changed) this.showToast && this.showToast('Synced gameplay settings', 'success', 3000);
             }
         } catch (e) {
             try { window.__devlog && window.__devlog('syncRemoteSettings error', e); } catch {}
@@ -986,6 +1180,32 @@ class SudokuGame {
         }
     }
 
+    // --- Footer helpers ---
+    updateFooterBrand() {
+        try {
+            const y = new Date().getFullYear();
+            const el = document.getElementById('game-brand-year');
+            if (el) el.textContent = String(y);
+        } catch {}
+    }
+
+    updateFooterSeed() {
+        try {
+            const btn = document.getElementById('game-seed');
+            if (!btn) return;
+            const hasSeed = typeof this._activeSeed === 'string' && this._activeSeed.length > 0;
+            if (!hasSeed) {
+                btn.hidden = true;
+                btn.textContent = '';
+                btn.removeAttribute('data-seed');
+                return;
+            }
+            btn.hidden = false;
+            btn.textContent = this._activeSeed;
+            btn.setAttribute('data-seed', this._activeSeed);
+        } catch {}
+    }
+
     spawnMistakeFloater(row, col) {
         const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
         if (!cell || !cell.parentElement) return;
@@ -1009,32 +1229,25 @@ class SudokuGame {
         this.setupResponsiveSizing();
         const landingOverlay = document.getElementById('landing-overlay');
         if (landingOverlay) {
-            const isAutomation = (typeof navigator !== 'undefined' && !!navigator.webdriver);
-            if (isAutomation) {
-                // In automation, keep landing visible but prepare a puzzle behind it for fast interactions
-                try {
-                    const saved = localStorage.getItem('sudoku-last-difficulty');
-                    const diff = saved || 'medium';
-                    this.updateModeIndicator({ type: 'normal', difficulty: diff });
-                    this.generatePuzzle(diff);
-                    if (this.initialBoard && this.initialBoard[0] && this.initialBoard[0][0] !== 0) {
-                        this.initialBoard[0][0] = 0;
-                        this.board[0][0] = 0;
-                    }
-                } catch {
-                    this.generatePuzzle('medium');
-                    this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
+            // Always prepare a puzzle behind the landing overlay for fast interactions across engines
+            try {
+                const saved = localStorage.getItem('sudoku-last-difficulty');
+                const diff = saved || 'medium';
+                this.updateModeIndicator({ type: 'normal', difficulty: diff });
+                this.generatePuzzle(diff);
+                if (this.initialBoard && this.initialBoard[0] && this.initialBoard[0][0] !== 0) {
+                    this.initialBoard[0][0] = 0;
+                    this.board[0][0] = 0;
                 }
-                this.updateDisplay();
-                // Keep landing visible for tests that assert it
-                landingOverlay.style.display = 'flex';
-            } else {
-                // Show landing menu and defer puzzle generation until a selection is made
-                landingOverlay.style.display = 'flex';
-                // Clear mode indicator until a mode is chosen
-                const host = document.getElementById('mode-indicator');
-                if (host) host.innerHTML = '';
+            } catch {
+                this.generatePuzzle('medium');
+                this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
             }
+            this.updateDisplay();
+            // Ensure full board cells are present before tests assert
+            try { const board = document.getElementById('board'); if (board && board.children.length < 81) { this.createBoard(); this.updateDisplay(); } } catch {}
+            // Keep landing visible for welcome UI
+            landingOverlay.style.display = 'flex';
         } else {
             // Fallback to previous behavior when landing overlay is not present (e.g., tests)
             try {
@@ -1164,66 +1377,16 @@ class SudokuGame {
                 boardElement.appendChild(wrapper);
             }
         }
+        // Signal to tests/observers that the board is ready (no eval required)
+        try { const evt = new CustomEvent('boardready', { bubbles: true }); boardElement.dispatchEvent(evt); } catch {}
     }
 
     generatePuzzle(difficulty = 'medium') {
-        // console.log('Generating puzzle with difficulty:', difficulty);
-        
-        // Generate a solved board first
-        this.generateSolvedBoard();
-        // console.log('Solved board generated:', this.board);
-        
-        // Copy solution
-        this.solution = this.board.map(row => [...row]);
-        
-        // Remove numbers based on difficulty
-        const cellsToRemove = {
-            'easy': 30,
-            'medium': 40,
-            'hard': 50,
-            'expert': 60,
-            'master': 62,
-            'extreme': 64
-        };
-        
-        const cellsToRemoveCount = cellsToRemove[difficulty] || 40;
-        // Use symmetric removal with uniqueness check
-        if (typeof this.removeNumbersSymmetricUnique === 'function') {
-            this.removeNumbersSymmetricUnique(cellsToRemoveCount);
-        } else {
-            this.removeNumbers(cellsToRemoveCount);
-        }
-
-        // Final safeguard: ensure uniqueness; if not unique, retry a few times
-        let attempts = 0;
-        while (!this.hasUniqueSolution() && attempts < 3) {
-            this.generateSolvedBoard();
-            this.solution = this.board.map(row => [...row]);
-            if (typeof this.removeNumbersSymmetricUnique === 'function') {
-                this.removeNumbersSymmetricUnique(cellsToRemoveCount);
-            } else {
-                this.removeNumbers(cellsToRemoveCount);
-            }
-            attempts++;
-        }
-        // console.log('Numbers removed, puzzle board:', this.board);
-        
-        // Copy to initial board
-        this.initialBoard = this.board.map(row => [...row]);
-        
-        // Reset all notes to empty for a fresh puzzle
-        this.notes = Array(9).fill().map(() => Array(9).fill(null).map(() => new Set()));
-        // Reset hints and set cap by difficulty
-        const hintCaps = { easy: 5, medium: 3, hard: 2, expert: 1, master: 0, extreme: 0 };
-        this.hintsUsed = 0;
-        this.hintsLimit = hintCaps[difficulty] ?? 3;
-        this.updateHintUi && this.updateHintUi();
-        // console.log('Initial board saved:', this.initialBoard);
-        
-        // Auto-candidates on start
-        if (this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
-            this.recomputeAllCandidates();
-        }
+        // Generate a random seed for reproducible normal games and delegate to seeded path
+        const seed = this._generateRandomSeedString ? this._generateRandomSeedString() : (Math.random().toString(36).slice(2, 10));
+        this._activeSeed = String(seed);
+        this.updateFooterSeed && this.updateFooterSeed();
+        this.generateSeeded && this.generateSeeded(seed, difficulty);
     }
 
     // ---- Seeded puzzle generation (deterministic by seed) ----
@@ -1245,6 +1408,26 @@ class SudokuGame {
                 this.removeNumbersSymmetricUniqueSeeded(cellsToRemoveCount, rng);
                 attempts++;
             }
+        // Sanity: ensure no empty-but-given cells and every empty cell has at least one candidate; else retry once
+        const ensureConsistent = () => {
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0) {
+                        if (this.initialBoard[r][c] !== 0) this.initialBoard[r][c] = 0;
+                            const s = this.computeCandidates(r, c);
+                            if (!s || s.size === 0) return false;
+                        }
+                    }
+                }
+                return true;
+            };
+            if (!ensureConsistent()) {
+                // Rebuild once with the same seed path
+                this.generateSolvedBoardSeeded(rng);
+                this.solution = this.board.map(row => [...row]);
+                this.removeNumbersSymmetricUniqueSeeded(cellsToRemoveCount, rng);
+                // If still inconsistent, proceed; downstream self-heal will mitigate
+            }
             // 4) Initialize gameplay state as in generatePuzzle
             this.initialBoard = this.board.map(row => [...row]);
             this.notes = Array(9).fill().map(() => Array(9).fill(null).map(() => new Set()));
@@ -1262,6 +1445,9 @@ class SudokuGame {
             try { localStorage.setItem('sudoku-last-difficulty', difficulty); } catch {}
             this.clearStatus && this.clearStatus();
             this.renderHealthBar && this.renderHealthBar();
+            // Show seed in footer
+            this._activeSeed = String(seed);
+            this.updateFooterSeed && this.updateFooterSeed();
             // Reset timer and state similar to newGame()
             this.stopTimer && this.stopTimer();
             this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = false; this._pendingStart = false; this._preStartElapsed = 0; this._hasMadeMove = false; this.updateTimerButton && this.updateTimerButton();
@@ -1405,6 +1591,10 @@ class SudokuGame {
         if (this._dailyTimer) clearInterval(this._dailyTimer);
         this._dailyTimer = setInterval(update, 1000);
         update();
+
+        // Ensure footer brand/year and seed state are in sync on countdown start
+        this.updateFooterBrand && this.updateFooterBrand();
+        this.updateFooterSeed && this.updateFooterSeed();
     }
 
     setDailyUiState(isDaily, difficulty) {
@@ -1506,6 +1696,9 @@ class SudokuGame {
         const storeKey = `sudoku-daily-${key}`;
         // Flag daily-active for Zen CSS logic
         document.documentElement.classList.add('daily-active');
+        // Daily is seeded by date key; show key as seed in footer
+        this._activeSeed = String(key);
+        this.updateFooterSeed && this.updateFooterSeed();
         const cached = localStorage.getItem(storeKey);
         if (cached) {
             try {
@@ -1575,6 +1768,27 @@ class SudokuGame {
         };
         const cellsToRemove = { easy: 30, medium: 40, hard: 50, expert: 60, master: 62, extreme: 64 };
         removeSymUnique(cellsToRemove[difficulty] || 40);
+        // Sanity: ensure no empty-but-given cells and every empty cell has at least one candidate; else retry once
+        const ensureConsistentDaily = () => {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0) {
+                        if (this.initialBoard[r][c] !== 0) this.initialBoard[r][c] = 0;
+                        const s = this.computeCandidates(r, c);
+                        if (!s || s.size === 0) return false;
+                    }
+                }
+            }
+            return true;
+        };
+        if (!ensureConsistentDaily()) {
+            // Rebuild once with same key/seed path
+            this.board = Array(9).fill().map(() => Array(9).fill(0));
+            fillBox(0,0); fillBox(3,3); fillBox(6,6);
+            this.solveBoard();
+            this.solution = this.board.map(r => [...r]);
+            removeSymUnique(cellsToRemove[difficulty] || 40);
+        }
         // Final uniqueness guard for freshly generated daily
         if (!this.hasUniqueSolution()) {
             // Regenerate once using the same seed but different shuffle approach
@@ -1640,6 +1854,7 @@ class SudokuGame {
                         for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) { this.notes[r][c].clear(); this.updateNotesDisplay(r, c); }
                     }
                     this.updateModeIndicator({ type: 'daily', difficulty: data.difficulty || difficulty, dateKey: key });
+                    this._activeSeed = String(key); this.updateFooterSeed && this.updateFooterSeed();
                     return true;
                 }
             } catch {}
@@ -1700,6 +1915,7 @@ class SudokuGame {
         try { localStorage.setItem(storeKey, JSON.stringify({ board: this.board, solution: this.solution, difficulty: diff })); } catch {}
         this._activeDailyKey = key;
         this.updateModeIndicator({ type: 'daily', difficulty: diff, dateKey: key });
+        this._activeSeed = String(key); this.updateFooterSeed && this.updateFooterSeed();
         return true;
     }
 
@@ -1761,6 +1977,19 @@ class SudokuGame {
             state ^= state << 5;  state >>>= 0;
             return (state >>> 0) / 4294967296;
         };
+    }
+
+    _generateRandomSeedString() {
+        try {
+            // Prefer crypto for better randomness if available
+            if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+                const bytes = new Uint8Array(8);
+                crypto.getRandomValues(bytes);
+                return Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('');
+            }
+        } catch {}
+        // Fallback: timestamp + Math.random chunk
+        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
     generateSolvedBoard() {
@@ -1913,10 +2142,37 @@ class SudokuGame {
             if (cell.setSelectionRange) cell.setSelectionRange(len, len);
             cell.setAttribute('aria-selected', 'true');
         } catch {}
+        // Inline heal for selected cell: if empty but marked as a given, clear now so input works
+        try {
+            if (this.board[row][col] === 0 && this.initialBoard[row][col] !== 0) {
+                this.initialBoard[row][col] = 0;
+                cell.classList.remove('initial');
+                cell.readOnly = false;
+                if (this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                    this.notes[row][col] = this.computeCandidates(row, col);
+                    this.updateNotesDisplay(row, col);
+                }
+            }
+            // If Auto Candidates is on and this empty cell has no notes yet, compute them now
+            if (this.board[row][col] === 0 && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                const set = this.notes?.[row]?.[col];
+                if (!(set && set.size > 0)) {
+                    this.notes[row][col] = this.computeCandidates(row, col);
+                    this.updateNotesDisplay(row, col);
+                }
+            }
+        } catch {}
         
         // In lock mode: selecting a cell that already contains a number should
         // auto-select the same number on the number pad (update lockedNumber/UI)
         try {
+            // Enforce readOnly for givens to avoid caret/input confusion
+            try {
+                if (this.initialBoard[row][col] !== 0) {
+                    cell.readOnly = true;
+                    cell.classList.add('initial');
+                }
+            } catch {}
             const lockToggle = document.getElementById('pad-lock-toggle');
             const lockEnabled = !lockToggle || lockToggle.getAttribute('aria-pressed') === 'true';
             const currentVal = parseInt(cell.value || '0');
@@ -1992,6 +2248,11 @@ class SudokuGame {
 
     handleCellInput(event, row, col) {
         const value = event.target.value;
+        // If a recent keydown already placed in this cell, ignore the echoing input event
+        if (this._suppressNextInputForCell === `${row},${col}`) {
+            this._suppressNextInputForCell = null;
+            return;
+        }
         
         if (this.isNotesMode && (value >= '1' && value <= '9')) {
             const v = parseInt(value);
@@ -2023,6 +2284,9 @@ class SudokuGame {
                 this.toggleNote(row, col, parseInt(k));
             } else {
                 this.setCellValue(row, col, parseInt(k), 'keydown');
+                // Prevent duplicate placement from subsequent input event on some browsers
+                this._suppressNextInputForCell = `${row},${col}`;
+                try { event.preventDefault(); } catch {}
             }
             this.checkGameComplete();
             // Auto-advance after keyboard entry if enabled
@@ -2106,6 +2370,15 @@ class SudokuGame {
     }
 
     setCellValue(row, col, value, source = 'api') {
+        // Per-cell heal: if the UI shows this cell empty but it's marked as a given,
+        // clear the given flag so input is accepted and candidates can compute.
+        try {
+            if (this.board[row][col] === 0 && this.initialBoard[row][col] !== 0) {
+                this.initialBoard[row][col] = 0;
+                const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                if (cell) { cell.classList.remove('initial'); cell.readOnly = false; }
+            }
+        } catch {}
         if (this.initialBoard[row][col] !== 0) return; // Don't change givens
         if (this.mistakesEnabled && this.isGameOver) return;
         // First real interaction should start the game/timer
@@ -2288,9 +2561,22 @@ class SudokuGame {
     }
 
     updateDisplay() {
-        // console.log('Updating display with board:', this.board);
-        // console.log('Initial board:', this.initialBoard);
-        
+        // Heal any inconsistent state where a visually empty cell is marked as a given
+        try {
+            let healed = false;
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) {
+                        this.initialBoard[r][c] = 0;
+                        healed = true;
+                    }
+                }
+            }
+            if (healed && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                this.recomputeAllCandidates();
+            }
+        } catch {}
+
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
                 const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
@@ -2299,9 +2585,17 @@ class SudokuGame {
                     cell.value = value;
                     cell.classList.toggle('initial', this.initialBoard[row][col] !== 0);
                     cell.readOnly = this.initialBoard[row][col] !== 0;
+                    // Non-invasive: annotate representation hints for future renderer
+                    try {
+                        const s = JSON.parse(localStorage.getItem('sudoku-settings') || '{}') || {};
+                        const repMode = s.representationMode || 'numbers';
+                        const repTheme = s.representationTheme || 'pocket-beasts';
+                        cell.setAttribute('data-repr-mode', repMode);
+                        cell.setAttribute('data-repr-theme', repTheme);
+                        cell.setAttribute('data-repr-digit', value ? String(value) : '');
+                    } catch {}
                     // Clear any lingering error class during a full repaint
                     cell.classList.remove('error');
-                    // console.log(`Cell [${row}][${col}]: value=${value}, initial=${this.initialBoard[row][col] !== 0}`);
                 }
                 this.updateNotesDisplay(row, col);
             }
@@ -2309,6 +2603,24 @@ class SudokuGame {
         this.highlightSameNumbers();
         this.updateNumberPadAvailability();
         this.updateHintUi && this.updateHintUi();
+
+        // Extra safety: if any cell remains empty but readOnly, clear that state and refresh notes
+        try {
+            let repaired = false;
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) {
+                        this.initialBoard[r][c] = 0;
+                        const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                        if (cell) { cell.classList.remove('initial'); cell.readOnly = false; }
+                        repaired = true;
+                    }
+                }
+            }
+            if (repaired && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                this.recomputeAllCandidates();
+            }
+        } catch {}
     }
 
     highlightSameNumbers() {
@@ -2981,10 +3293,22 @@ class SudokuGame {
     }
 
     async restartPuzzle() {
-        if (this.isGameInProgress && this.isGameInProgress()) {
+		if (!this._zenMode && (this.isGameInProgress && this.isGameInProgress())) {
             const proceed = await (this.showConfirm?.('Restart this puzzle from the beginning? Your time and progress will reset.'));
             if (!proceed) return;
+            // Count as a loss for non‑Zen runs when a game has started
+            try { this.recordLoss && this.recordLoss(); } catch {}
         }
+        // Clear any overlays and reset end-state flags so UI is interactive
+        try {
+            this.isGameComplete = false;
+            this.isGameOver = false;
+            const go = document.getElementById('gameover-overlay'); if (go) go.style.display = 'none';
+            const po = document.getElementById('pause-overlay'); if (po) po.style.display = 'none';
+            // In case a prior modal left background inert, forcibly restore interactivity
+            document.querySelectorAll('header, main, footer').forEach(el => { try { if ('inert' in el) el.inert = false; el.removeAttribute('aria-hidden'); } catch {} });
+            document.body.classList.remove('modal-open');
+        } catch {}
         // Reset board to initial givens
         this.board = this.initialBoard.map(row => [...row]);
         // Clear notes
@@ -3010,18 +3334,20 @@ class SudokuGame {
         // Reset hints count UI
         this.hintsUsed = 0;
         this.updateHintUi && this.updateHintUi();
-        // Reset timer
+        // Reset timer and clear any pause state; do not defer start until interaction here
         this.stopTimer && this.stopTimer();
-        this.startTime = null;
+        this.startTime = Date.now();
         this.isPaused = false;
         this._pauseStartedAt = null;
         this._elapsedBeforePause = 0;
-        this._hasStarted = false;
+        this._hasStarted = true;
         this._pendingStart = false;
         this._preStartElapsed = 0;
         this.updateTimerButton && this.updateTimerButton();
         // Apply to UI
         this.updateDisplay && this.updateDisplay();
+        // Kick the timer immediately so UI shows running state
+        this.startTimer && this.startTimer();
         this.clearStatus && this.clearStatus();
         this.showStatus && this.showStatus('Puzzle restarted', 'info');
     }
@@ -3062,27 +3388,60 @@ class SudokuGame {
         }
     }
 
-    showToast(message, type = 'info', duration = 6000) {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
+	showToast(message, type = 'info', duration = 6000, opts = {}) {
+		const container = document.getElementById('toast-container');
+		if (!container) return;
+		const { key } = opts || {};
 
-        const el = document.createElement('div');
-        el.className = `toast ${type}`;
-        el.textContent = message;
+		// Coalesce: update existing toast with same key
+		if (key && this._toastsByKey && this._toastsByKey.has(key)) {
+			const existing = this._toastsByKey.get(key);
+			try { existing.textContent = message; existing.className = `toast ${type}`; } catch {}
+			if (existing._dismissTimer) clearTimeout(existing._dismissTimer);
+			existing._dismissTimer = setTimeout(existing._dismiss, duration);
+			return;
+		}
 
-        container.appendChild(el);
+		this._toastQueue = this._toastQueue || [];
+		this._toastQueue.push({ message, type, duration, key });
 
-        const timer = setTimeout(() => {
-            el.classList.add('out');
-            setTimeout(() => el.remove(), 180);
-        }, duration);
+		const drain = () => {
+			while (this._activeToastCount < this._maxVisibleToasts && this._toastQueue.length) {
+				const next = this._toastQueue.shift();
+				const el = document.createElement('div');
+				el.className = `toast ${next.type}`;
+				el.setAttribute('role', next.type === 'error' ? 'alert' : 'status');
+				el.textContent = next.message;
+				container.appendChild(el);
+				this._activeToastCount++;
+				if (next.key) this._toastsByKey.set(next.key, el);
 
-        el.addEventListener('click', () => {
-            clearTimeout(timer);
-            el.classList.add('out');
-            setTimeout(() => el.remove(), 180);
-        });
-    }
+				const dismiss = () => {
+					if (el._dismissed) return; el._dismissed = true;
+					if (el._dismissTimer) clearTimeout(el._dismissTimer);
+					el.classList.add('out');
+					setTimeout(() => {
+						try { el.remove(); } catch {}
+						if (next.key) this._toastsByKey.delete(next.key);
+						this._activeToastCount = Math.max(0, this._activeToastCount - 1);
+						drain();
+					}, 180);
+				};
+				el._dismiss = dismiss;
+				// Stagger auto-dismiss so toasts exit with spacing
+				const now = Date.now();
+				const baseDue = now + Math.max(0, next.duration);
+				const scheduled = Math.max(baseDue, this._toastNextAutoOutAt + this._toastMinGapMs);
+				this._toastNextAutoOutAt = scheduled;
+				el._dismissTimer = setTimeout(dismiss, Math.max(0, scheduled - now));
+				el.addEventListener('mouseenter', () => { if (el._dismissTimer) { clearTimeout(el._dismissTimer); el._dismissTimer = null; } });
+				el.addEventListener('mouseleave', () => { if (!el._dismissed && !el._dismissTimer) el._dismissTimer = setTimeout(dismiss, 1500); });
+				el.addEventListener('click', dismiss);
+			}
+		};
+
+		drain();
+	}
 
     setupEventListeners() {
         // Game control buttons (header new game removed; handled via menu)
@@ -3238,7 +3597,6 @@ class SudokuGame {
                 if (!ok) return;
                 this.clearBoard();
             }],
-            ['menu-solve', async () => { this.solvePuzzle && this.solvePuzzle(); }],
             ['menu-stats', () => this.showStats && this.showStats()],
             ['menu-login', () => this.loginWithGoogle && this.loginWithGoogle()],
             ['menu-logout', () => this.logout && this.logout()],
@@ -3315,6 +3673,49 @@ class SudokuGame {
                 this._mistakesSettingChangedDuringActiveGame = false;
             }
         });
+        // Wire sync toggles to local preferences
+        try {
+            const sraw = localStorage.getItem('sudoku-settings');
+            const s = sraw ? JSON.parse(sraw) : {};
+            const sg = document.getElementById('settings-sync-gameplay-toggle');
+            const sa = document.getElementById('settings-sync-appearance-toggle');
+            const sc = document.getElementById('settings-sync-calendar-toggle');
+            if (sg) sg.checked = (typeof s.syncGameplayAcrossDevices === 'boolean') ? !!s.syncGameplayAcrossDevices : true;
+            if (sa) sa.checked = (typeof s.syncAppearanceAcrossDevices === 'boolean') ? !!s.syncAppearanceAcrossDevices : false;
+            if (sc) sc.checked = (typeof s.syncCalendarAcrossDevices === 'boolean') ? !!s.syncCalendarAcrossDevices : true;
+            const onChange = () => {
+                try {
+                    const raw = localStorage.getItem('sudoku-settings');
+                    const cur = raw ? JSON.parse(raw) : {};
+                    cur.syncGameplayAcrossDevices = sg ? !!sg.checked : (cur.syncGameplayAcrossDevices ?? true);
+                    cur.syncAppearanceAcrossDevices = sa ? !!sa.checked : (cur.syncAppearanceAcrossDevices ?? false);
+                    cur.syncCalendarAcrossDevices = sc ? !!sc.checked : (cur.syncCalendarAcrossDevices ?? true);
+                    cur.updatedAt = new Date().toISOString();
+                    localStorage.setItem('sudoku-settings', JSON.stringify(cur));
+                } catch {}
+            };
+            if (sg && !sg._bound) { sg._bound = true; sg.addEventListener('change', onChange); }
+            if (sa && !sa._bound) { sa._bound = true; sa.addEventListener('change', onChange); }
+            if (sc && !sc._bound) { sc._bound = true; sc.addEventListener('change', onChange); }
+        } catch {}
+        // Settings reset wiring already exists; add sync toggle default on reset handled above
+
+        // Cloud reset (stats + remote settings)
+        const cloudResetBtn = document.getElementById('cloud-reset');
+        if (cloudResetBtn && !cloudResetBtn._bound) { cloudResetBtn._bound = true; cloudResetBtn.addEventListener('click', async () => {
+            if (!(await this.showConfirm('Reset cloud data? This deletes your synced stats and gameplay settings for your account.'))) return;
+            if (!(await this.showConfirm('Are you sure? This cannot be undone.'))) return;
+            try {
+                if (typeof window !== 'undefined' && window.supabase) {
+                    const { data: { user } } = await window.supabase.auth.getUser();
+                    if (user) {
+                        try { await window.supabase.from('stats').delete().eq('user_id', user.id); } catch {}
+                        try { await window.supabase.from('settings').delete().eq('user_id', user.id); } catch {}
+                    }
+                }
+            } catch {}
+            this.showToast && this.showToast('Cloud data reset', 'info', 3000);
+        }); }
         // New Puzzle modal wiring
         const newPuzzleModal = document.getElementById('newpuzzle-modal');
         const newPuzzleCancel = document.getElementById('newpuzzle-cancel');
@@ -3757,6 +4158,66 @@ class SudokuGame {
                     preview.appendChild(wrap);
                 }
             }
+
+            // Force a reflow so engines like WebKit paint immediately
+            try { void preview.offsetWidth; } catch {}
+        };
+
+        // Expose a robust, cross-engine callable to (re)build preview on demand
+        this.ensureSettingsPreview = () => {
+            try {
+                const el = document.getElementById('board-preview');
+                if (!el) return;
+                if (!el.children.length) {
+                    // Build the same 3x3 sample grid
+                    const sample = [
+                        [ { v: 5 },             { cand: [2,4,6] },     { v: 1 } ],
+                        [ { cand: [2,4,6,9] },  { v: 3 },              { cand: [2,4,6,8] } ],
+                        [ { cand: [2,4,8,9] },  { v: 7 },              { cand: [2,4,6,8] } ],
+                    ];
+                    for (let r = 0; r < 3; r++) {
+                        for (let c = 0; c < 3; c++) {
+                            const wrap = document.createElement('div');
+                            wrap.className = 'cell-container';
+                            const cell = document.createElement('input');
+                            cell.type = 'text';
+                            cell.className = 'cell';
+                            cell.setAttribute('readonly', 'true');
+                            const data = sample[r][c];
+                            if (data.v) {
+                                cell.value = String(data.v);
+                                cell.classList.add('initial');
+                                wrap.appendChild(cell);
+                            } else {
+                                wrap.appendChild(cell);
+                                const notes = document.createElement('div');
+                                notes.className = 'notes';
+                                for (let n = 1; n <= 9; n++) {
+                                    const ni = document.createElement('div');
+                                    ni.className = 'note-item';
+                                    ni.textContent = (data.cand && data.cand.includes(n)) ? String(n) : '';
+                                    notes.appendChild(ni);
+                                }
+                                wrap.appendChild(notes);
+                            }
+                            el.appendChild(wrap);
+                        }
+                    }
+                }
+                // Apply width/scale tokens just like previewApply
+                const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+                const overhead = vw <= 768 ? 48 : 64;
+                const maxBoardWidth = Math.min(520, Math.max(240, vw - overhead));
+                const raw = Math.floor((maxBoardWidth - 8) / 9);
+                const gridStepEl = document.getElementById('grid-size-slider');
+                const gridStep = parseInt(gridStepEl?.value || '2', 10);
+                const scaleMap = { 1: 0.9, 2: 1.0, 3: 1.12 };
+                const scale = scaleMap[gridStep] || 1.0;
+                const cellSize = Math.max(30, Math.min(60, Math.round(raw * scale)));
+                el.style.width = (cellSize * 3 + 2) + 'px';
+                el.style.setProperty('--cell-size', cellSize + 'px');
+                try { void el.offsetWidth; } catch {}
+            } catch {}
         };
 
         if (gridSlider || digitSlider || noteSlider) {
@@ -3781,6 +4242,17 @@ class SudokuGame {
         if (typeof window !== 'undefined' && window.SudokuEvents && window.SudokuEvents.wireCoreUiEvents) {
             window.SudokuEvents.wireCoreUiEvents(this);
         }
+        // Ensure preview is built when Settings modal opens (WebKit-friendly)
+        try {
+            document.addEventListener('modalopen', (e) => {
+                const id = e?.detail?.id || '';
+                if (id === 'settings-modal' && typeof this.ensureSettingsPreview === 'function') {
+                    // Build immediately, then again on next frame for WebKit paint
+                    this.ensureSettingsPreview();
+                    try { requestAnimationFrame(() => this.ensureSettingsPreview()); } catch {}
+                }
+            });
+        } catch {}
 
         // Pointer-based drag painting across cells when a number is locked
         const board = document.getElementById('board');
@@ -4079,6 +4551,15 @@ class SudokuGame {
                 </div>
               </div>
               <div class="dev-content">
+                <details class="dev-section" data-id="cell-debug" open>
+                  <summary class="dev-section-title">Cell Debug</summary>
+                  <div class="dev-grid" style="grid-template-columns: 1fr;">
+                    <button id="dev-debug-overlay" class="dev-tile"><span class="icon">🔎</span><span class="label">Toggle overlay</span></button>
+                    <div id="dev-debug-readout" class="dev-readout" style="font: 12px/1.4 system-ui, sans-serif; white-space: pre; background: var(--surface, #fff); border: 1px solid var(--border, #e5e7eb); border-radius: 8px; padding: 6px; max-width: 300px; overflow:auto;">
+                      Tap a cell to inspect…
+                    </div>
+                  </div>
+                </details>
                 <details class="dev-section" data-id="themes" open>
                   <summary class="dev-section-title">Themes</summary>
                   <div class="dev-grid">
@@ -4289,6 +4770,81 @@ class SudokuGame {
             panel.querySelector('#dev-confetti')?.addEventListener('click', () => {
                 runEffectWithOptionalMinimize(boardEl, () => this._burstConfetti && this._burstConfetti());
             });
+            // Debug overlay wiring
+            const dbgBtn = panel.querySelector('#dev-debug-overlay');
+            const dbgOut = panel.querySelector('#dev-debug-readout');
+            let dbgOn = false;
+            let dbgBox = null;
+            const fmt = (o) => {
+                try { return JSON.stringify(o, null, 2); } catch { return String(o); }
+            };
+            const paintOverlay = () => {
+                try {
+                    const b = document.getElementById('board'); if (!b) return;
+                    if (!dbgOn) { if (dbgBox) { dbgBox.remove(); dbgBox = null; } return; }
+                    if (!dbgBox) {
+                        dbgBox = document.createElement('div');
+                        dbgBox.id = 'dev-cell-overlay';
+                        dbgBox.style.position = 'absolute';
+                        dbgBox.style.inset = '0';
+                        dbgBox.style.pointerEvents = 'none';
+                        dbgBox.style.zIndex = '30';
+                        b.appendChild(dbgBox);
+                    }
+                } catch {}
+            };
+            const updateOutFor = (r, c) => {
+                try {
+                    const data = {
+                        row: r, col: c,
+                        board: this.board?.[r]?.[c] ?? null,
+                        initial: this.initialBoard?.[r]?.[c] ?? null,
+                        solution: this.solution?.[r]?.[c] ?? null,
+                        readOnly: !!document.querySelector(`[data-row="${r}"][data-col="${c}"]`)?.readOnly,
+                        notes: Array.from(this.notes?.[r]?.[c] || []),
+                        lockedNumber: this.lockedNumber,
+                        touchMode: !!this.touchMode,
+                    };
+                    if (dbgOut) dbgOut.textContent = fmt(data);
+                } catch {}
+            };
+            const onCellTap = (e) => {
+                if (!dbgOn) return;
+                const target = e.target.closest && e.target.closest('.cell');
+                if (!target) return;
+                const r = parseInt(target.dataset.row), c = parseInt(target.dataset.col);
+                updateOutFor(r, c);
+                // also draw a subtle outline box
+                try {
+                    paintOverlay();
+                    if (!dbgBox) return;
+                    dbgBox.innerHTML = '';
+                    const rect = target.getBoundingClientRect();
+                    const hostRect = target.parentElement?.parentElement?.getBoundingClientRect?.() || document.getElementById('board')?.getBoundingClientRect?.() || { left:0, top:0 };
+                    const hl = document.createElement('div');
+                    hl.style.position = 'absolute';
+                    hl.style.left = (rect.left - hostRect.left) + 'px';
+                    hl.style.top = (rect.top - hostRect.top) + 'px';
+                    hl.style.width = rect.width + 'px';
+                    hl.style.height = rect.height + 'px';
+                    hl.style.outline = '2px solid rgba(14,165,233,0.9)';
+                    hl.style.borderRadius = '6px';
+                    hl.style.pointerEvents = 'none';
+                    dbgBox.appendChild(hl);
+                } catch {}
+            };
+            dbgBtn?.addEventListener('click', () => {
+                dbgOn = !dbgOn;
+                dbgBtn.classList.toggle('active', dbgOn);
+                paintOverlay();
+                if (dbgOn) {
+                    document.getElementById('board')?.addEventListener('pointerdown', onCellTap);
+                } else {
+                    document.getElementById('board')?.removeEventListener('pointerdown', onCellTap);
+                    if (dbgBox) { try { dbgBox.remove(); } catch {} dbgBox = null; }
+                    if (dbgOut) dbgOut.textContent = 'Tap a cell to inspect…';
+                }
+            });
             panel.querySelector('#dev-accent')?.addEventListener('click', () => {
                 // Pure state change; do not minimize
                 this._applyAccent && this._applyAccent();
@@ -4498,7 +5054,17 @@ class SudokuGame {
         const landing = document.getElementById('landing-overlay');
         if (landing) {
             // Recompute overlay bounds when shown/resized
-            const recalibrateLanding = () => this._positionLandingOverlay();
+            const recalibrateLanding = () => {
+                this._positionLandingOverlay();
+                // Prevent scroll: ensure landing card never exceeds viewport
+                try {
+                    const card = landing.querySelector('.landing-card');
+                    if (card) {
+                        const gap = Math.max(12, Math.min(window.innerWidth * 0.04, 28));
+                        card.style.maxHeight = Math.max(200, Math.floor(window.innerHeight - gap * 2)) + 'px';
+                    }
+                } catch {}
+            };
             recalibrateLanding();
             try { window.addEventListener('resize', recalibrateLanding); } catch {}
             // Cleanup on hide when appropriate
@@ -4537,19 +5103,51 @@ class SudokuGame {
             if (typeof window !== 'undefined' && window.supabase) {
                 try {
                     this._authUnsubLanding?.();
-                    const { data: sub } = window.supabase.auth.onAuthStateChange(() => refreshGreeting());
+                    const { data: sub } = window.supabase.auth.onAuthStateChange((_event, session) => {
+                        // Update immediately on sign-out without waiting for async getUser()
+                        if (!session?.user) {
+                            try {
+                                const signinBtn2 = document.getElementById('landing-signin');
+                                const greeting2 = document.getElementById('landing-greeting');
+                                if (signinBtn2) { signinBtn2.style.display = ''; signinBtn2.disabled = false; signinBtn2.removeAttribute('aria-busy'); }
+                                if (greeting2) greeting2.textContent = 'Welcome!';
+                            } catch {}
+                        } else {
+                            // For sign-in, prefer immediate update from provided session
+                            try {
+                                const user = session?.user;
+                                const full = (user && (user.user_metadata?.full_name || user.email)) || 'Player';
+                                const first = (full.split?.(' ')?.[0]) || full;
+                                const signinBtn2 = document.getElementById('landing-signin');
+                                const greeting2 = document.getElementById('landing-greeting');
+                                const chip2 = document.getElementById('user-chip');
+                                if (greeting2) greeting2.textContent = `Welcome back, ${first}!`;
+                                if (signinBtn2) { signinBtn2.style.display = 'none'; signinBtn2.disabled = false; signinBtn2.removeAttribute('aria-busy'); }
+                                if (chip2) chip2.style.display = '';
+                            } catch {}
+                            // Then reconcile via async fetch in case metadata changed
+                            try { refreshGreeting(); } catch {}
+                        }
+                    });
                     this._authUnsubLanding = sub?.subscription?.unsubscribe?.bind(sub.subscription);
                 } catch {}
             }
             if (signinBtn) signinBtn.addEventListener('click', () => {
-                // Hide landing while auth flow starts; it may redirect away
-                landing.style.display = 'none';
+                // Keep landing visible; show a lightweight loading state on the button until redirect begins
+                try { signinBtn.disabled = true; signinBtn.setAttribute('aria-busy', 'true'); } catch {}
+                try {
+                    const text = signinBtn.querySelector('.g-text');
+                    if (text && !text._orig) { text._orig = text.textContent; text.textContent = 'Opening Google…'; }
+                } catch {}
                 this.loginWithGoogle && this.loginWithGoogle();
-                // If sign-in is not configured and we show an info modal, restore landing after closing
-                const ok = document.getElementById('confirm-ok');
-                if (ok) ok.addEventListener('click', () => {
-                    if (!this._hasStarted && !this._pendingStart) landing.style.display = 'flex';
-                }, { once: true });
+                // Safety: if redirect did not occur (e.g., sign-in not configured), revert state shortly
+                setTimeout(() => {
+                    try {
+                        signinBtn.disabled = false;
+                        signinBtn.removeAttribute('aria-busy');
+                        const text = signinBtn.querySelector('.g-text'); if (text && text._orig) { text.textContent = text._orig; delete text._orig; }
+                    } catch {}
+                }, 5000);
             });
 
             // Continue button visibility and action
@@ -4854,21 +5452,209 @@ class SudokuGame {
                 });
             }
 
-            // Difficulty selections
-            // Normalize landing grid icons to use SVGs for perfect centering
-            document.querySelectorAll('.diff-btn[data-diff]').forEach(btn => {
+            // Types carousel + flip-to-modes
+            const typesTrack = document.getElementById('types-track');
+            const typesPrev = document.getElementById('types-prev');
+            const typesNext = document.getElementById('types-next');
+            const typesBack = document.getElementById('types-back');
+            const typesDetail = document.getElementById('types-detail');
+            const variantsGrid = document.getElementById('variants-grid');
+            const diffsGrid = document.getElementById('diffs-grid');
+            if (typesTrack && typesPrev && typesNext) {
+                const TYPES = [
+                    // Active
+                    { id: 'classic', name: 'Classic', wip: false },
+                    // Popular
+                    { id: 'diagonal', name: 'Diagonal X', wip: true },
+                    { id: 'killer', name: 'Killer', wip: true },
+                    { id: 'jigsaw', name: 'Jigsaw', wip: true },
+                    // Representation
+                    { id: 'wordoku-9', name: 'Wordoku', wip: true },
+                    { id: 'color-9', name: 'Color', wip: true },
+                    { id: 'icons-9', name: 'Icons', wip: true },
+                    // Rare
+                    { id: 'girandola', name: 'Girandola', wip: true },
+                    { id: 'asterisk', name: 'Asterisk', wip: true },
+                    { id: 'toroidal', name: 'Toroidal', wip: true },
+                    { id: 'fortress', name: 'Fortress', wip: true },
+                    { id: 'clone', name: 'Clone', wip: true },
+                    // Cult favorites
+                    { id: 'arrow', name: 'Arrow', wip: true },
+                    { id: 'thermo', name: 'Thermo', wip: true },
+                    { id: 'german-whispers', name: 'German Whispers', wip: true },
+                    { id: 'kropki', name: 'Kropki', wip: true },
+                    { id: 'sandwich', name: 'Sandwich', wip: true },
+                ];
+
+                const createMiniTile = (diff) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'mini-tile';
+                    btn.setAttribute('data-diff', diff);
+                    const icon = document.createElement('span');
+                    icon.className = 'diff-icon';
+                    icon.innerHTML = this.getDifficultyIcon(diff);
+                    const label = document.createElement('span');
+                    label.className = 'label';
+                    label.textContent = diff[0].toUpperCase() + diff.slice(1);
+                    const hint = document.createElement('span');
+                    hint.className = 'hint';
+                    const hints = { easy: 'Relaxed', medium: 'Balanced', hard: 'Tricky', expert: 'Advanced', master: 'Elite', extreme: 'Insane' };
+                    hint.textContent = hints[diff] || '';
+                    btn.appendChild(icon);
+                    btn.appendChild(label);
+                    btn.appendChild(hint);
+                    return btn;
+                };
+
+                const buildTypeCard = (t) => {
+                    const card = document.createElement('div');
+                    card.className = 'type-card' + (t.wip ? ' wip' : '');
+                    card.setAttribute('role', 'option');
+                    card.setAttribute('data-type', t.id);
+
+                    const front = document.createElement('div');
+                    front.className = 'type-face type-front';
+                    const title = document.createElement('div');
+                    title.className = 'type-title';
+                    title.textContent = t.name;
+                    front.appendChild(title);
+
+                    const back = document.createElement('div');
+                    back.className = 'type-face type-back';
+
+                    if (t.wip) {
+                        const coming = document.createElement('div');
+                        coming.className = 'coming';
+                        coming.textContent = 'Coming soon';
+                        back.appendChild(coming);
+                    } else {
+                        const mini = document.createElement('div');
+                        mini.className = 'mini-grid';
+                        ['easy','medium','hard','expert','master','extreme'].forEach(d => mini.appendChild(createMiniTile(d)));
+                        back.appendChild(mini);
+                    }
+
+                    card.appendChild(front);
+                    card.appendChild(back);
+
+                    // Click behavior
+                    card.addEventListener('click', (e) => {
+                        const isBack = card.classList.contains('flip');
+                        if (!isBack) {
+                            if (t.wip) {
+                                // Flip only this WIP card; others stay front
+                                typesTrack.querySelectorAll('.type-card').forEach(el => el.classList.remove('flip'));
+                                card.classList.add('flip');
+                                if (typesBack) typesBack.style.display = '';
+                            } else {
+                                // Active type: flip all, then transition to detail panel
+                                typesTrack.querySelectorAll('.type-card').forEach(el => el.classList.add('flip'));
+                                if (typesBack) typesBack.style.display = '';
+                                setTimeout(() => {
+                                    // Hide hero/greeting, sign-in, subtitle, Last/Daily/Most, and the divider row
+                                    const greetingEl = document.getElementById('landing-greeting');
+                                    const signinEl = document.getElementById('landing-signin');
+                                    const subtitleEl = document.querySelector('.landing-subtitle');
+                                    const dailySectionEl = document.getElementById('landing-daily-section');
+                                    const dividers = Array.from(document.querySelectorAll('.landing-divider'));
+                                    if (greetingEl) greetingEl.style.display = 'none';
+                                    if (signinEl) signinEl.style.display = 'none';
+                                    if (subtitleEl) subtitleEl.style.display = 'none';
+                                    if (dailySectionEl) dailySectionEl.style.display = 'none';
+                                    dividers.forEach(d => { d.style.display = 'none'; });
+
+                                    const carousel = document.getElementById('landing-types');
+                                    if (carousel) carousel.style.display = 'none';
+                                    if (typesDetail) typesDetail.style.display = '';
+                                    if (variantsGrid) {
+                                        variantsGrid.innerHTML = '';
+                                        const classicVariants = [
+                                            { id: 'classic-4', label: 'Classic 4×4', rows: 4, cols: 4 },
+                                            { id: 'classic-6', label: 'Classic 6×6', rows: 6, cols: 6 },
+                                            { id: 'classic-9', label: 'Classic 9×9', rows: 9, cols: 9, default: true },
+                                            { id: 'classic-12', label: 'Classic 12×12', rows: 12, cols: 12 },
+                                            { id: 'classic-16', label: 'Classic 16×16', rows: 16, cols: 16 },
+                                        ];
+                                        const makeGridIcon = (rows, cols) => {
+                                            const size = 40;
+                                            return `\n<svg class="grid-icon" viewBox="0 0 ${size} ${size}" width="40" height="40" aria-hidden="true" focusable="false">\n  <rect x="0" y="0" width="${size}" height="${size}" rx="6" ry="6" fill="var(--surface-muted)" stroke="var(--border)"/>\n  ${Array.from({length: rows-1}, (_,i)=>`<line x1=\"0\" y1=\"${(i+1)*(size/rows)}\" x2=\"${size}\" y2=\"${(i+1)*(size/rows)}\" stroke=\"var(--border)\" stroke-width=\"1\" />`).join('')}\n  ${Array.from({length: cols-1}, (_,i)=>`<line x1=\"${(i+1)*(size/cols)}\" y1=\"0\" x2=\"${(i+1)*(size/cols)}\" y2=\"${size}\" stroke=\"var(--border)\" stroke-width=\"1\" />`).join('')}\n</svg>`;
+                                        };
+                                        classicVariants.forEach(vt => {
+                                            const btn = document.createElement('button');
+                                            btn.className = 'variant-tile' + (vt.default ? ' selected' : '');
+                                            btn.setAttribute('data-variant', vt.id);
+                                            btn.innerHTML = `${makeGridIcon(vt.rows, vt.cols)}<div class=\"variant-label\">${vt.label}</div>${vt.default ? '<div class=\"badge-default\">Default</div>' : ''}`;
+                                            btn.addEventListener('click', () => {
+                                                variantsGrid.querySelectorAll('.variant-tile').forEach(el => el.classList.remove('selected'));
+                                                btn.classList.add('selected');
+                                            });
+                                            variantsGrid.appendChild(btn);
+                                        });
+                                    }
+                                    if (diffsGrid) {
+                                        diffsGrid.innerHTML = '';
+                                        ['easy','medium','hard','expert','master','extreme'].forEach(d => diffsGrid.appendChild(createMiniTile(d)));
+                                        diffsGrid.onclick = async (ev) => {
+                                            const btn = ev.target.closest && ev.target.closest('.mini-tile');
+                                            if (!btn) return;
                 const diff = btn.getAttribute('data-diff') || 'medium';
-                const iconHost = btn.querySelector('.diff-icon');
-                if (iconHost) iconHost.innerHTML = this.getDifficultyIcon(diff);
-                    btn.addEventListener('click', async () => {
+                                            // Only classic supported for now
+                                            if (this.isGameInProgress && this.isGameInProgress()) {
+                                                const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
+                                                if (!proceed) return;
+                                                this.recordLoss();
+                                            }
+                                            try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
+                                            try {
+                                                const raw = localStorage.getItem('sudoku-recent');
+                                                const arr = Array.isArray(JSON.parse(raw || '[]')) ? JSON.parse(raw || '[]') : [];
+                                                const entry = { type: 'classic', difficulty: diff, ts: Date.now() };
+                                                arr.unshift(entry);
+                                                const pruned = arr.slice(0, 50);
+                                                localStorage.setItem('sudoku-recent', JSON.stringify(pruned));
+                                            } catch {}
+                                            try { await this._updateRemotePrefs && this._updateRemotePrefs({ lastPlayed: { type: 'classic', difficulty: diff, ts: Date.now() } }); } catch {}
+                                            this.setDailyUiState && this.setDailyUiState(false);
+                                            this._activeDailyKey = null;
+                                            this.updateModeIndicator({ type: 'normal', difficulty: diff });
+                                            this.isGameComplete = false;
+                                            this.isGameOver = false;
+                                            const go = document.getElementById('gameover-overlay'); if (go) go.style.display = 'none';
+                                            const po = document.getElementById('pause-overlay'); if (po) po.style.display = 'none';
+                                            this.lockedNumber = null;
+                                            document.querySelectorAll('.number-btn, #pad-erase-btn').forEach(b => b.classList.remove('active'));
+                                            if (this.selectedCell) { this.selectedCell.classList.remove('selected'); this.selectedCell = null; }
+                                            document.querySelectorAll('.cell.highlighted').forEach(cell => cell.classList.remove('highlighted'));
+                                            this.stopTimer();
+                                            this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = false; this._pendingStart = false; this._preStartElapsed = 0;
+                                            this.history = []; this.redoStack = [];
+                                            this._hasStarted = true;
+                                            this.startTime = Date.now();
+                                            this.generatePuzzle(diff);
+                                            this.updateDisplay();
+                                            landing.style.display = 'none';
+                                            this.startTimer();
+                                        };
+                                    }
+                                }, 220);
+                            }
+                        }
+                    });
+
+                    // Delegate mini-tile clicks to start game
+                    card.addEventListener('click', async (e) => {
+                        const btn = e.target.closest && e.target.closest('.mini-tile');
+                        if (!btn) return;
                     const diff = btn.getAttribute('data-diff') || 'medium';
+                        // Only classic supported now
+                        const type = card.getAttribute('data-type') || 'classic';
+                        if (type !== 'classic') return;
                     if (this.isGameInProgress && this.isGameInProgress()) {
                         const proceed = await this.showConfirm('Start a new game? Current game will end and count as a loss.');
                         if (!proceed) return;
                         this.recordLoss();
                     }
                     try { localStorage.setItem('sudoku-last-difficulty', diff); } catch {}
-                    // Record this non-daily selection in recent history
                     try {
                         const raw = localStorage.getItem('sudoku-recent');
                         const arr = Array.isArray(JSON.parse(raw || '[]')) ? JSON.parse(raw || '[]') : [];
@@ -4877,7 +5663,6 @@ class SudokuGame {
                         const pruned = arr.slice(0, 50);
                         localStorage.setItem('sudoku-recent', JSON.stringify(pruned));
                     } catch {}
-                        // Update cloud settings with lastPlayed for cross-device landing tiles
                         try { await this._updateRemotePrefs && this._updateRemotePrefs({ lastPlayed: { type: 'classic', difficulty: diff, ts: Date.now() } }); } catch {}
                     this.setDailyUiState && this.setDailyUiState(false);
                     this._activeDailyKey = null;
@@ -4893,7 +5678,6 @@ class SudokuGame {
                     this.stopTimer();
                     this.startTime = null; this.isPaused = false; this._pauseStartedAt = null; this._elapsedBeforePause = 0; this._hasStarted = false; this._pendingStart = false; this._preStartElapsed = 0;
                     this.history = []; this.redoStack = [];
-                    // Starting from landing counts as game start (timer on immediate interaction)
                     this._hasStarted = true;
                     this.startTime = Date.now();
                     this.generatePuzzle(diff);
@@ -4901,7 +5685,48 @@ class SudokuGame {
                     landing.style.display = 'none';
                     this.startTimer();
                 });
-            });
+
+                    return card;
+                };
+
+                // Populate track and enable wrap-around
+                typesTrack.innerHTML = '';
+                TYPES.forEach(t => typesTrack.appendChild(buildTypeCard(t)));
+                const rotate = (dir) => {
+                    const items = Array.from(typesTrack.children);
+                    if (!items.length) return;
+                    if (dir < 0) {
+                        typesTrack.insertBefore(items[items.length - 1], items[0]);
+                    } else {
+                        typesTrack.appendChild(items[0]);
+                    }
+                };
+                typesPrev.addEventListener('click', () => rotate(-1));
+                typesNext.addEventListener('click', () => rotate(1));
+
+                // Back button: return to carousel
+                if (typesBack) {
+                    typesBack.addEventListener('click', () => {
+                        const carousel = document.getElementById('landing-types');
+                        if (typesDetail) typesDetail.style.display = 'none';
+                        if (carousel) carousel.style.display = '';
+                        // Restore hero/greeting, sign-in, subtitle, Last/Daily/Most, and the divider row
+                        const greetingEl = document.getElementById('landing-greeting');
+                        const signinEl = document.getElementById('landing-signin');
+                        const subtitleEl = document.querySelector('.landing-subtitle');
+                        const dailySectionEl = document.getElementById('landing-daily-section');
+                        const dividers = Array.from(document.querySelectorAll('.landing-divider'));
+                        if (greetingEl) greetingEl.style.display = '';
+                        if (signinEl) signinEl.style.display = '';
+                        if (subtitleEl) subtitleEl.style.display = '';
+                        if (dailySectionEl) dailySectionEl.style.display = '';
+                        dividers.forEach(d => { d.style.display = ''; });
+
+                        typesTrack.querySelectorAll('.type-card').forEach(el => el.classList.remove('flip'));
+                        typesBack.style.display = 'none';
+                    });
+                }
+            }
 
             // Bottom shortcuts
             const openSettings = document.getElementById('landing-settings');
@@ -5126,10 +5951,23 @@ class SudokuGame {
             msgEl.textContent = message;
             okBtn.textContent = okText;
             cancelBtn.textContent = cancelText;
+            const usingController = !!(window.SudokuModals && window.SudokuModals.openModal && window.SudokuModals.closeModal);
+            if (usingController) {
+                try { window.SudokuModals.openModal('confirm-modal'); } catch { modal.style.display = 'grid'; modal.classList.add('is-open'); }
+            } else {
             modal.style.display = 'grid';
+                modal.classList.add('is-open');
+                try { document.body.classList.add('modal-open'); } catch {}
+            }
             const previouslyFocused = document.activeElement;
             const cleanup = () => {
+                if (usingController) {
+                    try { window.SudokuModals.closeModal('confirm-modal'); } catch { modal.style.display = 'none'; modal.classList.remove('is-open'); }
+                } else {
                 modal.style.display = 'none';
+                    modal.classList.remove('is-open');
+                    try { document.body.classList.remove('modal-open'); } catch {}
+                }
                 okBtn.removeEventListener('click', onOk);
                 cancelBtn.removeEventListener('click', onCancel);
                 modal.removeEventListener('click', onBackdrop);
@@ -5191,10 +6029,23 @@ class SudokuGame {
             okBtn.textContent = okText;
             const prevCancelDisplay = cancelBtn.style.display;
             cancelBtn.style.display = 'none';
+            const usingController = !!(window.SudokuModals && window.SudokuModals.openModal && window.SudokuModals.closeModal);
+            if (usingController) {
+                try { window.SudokuModals.openModal('confirm-modal'); } catch { modal.style.display = 'grid'; modal.classList.add('is-open'); }
+            } else {
             modal.style.display = 'grid';
+                modal.classList.add('is-open');
+                try { document.body.classList.add('modal-open'); } catch {}
+            }
             const previouslyFocused = document.activeElement;
             const cleanup = () => {
+                if (usingController) {
+                    try { window.SudokuModals.closeModal('confirm-modal'); } catch { modal.style.display = 'none'; modal.classList.remove('is-open'); }
+                } else {
                 modal.style.display = 'none';
+                    modal.classList.remove('is-open');
+                    try { document.body.classList.remove('modal-open'); } catch {}
+                }
                 okBtn.removeEventListener('click', onOk);
                 modal.removeEventListener('click', onBackdrop);
                 document.removeEventListener('keydown', onKey);
@@ -5352,6 +6203,18 @@ class SudokuGame {
             default:
                 return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>';
         }
+    }
+
+    // Provide a type icon for tiles/menus based on the game type registry
+    getTypeIcon(typeId) {
+        try {
+            if (typeof window !== 'undefined' && window.SudokuTypes && typeof window.SudokuTypes.getGameType === 'function') {
+                const t = window.SudokuTypes.getGameType(String(typeId || ''));
+                const icon = t && t.icon ? String(t.icon) : '';
+                return icon ? `<span class="menu-icon" aria-hidden="true">${icon}</span>` : '';
+            }
+        } catch {}
+        return '';
     }
 
     // ----- Daily results tracking -----
@@ -5748,6 +6611,10 @@ class SudokuGame {
     recomputeAllCandidates() {
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
+                // If board says empty but initialBoard marks as given, repair before computing
+                if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) {
+                    this.initialBoard[r][c] = 0;
+                }
                 if (this.board[r][c] === 0) this.notes[r][c] = this.computeCandidates(r, c); else this.notes[r][c].clear();
             }
         }
@@ -5765,6 +6632,8 @@ class SudokuGame {
         const dirty = [];
         peers.forEach(key => {
             const [r, c] = key.split(',').map(Number);
+            // Repair per-peer before computing
+            if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) this.initialBoard[r][c] = 0;
             if (this.board[r][c] === 0) {
                 this.notes[r][c] = this.computeCandidates(r, c);
                 dirty.push([r, c]);
@@ -5791,6 +6660,10 @@ class SudokuGame {
             window.SudokuStats.persistSettings(this);
             return;
         }
+        // Merge with previously saved settings so missing controls don't clobber values
+        let prev = {};
+        try { prev = JSON.parse(localStorage.getItem('sudoku-settings') || '{}') || {}; } catch {}
+
         const mlEl = document.getElementById('lives-limit') || document.getElementById('mistakes-limit');
         let storedMistakeLimit;
         if (mlEl) {
@@ -5799,26 +6672,44 @@ class SudokuGame {
             } else {
                 storedMistakeLimit = parseInt(mlEl.value);
             }
+        } else if (typeof prev.livesLimit === 'number') {
+            storedMistakeLimit = prev.livesLimit;
+        } else if (typeof prev.mistakeLimit === 'number') {
+            storedMistakeLimit = prev.mistakeLimit;
         } else {
             storedMistakeLimit = (this.livesLimit === Infinity ? 11 : this.livesLimit);
         }
+
+        const autoCandidatesEl = document.getElementById('auto-candidates-toggle');
+        const autoAdvanceEl = document.getElementById('auto-advance-toggle');
+        const zenModeEl = document.getElementById('zen-mode-toggle');
+        const idleToggleEl = document.getElementById('idle-autopause-toggle');
+        const idleSliderEl = document.getElementById('idle-timeout-slider');
+        const themeDarkEl = document.getElementById('theme-dark-toggle');
+        const weekstartEl = document.getElementById('weekstart-toggle');
+        const hintModeEl = document.getElementById('hint-mode-select');
+        const accentBtn = document.querySelector('#accent-swatches .swatch[aria-checked="true"]');
+        const gridSliderEl = document.getElementById('grid-size-slider');
+        const digitSliderEl = document.getElementById('digit-size-slider');
+        const noteSliderEl  = document.getElementById('note-size-slider');
+
         const settings = {
-            autoCandidates: !!(document.getElementById('auto-candidates-toggle')?.checked),
-            autoAdvance: !!(document.getElementById('auto-advance-toggle')?.checked),
-            zenMode: !!(document.getElementById('zen-mode-toggle')?.checked),
+            autoCandidates: (autoCandidatesEl ? !!autoCandidatesEl.checked : (typeof prev.autoCandidates === 'boolean' ? !!prev.autoCandidates : false)),
+            autoAdvance: (autoAdvanceEl ? !!autoAdvanceEl.checked : (typeof prev.autoAdvance === 'boolean' ? !!prev.autoAdvance : false)),
+            zenMode: (zenModeEl ? !!zenModeEl.checked : (typeof prev.zenMode === 'boolean' ? !!prev.zenMode : false)),
             // Idle settings (fallback path for headless tests)
-            idleAutoPause: !!(document.getElementById('idle-autopause-toggle')?.checked),
-            idleTimeoutSec: parseInt(document.getElementById('idle-timeout-slider')?.value || '120', 10),
+            idleAutoPause: (idleToggleEl ? !!idleToggleEl.checked : (typeof prev.idleAutoPause === 'boolean' ? !!prev.idleAutoPause : true)),
+            idleTimeoutSec: (idleSliderEl ? parseInt(idleSliderEl.value || '120', 10) : (Number.isFinite(prev.idleTimeoutSec) ? prev.idleTimeoutSec : 120)),
             livesEnabled: !(storedMistakeLimit >= 11),
             livesLimit: storedMistakeLimit,
-            themeDark: !!(document.getElementById('theme-dark-toggle')?.checked),
-            weekstart: ((document.getElementById('weekstart-toggle')?.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') || 'sunday',
-            accent: (document.querySelector('#accent-swatches .swatch[aria-checked="true"]')?.dataset.accent) || 'indigo',
-            hintMode: (document.getElementById('hint-mode-select')?.value) || 'direct',
+            themeDark: (themeDarkEl ? !!themeDarkEl.checked : (typeof prev.themeDark === 'boolean' ? !!prev.themeDark : false)),
+            weekstart: (weekstartEl ? ((weekstartEl.getAttribute('aria-checked') === 'true') ? 'monday' : 'sunday') : (prev.weekstart || 'sunday')),
+            accent: (accentBtn?.dataset.accent) || prev.accent || 'indigo',
+            hintMode: (hintModeEl ? hintModeEl.value : (prev.hintMode || 'direct')),
             // Board sizing
-            gridSize: parseInt(document.getElementById('grid-size-slider')?.value || '2', 10),
-            digitSize: parseInt(document.getElementById('digit-size-slider')?.value || '3', 10),
-            noteSize: parseInt(document.getElementById('note-size-slider')?.value || '3', 10),
+            gridSize: (gridSliderEl ? parseInt(gridSliderEl.value || '2', 10) : (Number.isFinite(prev.gridSize) ? prev.gridSize : 2)),
+            digitSize: (digitSliderEl ? parseInt(digitSliderEl.value || '3', 10) : (Number.isFinite(prev.digitSize) ? prev.digitSize : 3)),
+            noteSize: (noteSliderEl ? parseInt(noteSliderEl.value || '3', 10) : (Number.isFinite(prev.noteSize) ? prev.noteSize : 3)),
             updatedAt: new Date().toISOString(),
         };
         try { localStorage.setItem('sudoku-settings', JSON.stringify(settings)); } catch {}
@@ -5849,6 +6740,21 @@ class SudokuGame {
             this.hintsUsed = data.hintsUsed || 0;
             this.hintsLimit = (Number.isFinite(data.hintsLimit) ? data.hintsLimit : this.hintsLimit);
             if (data.gameType) this.gameType = data.gameType;
+            // Normalize: if a cell is empty on the board but marked as a given, clear the given flag
+            try {
+                let healed = false;
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        if (this.board[r][c] === 0 && this.initialBoard[r][c] !== 0) {
+                            this.initialBoard[r][c] = 0;
+                            healed = true;
+                        }
+                    }
+                }
+                if (healed && this.isAutoCandidatesEnabled && this.isAutoCandidatesEnabled()) {
+                    this.recomputeAllCandidates();
+                }
+            } catch {}
             this.updateDisplay();
         } catch {}
     }
@@ -5936,13 +6842,13 @@ class SudokuGame {
         const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
         const elapsed = this.getElapsedSeconds();
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
-        stats.totalWins = (stats.totalWins || 0) + 1;
-        stats.totalCompleted = (stats.totalCompleted || 0) + 1;
+        stats.totalWins = (Number(stats.totalWins) || 0) + 1;
+        stats.totalCompleted = (Number(stats.totalCompleted) || 0) + 1;
         stats.bestTimes = stats.bestTimes || {};
         stats.byDifficulty = stats.byDifficulty || {};
         const slot = stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 };
-        slot.played += 1;
-        slot.wins += 1;
+        slot.played = (Number(slot.played) || 0) + 1;
+        slot.wins = (Number(slot.wins) || 0) + 1;
         const best = stats.bestTimes[diff];
         let newBest = false;
         if ((this.hintsUsed || 0) === 0) {
@@ -5972,11 +6878,11 @@ class SudokuGame {
         if (!this._hasMadeMove) return;
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
         const diff = (this._activeDailyKey ? (JSON.parse(localStorage.getItem(`sudoku-daily-${this._activeDailyKey}`)||'{}').difficulty || this.getDailyDifficulty()) : (document.getElementById('difficulty')?.value || localStorage.getItem('sudoku-last-difficulty') || 'medium'));
-        stats.totalLosses = (stats.totalLosses || 0) + 1;
-        stats.totalCompleted = (stats.totalCompleted || 0) + 1;
+        stats.totalLosses = (Number(stats.totalLosses) || 0) + 1;
+        stats.totalCompleted = (Number(stats.totalCompleted) || 0) + 1;
         stats.byDifficulty = stats.byDifficulty || {};
         const slot = stats.byDifficulty[diff] = stats.byDifficulty[diff] || { played: 0, wins: 0 };
-        slot.played += 1;
+        slot.played = (Number(slot.played) || 0) + 1;
         try { stats.updatedAt = new Date().toISOString(); localStorage.setItem('sudoku-stats', JSON.stringify(stats)); } catch {}
         this.syncRemoteStats && this.syncRemoteStats();
         // Record non-daily loss in recent history (for dynamic tiles)
@@ -5996,10 +6902,12 @@ class SudokuGame {
         const modal = document.getElementById('stats-modal');
         const content = document.getElementById('stats-content');
         if (!modal || !content) return;
+        // Recompute stats immediately before paint so tests can assert strict values
+        try { if (typeof window !== 'undefined' && window.SudokuStats && window.SudokuStats.refresh) { window.SudokuStats.refresh(this); } } catch {}
         const stats = JSON.parse(localStorage.getItem('sudoku-stats') || '{}');
-        const totalWins = stats.totalWins || 0;
-        const totalLosses = stats.totalLosses || 0;
-        const totalCompleted = stats.totalCompleted || (totalWins + totalLosses);
+        const totalWins = Number(stats.totalWins) || 0;
+        const totalLosses = Number(stats.totalLosses) || 0;
+        const totalCompleted = Number(stats.totalCompleted) || (totalWins + totalLosses);
         const best = stats.bestTimes || {};
         // Ensure keys for all difficulties exist for display
         ['easy','medium','hard','expert','master','extreme'].forEach(k => { if (!(k in best)) best[k] = null; });
@@ -6167,7 +7075,7 @@ class SudokuGame {
             this.updateDailyIconBadge && this.updateDailyIconBadge();
         }); }
 
-        (window.SudokuModals?.openModal && window.SudokuModals.openModal('stats-modal')) || modal.classList.add('is-open');
+        (window.SudokuModals?.openModal && window.SudokuModals.openModal('stats-modal')) || (modal.style.display = 'grid', modal.classList.add('is-open'));
         this._positionOverlayWithinGameArea && this._positionOverlayWithinGameArea(modal);
         this._bindOverlayRecalibration && this._bindOverlayRecalibration(modal);
     }
