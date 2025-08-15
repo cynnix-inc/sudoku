@@ -1230,24 +1230,24 @@ class SudokuGame {
         const landingOverlay = document.getElementById('landing-overlay');
         if (landingOverlay) {
             // Always prepare a puzzle behind the landing overlay for fast interactions across engines
-                try {
-                    const saved = localStorage.getItem('sudoku-last-difficulty');
-                    const diff = saved || 'medium';
-                    this.updateModeIndicator({ type: 'normal', difficulty: diff });
-                    this.generatePuzzle(diff);
-                    if (this.initialBoard && this.initialBoard[0] && this.initialBoard[0][0] !== 0) {
-                        this.initialBoard[0][0] = 0;
-                        this.board[0][0] = 0;
-                    }
-                } catch {
-                    this.generatePuzzle('medium');
-                    this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
+            try {
+                const saved = localStorage.getItem('sudoku-last-difficulty');
+                const diff = saved || 'medium';
+                this.updateModeIndicator({ type: 'normal', difficulty: diff });
+                this.generatePuzzle(diff);
+                if (this.initialBoard && this.initialBoard[0] && this.initialBoard[0][0] !== 0) {
+                    this.initialBoard[0][0] = 0;
+                    this.board[0][0] = 0;
                 }
-                this.updateDisplay();
+            } catch {
+                this.generatePuzzle('medium');
+                this.updateModeIndicator({ type: 'normal', difficulty: 'medium' });
+            }
+            this.updateDisplay();
             // Ensure full board cells are present before tests assert
             try { const board = document.getElementById('board'); if (board && board.children.length < 81) { this.createBoard(); this.updateDisplay(); } } catch {}
             // Keep landing visible for welcome UI
-                landingOverlay.style.display = 'flex';
+            landingOverlay.style.display = 'flex';
         } else {
             // Fallback to previous behavior when landing overlay is not present (e.g., tests)
             try {
@@ -2576,7 +2576,7 @@ class SudokuGame {
                 this.recomputeAllCandidates();
             }
         } catch {}
-        
+
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
                 const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
@@ -3389,8 +3389,8 @@ class SudokuGame {
     }
 
 	showToast(message, type = 'info', duration = 6000, opts = {}) {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
+		const container = document.getElementById('toast-container');
+		if (!container) return;
 		const { key } = opts || {};
 
 		// Coalesce: update existing toast with same key
@@ -3412,14 +3412,14 @@ class SudokuGame {
 				el.className = `toast ${next.type}`;
 				el.setAttribute('role', next.type === 'error' ? 'alert' : 'status');
 				el.textContent = next.message;
-        container.appendChild(el);
+				container.appendChild(el);
 				this._activeToastCount++;
 				if (next.key) this._toastsByKey.set(next.key, el);
 
 				const dismiss = () => {
 					if (el._dismissed) return; el._dismissed = true;
 					if (el._dismissTimer) clearTimeout(el._dismissTimer);
-            el.classList.add('out');
+					el.classList.add('out');
 					setTimeout(() => {
 						try { el.remove(); } catch {}
 						if (next.key) this._toastsByKey.delete(next.key);
@@ -3441,7 +3441,7 @@ class SudokuGame {
 		};
 
 		drain();
-    }
+	}
 
     setupEventListeners() {
         // Game control buttons (header new game removed; handled via menu)

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-08-14
+## [Unreleased] - 2025-08-15
 
 ### Changes
 
@@ -27,7 +27,8 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
-  - docs(changelog): update local changelog (f5b9964)
+  - feat: confirmation dialogs and related updates (e9bad31)
+  - docs(changelog): update local changelog (66fe831)
   - feat: improve board focus stability and enhance game type UI (63d2d52)
   - docs(changelog): update local changelog (9af5ff9)
   - docs(changelog): update local changelog (5fe69e9)
