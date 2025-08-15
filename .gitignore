@@ -16,3 +16,12 @@ Thumbs.db
 # Test artifacts
 /test-results/
 /test-report/
+.env
+.env.*
+**/.env
+**/.env.*
+env.js
+.env
+.env.*
+**/.env
+**/.env.*

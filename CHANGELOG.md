@@ -27,6 +27,7 @@ This format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   - ui overhaul and new settings (b6162b0)
 
 - **Changed**:
+  - Remove env.js and ignore local env files (185f0fb)
   - feat: confirmation dialogs and related updates (e9bad31)
   - docs(changelog): update local changelog (66fe831)
   - feat: improve board focus stability and enhance game type UI (63d2d52)
