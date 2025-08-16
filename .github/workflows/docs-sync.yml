@@ -1,0 +1,48 @@
+name: Docs Sync
+
+on:
+  push:
+    paths:
+      - 'package.json'
+      - 'apps/app/eas.json'
+      - '.github/workflows/**'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack and install dependencies
+        run: |
+          corepack enable
+          pnpm --version || npm i -g pnpm@9
+          pnpm i --frozen-lockfile=false
+
+      - name: Generate README sections
+        run: node scripts/generate-readme.mjs
+
+      - name: Commit changes if any
+        run: |
+          if git diff --quiet README.md; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "docs-bot"
+          git config user.email "actions@github.com"
+          git add README.md
+          git commit -m "docs: sync README (autogen)"
+          git push
+
+

@@ -1,0 +1,26 @@
+name: Send OTA Updates (production)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: EAS Update to production channel
+        working-directory: apps/app
+        run: npx eas update --auto --branch=production --message "Auto update $GITHUB_SHA" --non-interactive
+
+
