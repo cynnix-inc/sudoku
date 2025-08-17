@@ -1,7 +1,6 @@
 {
   "name": "ultimate-sudoku",
   "version": "1.0.0",
-  "main": "index.js",
   "directories": {
     "doc": "docs"
   },
@@ -16,30 +15,33 @@
     "test": "jest --passWithNoTests",
     "bundle:check": "node scripts/bundle-check.mjs",
     "deps:verify": "node scripts/verify-deps.mjs",
-    "verify:deps": "node scripts/verify-deps.mjs"
+    "verify:deps": "node scripts/verify-deps.mjs",
+    "ios": "expo run:ios"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "volta": {
-    "node": "22.0.0"
+    "node": "20.19.4"
   },
   "dependencies": {
-    "expo": "^53.0.20",
-    "expo-haptics": "^14.1.4",
-    "expo-linear-gradient": "^14.1.5",
-    "expo-router": "^5.1.4",
+    "expo": "53.0.20",
+    "expo-haptics": "~14.1.4",
+    "expo-linear-gradient": "~14.1.5",
+    "expo-router": "~5.1.4",
     "nativewind": "^4.1.23",
     "react": "^19.1.1",
-    "react-native": "^0.81.0",
-    "react-native-gesture-handler": "^2.28.0",
-    "react-native-reanimated": "^4.0.2",
-    "react-native-safe-area-context": "^5.6.0",
-    "react-native-web": "^0.21.0",
+    "react-dom": "^19.1.1",
+    "react-native": "0.79.5",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-web": "^0.20.0",
     "tailwindcss": "^4.1.12"
   },
   "devDependencies": {
+    "@expo/cli": "^0.24.20",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.2.2",
     "@types/jest": "^30.0.0",

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Platform, useColorScheme, Pressable, Text } from "react-native";
-import { Stack } from "expo-router";
+import { Platform, useColorScheme, Pressable, Text, View } from "react-native";
  
 if (Platform.OS === "web") {
 	// Import Tailwind styles only on web
@@ -40,25 +39,28 @@ export default function RootLayout() {
 
 	return (
 		<ThemeContext.Provider value={theme}>
-			<Stack
-				screenOptions={{
-					headerStyle: { backgroundColor: theme.background },
-					headerTintColor: theme.foreground,
-					contentStyle: { backgroundColor: theme.background },
-					headerRight: () => (
-						<Pressable
-							onPress={theme.toggle}
-							accessibilityRole="button"
-							accessibilityLabel="Toggle color theme"
-							style={{ paddingHorizontal: 12, paddingVertical: 6 }}
-						>
-							<Text style={{ color: theme.foreground, fontSize: 18 }}>
-								{theme.isDark ? "☀️" : "🌙"}
-							</Text>
-						</Pressable>
-					),
-				}}
-			/>
+			<View style={{ flex: 1, backgroundColor: theme.background }}>
+				<View style={{ padding: 20, alignItems: 'flex-end' }}>
+					<Pressable
+						onPress={theme.toggle}
+						accessibilityRole="button"
+						accessibilityLabel="Toggle color theme"
+						style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+					>
+						<Text style={{ color: theme.foreground, fontSize: 18 }}>
+							{theme.isDark ? "☀️" : "🌙"}
+						</Text>
+					</Pressable>
+				</View>
+				<View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+					<Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 8, color: theme.foreground }}>
+						Hello world
+					</Text>
+					<Text style={{ fontSize: 16, opacity: 0.7, color: theme.foreground }}>
+						Welcome to Ultimate Sudoku
+					</Text>
+				</View>
+			</View>
 		</ThemeContext.Provider>
 	);
 }

@@ -1,0 +1,44 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-store/
+.cache/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+.metro-cache/
+web-build/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Android
+android/
+*.keystore
+*.jks
+*.apk
+*.aab
+android/app/build/
+
+# iOS
+ios/
+Pods/
+*.xcworkspace
+*.xcodeproj
+DerivedData/
+
+# Env
+.env*
+
+
