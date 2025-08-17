@@ -1,69 +1,40 @@
-# Style Guide Rules
+Rule: Code Style and Patterns
+Applies to: apps/**, packages/**
+Use when: writing or reviewing code
+Avoid: stylistic drift, ad-hoc patterns
+Definition of Done:
+  - TypeScript passes with strict settings
+  - ESLint and Prettier pass
+  - Components are functional and accessible
+  - Performance and bundle budgets met
 
-## Code Style
-- **TypeScript**: Use strict mode, prefer explicit types
-- **React**: Functional components with hooks, avoid class components
-- **Naming**: camelCase for variables/functions, PascalCase for components
-- **Imports**: Group imports (React, external, internal, relative)
-- **Exports**: Named exports preferred, default exports for main components
+# TypeScript
+- "strict": true
+- No implicit any, no namespace usage, prefer types over interfaces for unions.
 
-## Component Structure
-```tsx
-// 1. Imports
-import React from 'react';
-import { View, Text } from 'react-native';
+# React and React Native
+- Functional components with hooks only.
+- Keep components small and pure. Extract hooks for complex logic.
+- Accessibility: use accessible roles, labels, and test with screen readers.
 
-// 2. Types
-interface ComponentProps {
-  title: string;
-  onPress?: () => void;
-}
+# Imports and Structure
+- Absolute imports via tsconfig paths for packages.
+- Group imports: Node/std, external libs, internal modules, styles.
 
-// 3. Component
-export function Component({ title, onPress }: ComponentProps) {
-  // 4. Hooks
-  const [state, setState] = useState(false);
+# Styling
+- Centralize tokens in packages/ui (spacing, colors, typography).
+- No inline magic numbers. Use constants or tokens.
 
-  // 5. Handlers
-  const handlePress = () => {
-    onPress?.();
-  };
+# Always / Never
+- Always write explicit return types for exported functions.
+- Always memoize expensive computations.
+- Never use class components.
+- Never access storage or network inside UI components.
 
-  // 6. Render
-  return (
-    <View>
-      <Text>{title}</Text>
-    </View>
-  );
-}
-```
+# Performance Budget
+- Avoid adding heavy deps without review.
+- Images must be optimized. Avoid runtime image resizing in hot paths.
 
-## File Organization
-- **Components**: One component per file
-- **Tests**: Co-located with source: `Component.tsx` + `Component.test.tsx`
-- **Types**: Inline for simple types, separate files for complex types
-- **Constants**: At top of file or in separate constants file
-
-## CSS/Styling
-- **Tailwind**: Use Tailwind classes when possible
-- **Custom CSS**: Only when Tailwind doesn't suffice
-- **Theme**: Use CSS variables for theming
-- **Responsive**: Mobile-first approach with responsive utilities
-
-## Error Handling
-- **Try-Catch**: Wrap async operations
-- **Error Boundaries**: Use for React component errors
-- **User Feedback**: Always provide meaningful error messages
-- **Logging**: Use Sentry for production error tracking
-
-## Performance
-- **Memoization**: Use React.memo, useMemo, useCallback when beneficial
-- **Lazy Loading**: Implement for heavy components
-- **Bundle Size**: Monitor and optimize bundle size
-- **Images**: Use appropriate formats and sizes
-
-## Accessibility
-- **Semantic HTML**: Use proper HTML elements
-- **ARIA Labels**: Add when needed for screen readers
-- **Keyboard Navigation**: Ensure keyboard accessibility
-- **Color Contrast**: Maintain WCAG AA compliance
+## Examples
+- Good: export const Button = ({ label }: Props) => { ... }
+- Bad: export default function BigComponentDoingEverything() { /* 400 lines */ }

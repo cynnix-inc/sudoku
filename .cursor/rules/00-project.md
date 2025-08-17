@@ -1,38 +1,50 @@
-# Project Overview Rules
+Rule: Project Overview and Repo Map for Ultimate Sudoko
+Applies to: ./, apps/**, packages/**
+Use when: creating new features, scaffolding folders, onboarding, planning
+Avoid: changing gameplay mechanics without a clear request
+Definition of Done:
+  - The feature fits within scope and target platforms
+  - Folder paths match the repo map
+  - No unauthorized dependencies added
+  - Linked docs updated where relevant
 
-## Project Context
-- **Name**: Ultimate Sudoku
-- **Type**: Single app Expo project with React Native
-- **Architecture**: Monorepo with apps/ and packages/ structure
-- **Package Manager**: pnpm with workspaces
+# Ultimate Sudoko: Project Overview
 
-## Core Principles
-1. **Single App Focus**: This is a single Sudoku app, not a multi-app platform
-2. **Expo First**: Use Expo SDK and tools when possible
-3. **TypeScript**: All new code should be TypeScript
-4. **Testing**: Maintain high test coverage with Jest and Playwright
-5. **Documentation**: Keep docs updated with code changes
+This project builds a lightweight, high-quality Sudoku experience with modern tooling and strict quality gates.
 
-## Project Structure
-- `apps/app/` - Main Expo app
-- `packages/ui/` - Shared UI components
-- `packages/config/` - Shared configuration
-- `docs/` - Project documentation
-- `tests/` - E2E tests
-- `scripts/` - Build and utility scripts
+## Scope and Targets
+- Platforms: React Native (Expo), iOS, Android, Web where practical.
+- Languages: TypeScript.
+- Package manager: npm (workspaces).
+- Monorepo structure with apps and packages folders.
+- Focus: core Sudoku gameplay, clean UI, reliable performance.
 
-## Key Technologies
-- React Native with Expo
-- TypeScript
-- Tailwind CSS
-- Jest for unit tests
-- Playwright for E2E tests
-- Supabase for backend
-- pnpm for package management
+## Repo Map (authoritative paths)
+```
+apps/
+  mobile/
+    app/                 # Expo Router screens
+    components/          # App-specific UI
+    hooks/               # App-specific hooks
+    assets/              # Images, fonts, sounds
+    test/                # App-level tests
+  web/
+    src/                 # Web entry where applicable
+    test/
+packages/
+  ui/                    # Reusable UI components
+  core/                  # Game logic, Sudoku engine, helpers
+  config/                # ESLint, Prettier, tsconfig, shared tooling
+  testing/               # test-utils like renderWithProviders
+docs/                    # This ruleset and ADRs
+```
 
-## Development Workflow
-1. Feature branches from `rebuild/foundation`
-2. Tests must pass before merge
-3. Use conventional commits
-4. Update docs with code changes
-5. Run lint and typecheck before committing
+## Working Agreements
+- Keep commits small and descriptive.
+- PRs must pass CI, tests, type check, and lint.
+- Changes to game rules or generator require an ADR.
+- npm lockfile policy: commit package-lock.json; use `npm ci` for reproducible installs.
+
+## Examples
+- Adding a new screen: create apps/mobile/app/<feature>/index.tsx, add tests, export any shared UI in packages/ui.
+- Updating Sudoku engine: modify packages/core and add unit tests under packages/core/__tests__.

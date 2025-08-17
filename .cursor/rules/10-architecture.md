@@ -1,45 +1,49 @@
-# Architecture Rules
+Rule: Architecture and Module Boundaries
+Applies to: apps/**, packages/**
+Use when: designing features, refactoring, adding dependencies
+Avoid: cross-layer imports that break boundaries
+Definition of Done:
+  - Module boundaries respected (UI does not contain domain logic)
+  - Data flow is unidirectional and explicit
+  - New dependency reviewed for size, license, and security
+  - ADR added for impactful decisions
 
-## Monorepo Structure
-- **Root Level**: Configuration files, scripts, and shared tooling
-- **Apps**: Single app in `apps/app/` (Expo React Native)
-- **Packages**: Reusable libraries in `packages/`
-- **Shared Config**: Common configurations in `packages/config/`
+# Architecture
+- Monorepo with clear separation:
+  - packages/core: Sudoku engine, validation, generation, serialization.
+  - packages/ui: Pure presentational components with styles and a11y.
+  - apps/*: Composition, navigation, platform-specific glue.
+  - packages/testing: shared test utilities.
 
-## Package Organization
-```
-packages/
-├── ui/           # Shared UI components and theme
-├── config/       # Shared ESLint, Prettier, TypeScript configs
-└── [future]      # Additional shared packages as needed
-```
+## Data and State
+- App state lives in app layer. Core exposes pure functions, no side effects.
+- Prefer React hooks and Context over adding state libraries.
+- Side effects isolated behind services (e.g., storage, network). Pure core.
 
-## App Architecture
-- **Expo Router**: File-based routing in `apps/app/app/`
-- **Providers**: Context providers in `apps/app/providers/`
-- **Lib**: Utility functions and services in `apps/app/lib/`
-- **Components**: App-specific components in `apps/app/app/`
+## Dependency Rules
+- core has zero React or platform dependencies.
+- ui depends only on React, React Native primitives, and design tokens.
+- apps can depend on ui and core, not vice versa.
 
-## State Management
-- **Local State**: React hooks and useState/useReducer
-- **Global State**: React Context for theme, auth, etc.
-- **Server State**: Supabase client for backend data
-- **Remote Config**: Feature flags via remote configuration
+## npm Workspaces Discipline
+- Each workspace must declare all direct dependencies it imports (no relying on hoisted copies).
+- Use package entry points to import across workspaces (e.g., `@ultimate-sudoko/core`), not relative paths.
+- If a workspace needs a devDependency for its own tests/build, declare it locally or expose via a shared `packages/config`.
+- Consider adding ESLint `no-restricted-imports` to block cross-package relative imports.
 
-## Data Flow
-1. **UI Components** → **Hooks** → **Services** → **Supabase**
-2. **Theme Provider** → **CSS Variables** → **Tailwind Classes**
-3. **Remote Config** → **Feature Flags** → **Conditional Rendering**
+## Always / Never
+- Always keep core deterministic and pure.
+- Always document public APIs in core.
+- Never import app code from packages.
+- Never mix navigation with domain logic.
 
-## Testing Strategy
-- **Unit Tests**: Jest + React Testing Library for components
-- **E2E Tests**: Playwright for critical user flows
-- **Test Location**: Co-located with source code
-- **Coverage**: Aim for >80% coverage on new code
+## ADRs
+- Use docs/adr/YYYY-MM-DD-short-title.md for decisions that affect architecture, libraries, or data shape.
+- Template includes: Context, Decision, Alternatives, Consequences.
 
-## Build & Deploy
-- **Development**: Expo dev server
-- **Testing**: Jest for unit, Playwright for E2E
-- **Linting**: ESLint with shared config
-- **Formatting**: Prettier with shared config
-- **Type Checking**: TypeScript with strict mode
+## Example
+- Adding a new solver strategy:
+  - Implement in packages/core/solver/<strategy>.ts
+  - Export via packages/core/index.ts
+  - Add unit tests under packages/core/__tests__/<strategy>.test.ts
+  - Add an ADR if this changes performance characteristics.

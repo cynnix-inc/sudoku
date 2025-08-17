@@ -1,49 +1,74 @@
-# Prompts Rules
+Rule: Task Macros for Cursor
+Applies to: apps/**, packages/**
+Use when: asking the assistant to scaffold or modify code
+Avoid: vague requests; always specify files and edits
+Definition of Done:
+  - Files created or edited as listed
+  - Tests added or updated
+  - Docs and exports updated
+  - CI passes locally
 
-## AI Assistant Guidelines
-- **Context Awareness**: Always consider the project structure and architecture
-- **Code Quality**: Suggest improvements that align with our style guide
-- **Testing**: Always consider testing implications of code changes
-- **Documentation**: Suggest documentation updates when code changes
+# Macro: Create a new screen
+Prompt:
+"""
+Create a new screen called <Name> using Expo Router.
+Use functional components, TypeScript, and tokens from packages/ui.
+Add accessibility labels for interactive elements.
+Edits:
+  - apps/mobile/app/<name>/index.tsx (new)
+  - apps/mobile/test/<name>.test.tsx (new)
+  - packages/ui/index.ts (ensure any new shared components are exported)
+  - docs/screens.md (append short usage snippet)
+Definition of Done:
+  - Renders without errors via renderWithProviders
+  - Test covers at least one user interaction
+  - Lint and typecheck pass
+"""
 
-## Code Review Prompts
-- **Architecture**: "Does this change align with our monorepo structure?"
-- **Testing**: "What tests should be added or updated?"
-- **Performance**: "Are there performance implications to consider?"
-- **Security**: "Are there security considerations for this change?"
+# Macro: Add a core solver strategy
+Prompt:
+"""
+Implement a new Sudoku solver strategy named <StrategyName>.
+Keep it pure and deterministic.
+Edits:
+  - packages/core/solver/<strategyName>.ts (new)
+  - packages/core/index.ts (export)
+  - packages/core/__tests__/<strategyName>.test.ts (new)
+  - docs/adr/YYYY-MM-DD-<strategyName>.md (new ADR if performance or API changes)
+Definition of Done:
+  - 100 percent coverage on this strategy
+  - No additional deps
+  - Benchmarks documented in the ADR
+"""
 
-## Development Prompts
-- **Component Creation**: "Create a component following our style guide"
-- **Hook Implementation**: "Implement a custom hook with proper TypeScript types"
-- **State Management**: "Suggest the best approach for managing this state"
-- **Error Handling**: "How should we handle errors in this scenario?"
+# Macro: Add a UI component
+Prompt:
+"""
+Create a reusable UI component <ComponentName> in packages/ui.
+Keep presentational only, no side effects.
+Edits:
+  - packages/ui/src/<ComponentName>.tsx (new)
+  - packages/ui/src/index.ts (export)
+  - packages/ui/__tests__/<ComponentName>.test.tsx (new)
+  - storybook or docs snippet under docs/ui.md (append)
+Definition of Done:
+  - Component renders and is accessible
+  - Unit test verifies props and interactions
+  - Tree-shakeable and side-effect free
+"""
 
-## Testing Prompts
-- **Test Coverage**: "What test cases should we add?"
-- **Mocking Strategy**: "How should we mock external dependencies?"
-- **Test Data**: "What test data should we use for this component?"
-- **Integration Testing**: "How should we test the interaction between components?"
-
-## Performance Prompts
-- **Bundle Size**: "How can we optimize the bundle size?"
-- **Render Performance**: "Are there performance optimizations we can implement?"
-- **Memory Usage**: "How can we prevent memory leaks?"
-- **Lazy Loading**: "What components should be lazy loaded?"
-
-## Security Prompts
-- **Input Validation**: "How should we validate user input?"
-- **Authentication**: "What security measures should we implement?"
-- **Data Protection**: "How should we protect sensitive data?"
-- **API Security**: "What security considerations apply to this API?"
-
-## Documentation Prompts
-- **Code Comments**: "What comments would make this code clearer?"
-- **API Documentation**: "How should we document this API?"
-- **User Guides**: "What user documentation should we create?"
-- **Developer Guides**: "What developer documentation should we update?"
-
-## Best Practices
-- **Always suggest**: Testing, error handling, and accessibility improvements
-- **Consider**: Performance, security, and maintainability
-- **Reference**: Our style guide, architecture, and existing patterns
-- **Question**: Assumptions and suggest alternatives when appropriate
+# Macro: Wire basic analytics (privacy-first)
+Prompt:
+"""
+Add basic anonymous analytics with opt-out.
+Do not send PII.
+Edits:
+  - apps/mobile/app/providers/analytics.ts (new)
+  - apps/mobile/app/_layout.tsx (initialize provider)
+  - docs/analytics.md (document events and opt-out)
+  - tests for provider behavior in apps/mobile/test/analytics.test.tsx
+Definition of Done:
+  - Events queued offline, sent over HTTPS
+  - Opt-out respected across sessions
+  - No PII, security checklist passes
+"""
