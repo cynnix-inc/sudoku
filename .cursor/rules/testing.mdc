@@ -1,7 +1,0 @@
----
-alwaysApply: false
----
-- When a bug is described, write a failing test first, then fix.
-- Prefer property tests for pure functions.
-- Never mock the standard library or HTTP globally.
-- If coverage drops, propose tests before code changes.
