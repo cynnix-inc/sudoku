@@ -34,7 +34,7 @@ function walk(node, workspaceName) {
   }
 
   const deps = node.dependencies || {};
-  for (const [depName, depNode] of Object.entries(deps)) {
+  for (const [, depNode] of Object.entries(deps)) {
     walk(depNode, name);
   }
 }
