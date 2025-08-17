@@ -1,0 +1,60 @@
+{
+  "name": "ultimate-sudoku",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "expo start",
+    "web": "expo start --web",
+    "android": "expo run:android",
+    "prebuild": "expo prebuild",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "format": "prettier --check .",
+    "typecheck": "tsc --pretty --noEmit",
+    "test": "jest --passWithNoTests",
+    "bundle:check": "node scripts/bundle-check.mjs",
+    "deps:verify": "node scripts/verify-deps.mjs",
+    "verify:deps": "node scripts/verify-deps.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "volta": {
+    "node": "22.0.0"
+  },
+  "dependencies": {
+    "expo": "^53.0.20",
+    "expo-haptics": "^14.1.4",
+    "expo-linear-gradient": "^14.1.5",
+    "expo-router": "^5.1.4",
+    "nativewind": "^4.1.23",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-native": "^0.79.5",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "^5.4.0",
+    "react-native-web": "^0.20.0",
+    "tailwindcss": "^4.1.12"
+  },
+  "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.2.2",
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.0.10",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "jest": "^29.7.0",
+    "jest-expo": "^53.0.9",
+    "metro": "^0.82.0",
+    "metro-config": "^0.82.0",
+    "metro-resolver": "^0.82.0",
+    "prettier": "^3.6.2",
+    "typescript": "~5.8.3"
+  }
+}
