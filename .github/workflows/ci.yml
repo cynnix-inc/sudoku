@@ -45,9 +45,18 @@ jobs:
         run: npm run typecheck
 
       - name: Test
-        run: npm test -- --ci
+        run: npm test -- --ci --coverage
 
       - name: Build
         run: npm run build
+
+      - name: Verify dependencies
+        run: npm run verify:deps
+
+      - name: Bundle size check
+        run: npm run bundle:check
+
+      - name: Security audit (high severity)
+        run: npm audit --audit-level=high --omit=dev
 
 

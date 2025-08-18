@@ -18,7 +18,7 @@ try {
 	const initialScheme = Appearance.getColorScheme?.() ?? null;
 	const initialPreferred = initialScheme === "dark" ? "dark" : initialScheme === "light" ? "light" : "dark";
 	SystemUI.setBackgroundColorAsync(initialPreferred === "dark" ? DARK_BG : LIGHT_BG).catch(() => {});
-} catch {}
+} catch { /* noop */ }
 
 export type ThemeContextValue = {
 	isDark: boolean;

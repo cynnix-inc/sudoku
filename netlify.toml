@@ -5,6 +5,10 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+	# Ensure Netlify uses Node 20 to match local/CI
+	NODE_VERSION = "20"
+
 # Production context for main branch
 [context.production]
   command = "npm run build"
@@ -16,5 +20,12 @@
   publish = "dist"
   # This context applies to the 'staging' branch name
   # Netlify uses branch deploys for non-production branches by default.
+
+
+# Ensure SPA routing works on Netlify by redirecting all paths to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 

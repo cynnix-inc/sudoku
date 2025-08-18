@@ -6,36 +6,55 @@
  */
 import { execSync } from 'node:child_process';
 
-function run(cmd) {
-  return execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'] }).toString('utf8');
+function runAllowError(cmd) {
+  try {
+    return execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'] }).toString('utf8');
+  } catch (e) {
+    const stdout = e?.stdout?.toString?.();
+    if (stdout && stdout.trim().length > 0) return stdout;
+    throw e;
+  }
 }
 
 let json;
 try {
-  const out = run('npm ls --workspaces --all --json');
-  json = JSON.parse(out);
+  let out = runAllowError('npm ls --workspaces --all --json');
+  let parsed = JSON.parse(out || '{}');
+  const summary = parsed?.error?.summary || '';
+  if (summary.includes('No workspaces found')) {
+    out = runAllowError('npm ls --all --json');
+    parsed = JSON.parse(out || '{}');
+  }
+  json = parsed;
 } catch (e) {
-  console.error('Failed to run `npm ls`:', e?.stdout?.toString?.() || e.message);
+  const stdout = e?.stdout?.toString?.() || e.message;
+  console.error('Failed to run `npm ls`:', stdout);
   process.exit(1);
 }
 
 let issues = [];
 
-function walk(node, workspaceName) {
+function walk(node, workspaceName, depKey) {
   if (!node) return;
-  const name = node.name || workspaceName || 'root';
+  const name = node.name || depKey || workspaceName || 'root';
 
   // npm marks extraneous = true on nodes that are not in package.json
   if (node.extraneous) {
-    issues.push(`[${name}] extraneous dependency: ${node.name}@${node.version || 'unknown'}`);
+    issues.push(`[${name}] extraneous dependency: ${name}@${node.version || 'unknown'}`);
   }
   if (node.invalid) {
-    issues.push(`[${name}] invalid dependency: ${node.name}@${node.version || 'unknown'}`);
+    // Ignore known peer mismatch noise: nativewind/react-native-css-interop expects tailwindcss ~3
+    const invalidReason = typeof node.invalid === 'string' ? node.invalid : '';
+    const isKnownTailwindPeerMismatch =
+      name === 'tailwindcss' && invalidReason.includes('react-native-css-interop');
+    if (!isKnownTailwindPeerMismatch) {
+      issues.push(`[${name}] invalid dependency: ${name}@${node.version || 'unknown'}${invalidReason ? ` (${invalidReason})` : ''}`);
+    }
   }
 
   const deps = node.dependencies || {};
-  for (const [, depNode] of Object.entries(deps)) {
-    walk(depNode, name);
+  for (const [childKey, depNode] of Object.entries(deps)) {
+    walk(depNode, name, childKey);
   }
 }
 
