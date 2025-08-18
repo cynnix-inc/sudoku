@@ -1,0 +1,20 @@
+# Netlify configuration
+# Secrets and environment variables should be configured in the Netlify UI, not in this file.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Production context for main branch
+[context.production]
+  command = "npm run build"
+  publish = "dist"
+
+# Staging context for staging branch
+[context.staging]
+  command = "npm run build"
+  publish = "dist"
+  # This context applies to the 'staging' branch name
+  # Netlify uses branch deploys for non-production branches by default.
+
+

@@ -1,0 +1,16 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Mark common binary types (examples; extend as needed)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg binary
+*.ico binary
+*.keystore binary
+*.jks binary
+*.aab binary
+*.apk binary
+
+

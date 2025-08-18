@@ -1,6 +1,10 @@
+// Added Prettier integration at the end to disable stylistic rules that conflict with Prettier.
+// Also preserved existing TypeScript + JS recommended settings.
+// Behavior remains the same aside from delegating formatting concerns to Prettier.
 const js = require("@eslint/js");
 const tsParser = require("@typescript-eslint/parser");
 const tsPlugin = require("@typescript-eslint/eslint-plugin");
+const prettier = require("eslint-config-prettier");
 
 module.exports = [
 	{
@@ -52,4 +56,6 @@ module.exports = [
 			},
 		},
 	},
+	// Prettier should be last to disable conflicting rules
+	prettier,
 ];

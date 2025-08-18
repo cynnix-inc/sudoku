@@ -1,0 +1,53 @@
+# CI for lint, typecheck, test, and build
+# Node version reads from package.json engines.node if present; otherwise defaults to 20.x.
+# Caches npm to speed up installs; cancels in-progress runs per branch via concurrency.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Node version from package.json engines (fallback 20.x)
+        id: node
+        run: |
+          NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
+          if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
+            echo "version=20.x" >> $GITHUB_OUTPUT
+          else
+            echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test -- --ci
+
+      - name: Build
+        run: npm run build
+
+

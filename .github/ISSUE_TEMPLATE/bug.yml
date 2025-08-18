@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a bug or regression
+title: "fix: <short summary>"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened and what did you expect?
+  - type: input
+    id: repro
+    attributes:
+      label: Reproduction steps
+      placeholder: Step 1, Step 2, ...
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: OS, device, app version, commit
+  - type: textarea
+    id: test
+    attributes:
+      label: Test plan / checklist
+      description: What to validate once fixed
+
+
