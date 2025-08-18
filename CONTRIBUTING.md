@@ -52,4 +52,3 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 
 ## Styling
 - Tailwind/NativeWind is scaffolded and kept for upcoming UI work. It may not be widely used in the codebase yet; prefer consistent usage where practical and avoid mixing multiple styling paradigms in the same component.
-
