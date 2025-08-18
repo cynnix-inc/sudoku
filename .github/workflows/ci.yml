@@ -1,7 +1,3 @@
-# CI for lint, typecheck, test, and build
-# Node version reads from package.json engines.node if present; otherwise defaults to 20.x.
-# Caches npm to speed up installs; cancels in-progress runs per branch via concurrency.
-
 name: CI
 
 on:
@@ -22,7 +18,11 @@ jobs:
       - name: Detect Node version from package.json engines (fallback 20.x)
         id: node
         run: |
-          NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
+          if command -v jq >/dev/null 2>&1; then
+            NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
+          else
+            NODE_VERSION=""
+          fi
           if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
             echo "version=20.x" >> $GITHUB_OUTPUT
           else

@@ -1,5 +1,8 @@
 -- Seed data only; schema is created in migrations.
 
+-- Ensure required extension for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Demo user (example; typically created via auth API)
 -- If you manage users via Supabase Auth, consider inserting into a public profile table instead.
 
