@@ -5,6 +5,10 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+	# Ensure Netlify uses Node 20 to match local/CI
+	NODE_VERSION = "20"
+
 # Production context for main branch
 [context.production]
   command = "npm run build"
