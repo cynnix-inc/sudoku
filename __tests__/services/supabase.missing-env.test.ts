@@ -11,7 +11,6 @@ describe('supabase client (missing env)', () => {
 		delete process.env['EXPO_PUBLIC_SUPABASE_URL'];
 		delete process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'];
 
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		require('../../app/services/supabase');
 		const { createClient } = require('@supabase/supabase-js');
 		const args = (createClient as jest.Mock).mock.calls[0] ?? [];

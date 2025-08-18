@@ -11,7 +11,6 @@ describe('supabase client', () => {
 		process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'] = 'anon-key';
 
 		// Require after env is set to trigger createClient with values
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		require('../../app/services/supabase');
 
 		const { createClient } = require('@supabase/supabase-js');

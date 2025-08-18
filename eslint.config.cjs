@@ -40,6 +40,19 @@ module.exports = [
 		},
 	},
 	{
+		files: ["**/__tests__/**/*.{ts,tsx,js,jsx}", "jest.setup.ts"],
+		languageOptions: {
+			globals: {
+				describe: "readonly",
+				it: "readonly",
+				expect: "readonly",
+				beforeAll: "readonly",
+				afterAll: "readonly",
+				jest: "readonly",
+			},
+		},
+	},
+	{
 		files: [
 			"*.config.js",
 			"babel.config.js",

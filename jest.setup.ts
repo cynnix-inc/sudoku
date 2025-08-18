@@ -1,3 +1,4 @@
+import React from 'react';
 import { jest } from '@jest/globals';
 
 // Mock expo-system-ui to avoid touching real system UI in tests
@@ -22,7 +23,7 @@ beforeAll(() => {
 	console.warn = (...args: unknown[]) => {
 		const first = String(args[0] ?? '');
 		if (first.includes('Supabase env is missing')) return;
-		(originalWarn as (...args: any[]) => void)(...args as any);
+		(originalWarn as (...args: unknown[]) => void)(...args as unknown[]);
 	};
 });
 
