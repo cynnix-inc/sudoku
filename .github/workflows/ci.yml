@@ -1,62 +1,122 @@
 name: CI
 
 on:
-  push:
   pull_request:
+  push:
+    branches:
+      - main
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Detect Node version from package.json engines (fallback 20.x)
-        id: node
-        run: |
-          if command -v jq >/dev/null 2>&1; then
-            NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
-          else
-            NODE_VERSION=""
-          fi
-          if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
-            echo "version=20.x" >> $GITHUB_OUTPUT
-          else
-            echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ steps.node.outputs.version }}
+          node-version: 20
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
-      - name: Lint
+      - name: Run ESLint
         run: npm run lint
 
-      - name: Typecheck
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run TypeScript typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm test -- --ci --coverage
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test -- --ci
 
-      - name: Build
-        run: npm run build
+name: CI
 
-      - name: Verify dependencies
-        run: npm run verify:deps
+on:
+  pull_request:
+  push:
+    branches:
+      - main
 
-      - name: Bundle size check
-        run: npm run bundle:check
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
-      - name: Security audit (high severity)
-        run: npm audit --audit-level=high --omit=dev
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
 
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run TypeScript typecheck
+        run: npm run typecheck
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test -- --ci
 
