@@ -21,6 +21,12 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 - Include DB/Migration notes if schema changes.
 - Add Risks and Rollback plan when relevant.
 
+## Changing .cursor rules
+- Open a PR updating files under `.cursor/rules/`.
+- Include: Purpose, Out of scope, Priority, Examples, Non-examples, and a Self-check section in each changed file.
+- Test the proposed rule by running Cursor on a throwaway branch and verifying diffs follow the rule.
+- Required reviewers: at least one maintainer.
+
 ## Commit message style (Conventional Commits)
 - Format: `<type>(scope): short summary`
 - Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`.

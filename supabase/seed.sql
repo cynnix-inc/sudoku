@@ -1,32 +1,11 @@
--- Seed data for Ultimate Sudoku (deterministic). Safe to run multiple times.
--- Uses ON CONFLICT DO NOTHING to avoid duplicate inserts.
--- Tables assumed: auth.users (managed), public.saved_puzzles, public.leaderboard
-
--- Ensure required extension for gen_random_uuid()
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Seed data only; schema is created in migrations.
 
 -- Demo user (example; typically created via auth API)
 -- If you manage users via Supabase Auth, consider inserting into a public profile table instead.
 
--- Saved puzzle
-CREATE TABLE IF NOT EXISTS public.saved_puzzles (
-	id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	user_id uuid NOT NULL,
-	puzzle text NOT NULL,
-	solution text NOT NULL,
-	difficulty text NOT NULL,
-	created_at timestamptz NOT NULL DEFAULT now()
-);
+-- Example saved puzzle row
 
--- Leaderboard
-CREATE TABLE IF NOT EXISTS public.leaderboard (
-	id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	username text NOT NULL,
-	difficulty text NOT NULL,
-	time_seconds integer NOT NULL,
-	created_at timestamptz NOT NULL DEFAULT now(),
-	UNIQUE (username, difficulty, time_seconds)
-);
+-- Example leaderboard row
 
 -- Insert one saved puzzle for a demo user (use a stable UUID for demo purposes)
 INSERT INTO public.saved_puzzles (id, user_id, puzzle, solution, difficulty)
