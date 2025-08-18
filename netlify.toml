@@ -9,6 +9,11 @@
 	# Ensure Netlify uses Node 20 to match local/CI
 	NODE_VERSION = "20"
 
+	# Netlify Secrets Scanning flags
+	# The EXPO_PUBLIC_* variables are intentionally exposed to the client bundle.
+	# Allowlist them so the scanner doesn't fail builds when their values appear in dist.
+	SECRETS_SCAN_OMIT_KEYS = "EXPO_PUBLIC_SUPABASE_ANON_KEY,EXPO_PUBLIC_SUPABASE_URL"
+
 # Production context for main branch
 [context.production]
   command = "npm run build"
