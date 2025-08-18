@@ -40,6 +40,7 @@ DerivedData/
 
 # Env
 .env*
+!.env.example
 
 
 
