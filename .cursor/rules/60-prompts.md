@@ -1,3 +1,12 @@
+## Quick Reference: Git — which option when?
+# New work: git checkout -b feat/<name> off staging
+# Sync your branch: git pull --rebase origin staging (from your feature branch)
+# Commit small: git add -p && git commit -m "..."
+# Publish branch: git push -u origin feat/<name>
+# Open PR: feature → staging
+# Release: PR staging → main
+# Hotfix: branch off main, PR to main, then merge main back into staging
+
 Rule: Approved prompt patterns for Cursor
 Applies to: `app/**`
 Use when: asking the assistant to scaffold or modify code
