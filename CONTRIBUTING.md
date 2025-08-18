@@ -39,3 +39,9 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 - Commands: `npm run dev`, `npm run web`, `npm run android`, `npm run ios`.
 
 
+## Working from Issues
+- Assign yourself to an Issue: a branch is auto-created using `issue-<number>-<title>`.
+- Use that branch for your work and open a PR to `staging`.
+- Keep rebasing on `staging`; push updates to the same branch.
+- When done, open/refresh the PR and request review.
+

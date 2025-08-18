@@ -2,6 +2,9 @@
 -- Uses ON CONFLICT DO NOTHING to avoid duplicate inserts.
 -- Tables assumed: auth.users (managed), public.saved_puzzles, public.leaderboard
 
+-- Ensure required extension for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Demo user (example; typically created via auth API)
 -- If you manage users via Supabase Auth, consider inserting into a public profile table instead.
 
@@ -44,6 +47,6 @@ VALUES (
 	'normal',
 	600
 )
-ON CONFLICT DO NOTHING;
+ON CONFLICT (username, difficulty, time_seconds) DO NOTHING;
 
 
