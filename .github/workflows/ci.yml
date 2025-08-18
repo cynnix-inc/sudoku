@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.4
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.4
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -52,12 +52,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.4
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Run tests
         run: npm test -- --ci
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.4
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build web bundle
+        run: npm run build
 
 # CI for lint, typecheck, test, and build
 # Node version reads from package.json engines.node if present; otherwise defaults to 20.x.
