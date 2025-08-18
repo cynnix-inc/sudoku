@@ -52,10 +52,3 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 
 ## Styling
 - Tailwind/NativeWind is scaffolded and kept for upcoming UI work. It may not be widely used in the codebase yet; prefer consistent usage where practical and avoid mixing multiple styling paradigms in the same component.
-
-## Working from Issues
-- Assign yourself to an Issue: a branch is auto-created using `issue-<number>-<title>`.
-- Use that branch for your work and open a PR to `staging`.
-- Keep rebasing on `staging`; push updates to the same branch.
-- When done, open/refresh the PR and request review.
-
