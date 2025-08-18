@@ -81,7 +81,7 @@ A16. npm.
 
 **Q17. Node version and manager**  
 Which Node version is pinned and how?  
-A17. Node 22 LTS pinned via Volta
+A17. Node 20 LTS pinned via Volta
 
 ---
 
@@ -189,8 +189,8 @@ A37. Yes. Supabase and CI docs are generated and synced.
 ## Project Identity
 App name: Ultimate Sudoku  
 Repo slug: ultimate-sudoku  
-Android applicationId: com.cynnix.ultimate_sudoku  
-iOS bundle identifier: com.cynnix.ultimateSudoku
+Android applicationId: com.ultimatesudoku.app  
+iOS bundle identifier: com.ultimatesudoku.app
 
 ---
 

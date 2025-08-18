@@ -53,6 +53,7 @@ module.exports = [
 				require: "readonly",
 				process: "readonly",
 				console: "readonly",
+				__dirname: "readonly",
 			},
 		},
 	},

@@ -1,10 +1,19 @@
-Rule: Security and Privacy
-Applies to: apps/**, packages/**
-Use when: handling data, adding auth, integrating storage or network
-Avoid: logging secrets, weakening policies, unnecessary permissions
-Definition of Done:
+Rule: Security and privacy
+Applies to: entire repository
+Use when: handling data, auth, storage, network, analytics
+
+Purpose
+- Protect users and the project by default.
+
+Out of scope
+- CI mechanics and workflow (see `50-devops.md`).
+
+Priority
+- Wins over other files for data/secrets/privacy decisions.
+
+Definition of Done
   - No secrets in code or logs
-  - Data is minimized and encrypted in transit
+  - Data minimized and encrypted in transit
   - Permissions reviewed and least-privilege applied
   - Security checklist passed
 
@@ -31,3 +40,9 @@ Definition of Done:
 
 ## Example
 - Adding analytics: ensure no PII is sent, provide user opt-out, document data flow.
+
+# Self-check
+- No secrets introduced in code, tests, or logs.
+- Network calls use HTTPS; PII not collected or transmitted.
+- Permissions reviewed for least privilege.
+- Dependency changes include license/size/vulnerability review.
