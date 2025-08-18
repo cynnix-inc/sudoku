@@ -20,7 +20,7 @@
     "deps:verify": "node scripts/verify-deps.mjs",
     "verify:deps": "node scripts/verify-deps.mjs",
     "ios": "expo run:ios",
-    "build": "expo export --platform web --output-dir dist",
+    "build": "npx expo export --platform web --output-dir dist",
     "ci": "npm run lint && npm run typecheck && npm test -- --ci && npm run build"
   },
   "keywords": [],
