@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import type { Board as BoardType } from "../game/types";
+import type { Board as BoardType } from "../_game/types";
 
 export type BoardProps = {
 	board: BoardType;

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import type { Digit } from "../game/types";
+import type { Digit } from "../_game/types";
 
 export type NumpadProps = {
 	lockedDigit: Digit | null;
