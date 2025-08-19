@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Platform } from "react-native";
 import Board from "./components/Board";
 import { initializeGame, applyAction } from "./_game/state";
 import type { Digit, GameAction } from "./_game/types";
 import Numpad from "./components/Numpad";
 import { loadProgress, saveProgress } from "./services/storage";
-import { Platform } from "react-native";
 
 export default function ClassicScreen() {
 	const [game, setGame] = useState(() =>
@@ -86,6 +85,7 @@ export default function ClassicScreen() {
 		window.addEventListener('keydown', handler);
 		return () => window.removeEventListener('keydown', handler);
 	}, [selected, lockedDigit, notesMode]);
+
 	return (
 		<View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 12 }}>
 			{/* Header */}
