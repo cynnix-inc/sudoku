@@ -9,7 +9,8 @@ module.exports = {
 	],
 	testPathIgnorePatterns: [
 		"/node_modules/",
-		"/__tests__/utils/"
+		"/__tests__/utils/",
+		"/__tests__/bdd/"
 	],
 	collectCoverage: true,
 	coverageThreshold: {

@@ -16,6 +16,7 @@
     "format": "prettier --check .",
     "typecheck": "tsc --pretty --noEmit",
     "test": "jest --passWithNoTests",
+    "test:bdd": "jest --config __tests__/bdd/jest.config.bdd.js --passWithNoTests",
     "bundle:check": "node scripts/bundle-check.mjs",
     "deps:verify": "node scripts/verify-deps.mjs",
     "verify:deps": "node scripts/verify-deps.mjs",
@@ -64,6 +65,7 @@
     "eslint-config-prettier": "^10.1.8",
     "jest": "^29.7.0",
     "jest-expo": "^53.0.9",
+    "jest-cucumber": "^4.2.1",
     "prettier": "^3.6.2",
     "react-test-renderer": "^19.1.1",
     "typescript": "^5.9.2"
