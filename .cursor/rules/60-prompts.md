@@ -1,3 +1,43 @@
+# Quick Git cheat sheet (repo workflow)
+Canonical sources: see `.cursor/rules/50-devops.md` and `CONTRIBUTING.md`. This is a convenience reference.
+
+- Start a feature branch from `staging`:
+```bash
+git checkout staging && git pull
+git checkout -b feat/<short-name>
+```
+
+- Make and commit changes (Conventional Commits):
+```bash
+git add -A
+git commit -m "feat(scope): short summary"
+```
+
+- Stay up to date with `staging` (rebase preferred):
+```bash
+git fetch origin
+git rebase origin/staging
+```
+
+- Push and open a PR to `staging`:
+```bash
+git push -u origin HEAD
+```
+
+- After a rebase, update your PR safely:
+```bash
+git push --force-with-lease
+```
+
+- Hotfix (urgent fix on production):
+```bash
+git checkout main && git pull
+git checkout -b hotfix/<short-name>
+# commit changes
+git push -u origin HEAD
+# PR to main, then back-merge to staging after merge
+```
+
 Rule: Approved prompt patterns for Cursor
 Applies to: `app/**`
 Use when: asking the assistant to scaffold or modify code
