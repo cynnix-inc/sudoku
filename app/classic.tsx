@@ -56,14 +56,14 @@ export default function ClassicScreen() {
 	}, []);
 	return (
 		<View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 12 }}>
-			<Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 4 }}>Classic</Text>
-			<Text style={{ fontSize: 16, opacity: 0.7 }}>9×9 Classic Sudoku</Text>
-			<Text accessibilityLabel="Elapsed time" style={{ fontSize: 14, opacity: 0.8 }}>
-				Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
-			</Text>
-			<Text accessibilityLabel="Lives remaining" style={{ fontSize: 14, opacity: 0.8, marginBottom: 12 }}>
-				Lives: {game.livesRemaining}
-			</Text>
+			{/* Header */}
+			<View style={{ alignItems: 'center', marginBottom: 8 }}>
+				<Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 4 }}>Classic</Text>
+				<Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2 }}>Mode: Classic • Difficulty: {game.config.difficulty}</Text>
+				<Text accessibilityLabel="Elapsed time" style={{ fontSize: 12, opacity: 0.8 }}>
+					Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} • Lives: {game.livesRemaining}
+				</Text>
+			</View>
 			<Board
 				board={game.board}
 				selected={selected}
@@ -164,6 +164,10 @@ export default function ClassicScreen() {
 				}}
 				onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
 			/>
+			{/* Seed footer */}
+			<Text accessibilityLabel="Seed footer" style={{ fontSize: 12, opacity: 0.6, marginTop: 12 }}>
+				Seed: fixed-easy
+			</Text>
 		</View>
 	);
 }
