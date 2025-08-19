@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import Board from "./components/Board";
 import { initializeGame, applyAction } from "./_game/state";
-import type { Digit } from "./_game/types";
+import type { Digit, GameAction } from "./_game/types";
 import Numpad from "./components/Numpad";
 
 export default function ClassicScreen() {
@@ -75,6 +75,24 @@ export default function ClassicScreen() {
 					}}
 				>
 					<Text style={{ fontSize: 14, fontWeight: "500" }}>Erase</Text>
+				</Pressable>
+				<View style={{ width: 8 }} />
+				<Pressable
+					onPress={() => setGame((prev) => applyAction(prev, { type: "undo" } as GameAction))}
+					accessibilityRole="button"
+					accessibilityLabel="Undo move"
+					style={{ paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 6, backgroundColor: "#ffffff", marginBottom: 8 }}
+				>
+					<Text style={{ fontSize: 14, fontWeight: "500" }}>Undo</Text>
+				</Pressable>
+				<View style={{ width: 8 }} />
+				<Pressable
+					onPress={() => setGame((prev) => applyAction(prev, { type: "redo" } as GameAction))}
+					accessibilityRole="button"
+					accessibilityLabel="Redo move"
+					style={{ paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 6, backgroundColor: "#ffffff", marginBottom: 8 }}
+				>
+					<Text style={{ fontSize: 14, fontWeight: "500" }}>Redo</Text>
 				</Pressable>
 			</View>
 			<Numpad

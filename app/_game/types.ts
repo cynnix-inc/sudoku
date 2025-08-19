@@ -27,12 +27,18 @@ export type GameState = {
 	givens: { row: number; col: number; value: Digit }[];
 	config: GameConfig;
 	livesRemaining: number;
+	history: {
+		past: { board: Board; livesRemaining: number }[];
+		future: { board: Board; livesRemaining: number }[];
+	};
 };
 
 export type PlaceAction = { type: "place"; row: number; col: number; value: Digit | null };
 export type NoteAction = { type: "note"; row: number; col: number; value: Digit; present: boolean };
 export type EraseAction = { type: "erase"; row: number; col: number };
+export type UndoAction = { type: "undo" };
+export type RedoAction = { type: "redo" };
 
-export type GameAction = PlaceAction | NoteAction | EraseAction;
+export type GameAction = PlaceAction | NoteAction | EraseAction | UndoAction | RedoAction;
 
 
