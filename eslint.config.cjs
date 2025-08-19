@@ -55,8 +55,10 @@ module.exports = [
 	{
 		files: [
 			"*.config.js",
+			"**/*.config.js",
 			"babel.config.js",
 			"jest.config.js",
+			"**/jest.config.*.js",
 			"tailwind.config.js",
 			"scripts/**/*.mjs",
 		],
