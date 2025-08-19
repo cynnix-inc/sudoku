@@ -56,10 +56,47 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 - Commands: `npm run dev`, `npm run web`, `npm run android`, `npm run ios`.
 
 ## Working from Issues
-- Assign yourself to an Issue: a branch is auto-created using `issue-<number>-<title>`.
-- Use that branch for your work and open a PR to `staging`.
+- Assign yourself to an Issue: create a feature branch using `feat/<short-name>` (e.g., `feat/classic-nav`).
+- Open a PR to `staging` from your feature branch.
 - Keep rebasing on `staging`; push updates to the same branch.
 - When done, open/refresh the PR and request review.
+
+## Epics, Issues, and Sub-issues
+- We track large scopes as Epics (GitHub issues titled with `[Epic] ...`).
+- Implementation tasks are Issues; Epics link to their children via sub-issues.
+- Use the GitHub CLI sub-issues extension to manage hierarchy: see `gh-sub-issue`.
+
+### Install the CLI extension
+```bash
+gh extension install yahsan2/gh-sub-issue
+```
+
+### Link an existing issue as a sub-issue
+```bash
+gh sub-issue add <epic-number> <issue-number> -R cynnix-inc/sudoku
+```
+
+### Create a new sub-issue under an epic
+```bash
+gh sub-issue create --parent <epic-number> \
+  --title "[UI] 9×9 board rendering" \
+  --body "Parent: #<epic-number>\n\nAcceptance Criteria..." \
+  --label "type/feature,area/ui,priority/p0,status/ready" \
+  --milestone "MVP v0.9" \
+  -R cynnix-inc/sudoku
+```
+
+### List sub-issues under an epic
+```bash
+gh sub-issue list <epic-number> -R cynnix-inc/sudoku --state all
+```
+
+### Templates and labels
+- Epics: Prefix title with `[Epic]`, include Scope and Done-when; add labels for area and priority.
+- Issues: Start with a short bracketed area (e.g., `[UI]`), include Context, Acceptance Criteria, Out of scope, Tech notes.
+- Labels: `type/*`, `area/*`, `mode/*`, `priority/*`, `status/*`.
+
+Reference: `gh-sub-issue` usage and options are documented here: https://github.com/yahsan2/gh-sub-issue
 
 ## Styling
 - Tailwind/NativeWind is scaffolded and kept for upcoming UI work. It may not be widely used in the codebase yet; prefer consistent usage where practical and avoid mixing multiple styling paradigms in the same component.

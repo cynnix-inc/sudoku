@@ -200,6 +200,26 @@ Tooltip examples:
 
 ## 6) Roadmap
 
+Tracking (GitHub issue IDs)
+- Epic: Classic – #14
+- Epic: Daily – #15
+- Epic: Difficulty Engine – #16
+- Epic: Hints – #18
+- Epic: Stats – #19
+- Epic: Storage & Sync – #20
+- Epic: Accessibility & UX – #21
+- Epic: Navigation/Settings/Help – #22
+- Epic: Developer Tools – #23
+
+Key child issues (selected)
+- Classic: #24–#37, #63
+- Daily: #38–#40, #49–#50
+- Hints: #41–#44
+- Stats: #45–#47
+- Storage & Sync: #48, #52–#54
+- Accessibility & UX: #57, #60
+- Navigation/Settings/Help: #61–#62
+
 ### MVP Scope (Phase 1)
 - Core 9×9 gameplay & controls
 - Classic mode with selectable difficulty
