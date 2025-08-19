@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import Board from '../../app/components/Board';
-import { createEmptyBoard, getCell } from '../../app/game/state';
-import type { Digit } from '../../app/game/types';
+import { createEmptyBoard, getCell } from '../../app/_game/state';
+import type { Digit } from '../../app/_game/types';
 
 describe('Board component', () => {
 	it('renders a 9x9 grid with givens styled', () => {

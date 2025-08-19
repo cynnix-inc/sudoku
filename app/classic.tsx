@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { View, Text } from "react-native";
 import Board from "./components/Board";
-import { initializeGame, applyAction } from "./game/state";
-import type { Digit } from "./game/types";
+import { initializeGame, applyAction } from "./_game/state";
+import type { Digit } from "./_game/types";
 import Numpad from "./components/Numpad";
 
 export default function ClassicScreen() {
