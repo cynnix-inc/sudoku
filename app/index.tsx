@@ -1,5 +1,7 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
+import { Link } from "expo-router";
+import type { Href } from "expo-router";
 
 export default function IndexScreen() {
 	return (
@@ -16,6 +18,18 @@ export default function IndexScreen() {
 			<Text style={{ fontSize: 16, opacity: 0.7 }}>
 				Welcome to Ultimate Sudoku
 			</Text>
+			{(() => {
+				const classicHref = "/classic" as unknown as Href;
+				return (
+					<Link href={classicHref} asChild>
+						<Pressable accessibilityRole="button" accessibilityLabel="Go to Classic">
+							<Text style={{ fontSize: 18, marginTop: 20, color: "#2563eb" }}>
+								Play Classic 9×9
+							</Text>
+						</Pressable>
+					</Link>
+				);
+			})()}
 		</View>
 	);
 }
