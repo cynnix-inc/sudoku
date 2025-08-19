@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Platform, useColorScheme, Pressable, Text, View, Appearance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { Slot } from "expo-router";
 import * as SystemUI from "expo-system-ui";
  
 if (Platform.OS === "web") {
@@ -83,13 +84,8 @@ export default function RootLayout() {
 						</Pressable>
 					</View>
 				</SafeAreaView>
-				<View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-					<Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 8, color: theme.foreground }}>
-						Hello world
-					</Text>
-					<Text style={{ fontSize: 16, opacity: 0.7, color: theme.foreground }}>
-						Welcome to Ultimate Sudoku
-					</Text>
+				<View style={{ flex: 1 }}>
+					<Slot />
 				</View>
 			</View>
 		</ThemeContext.Provider>
