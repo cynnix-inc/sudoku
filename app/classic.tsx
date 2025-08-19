@@ -21,7 +21,10 @@ export default function ClassicScreen() {
 	return (
 		<View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 12 }}>
 			<Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 4 }}>Classic</Text>
-			<Text style={{ fontSize: 16, opacity: 0.7, marginBottom: 12 }}>9×9 Classic Sudoku</Text>
+			<Text style={{ fontSize: 16, opacity: 0.7 }}>9×9 Classic Sudoku</Text>
+			<Text accessibilityLabel="Lives remaining" style={{ fontSize: 14, opacity: 0.8, marginBottom: 12 }}>
+				Lives: {game.livesRemaining}
+			</Text>
 			<Board
 				board={game.board}
 				selected={selected}

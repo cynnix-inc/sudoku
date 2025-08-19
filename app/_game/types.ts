@@ -10,6 +10,7 @@ export type Cell = {
 	value: CellValue;
 	notes: CellNotes;
 	isGiven: boolean;
+	isError: boolean;
 };
 
 export type Board = Cell[][]; // 9x9 grid

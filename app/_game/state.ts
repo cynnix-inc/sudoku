@@ -1,11 +1,12 @@
 import type { Board, Cell, Digit, GameAction, GameConfig, GameState } from "./types";
+import { isValidPlacement } from "./rules";
 
 export function createEmptyBoard(): Board {
 	const board: Board = [];
 	for (let r = 0; r < 9; r++) {
 		const row: Cell[] = [];
 		for (let c = 0; c < 9; c++) {
-			row.push({ row: r, col: c, value: null, notes: {}, isGiven: false });
+			row.push({ row: r, col: c, value: null, notes: {}, isGiven: false, isError: false });
 		}
 		board.push(row);
 	}
@@ -33,6 +34,7 @@ export function initializeGame(
 		cell.value = g.value;
 		cell.isGiven = true;
 		cell.notes = {};
+		cell.isError = false;
 	}
 	return {
 		board,
@@ -52,8 +54,20 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 		return next; // ignore edits to givens
 	}
 	if (action.type === "place") {
-		cell.value = action.value;
+		// reset notes/error first
 		cell.notes = {};
+		cell.isError = false;
+		if (action.value == null) {
+			cell.value = null;
+			return next;
+		}
+		if (!isValidPlacement(next.board, action.row, action.col, action.value)) {
+			cell.value = action.value;
+			cell.isError = true;
+			next.livesRemaining = Math.max(0, next.livesRemaining - 1);
+			return next;
+		}
+		cell.value = action.value;
 		return next;
 	}
 	if (action.type === "note") {
@@ -68,9 +82,8 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 	if (action.type === "erase") {
 		cell.value = null;
 		cell.notes = {};
+		cell.isError = false;
 		return next;
 	}
 	return next;
 }
-
-

@@ -15,8 +15,8 @@ export default function Board({ board, selected, onSelect }: BoardProps) {
 				<View key={r} style={{ flexDirection: "row" }}>
 					{row.map((cell, c) => {
 						const isSelected = selected && selected.row === r && selected.col === c;
-						const borderColor = isSelected ? "#2563eb" : "#d1d5db";
-						const backgroundColor = cell.isGiven ? "#f4f4f5" : "#ffffff";
+						const borderColor = cell.isError ? "#ef4444" : isSelected ? "#2563eb" : "#d1d5db";
+						const backgroundColor = cell.isGiven ? "#f4f4f5" : cell.isError ? "#fee2e2" : "#ffffff";
 						const noteDigits = Object.keys(cell.notes)
 							.map((k) => Number(k))
 							.sort((a, b) => a - b);
