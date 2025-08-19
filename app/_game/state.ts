@@ -41,6 +41,7 @@ export function initializeGame(
 		givens: [...givens],
 		config,
 		livesRemaining: config.maxLives,
+		history: { past: [], future: [] },
 	};
 }
 
@@ -49,41 +50,73 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 		...state,
 		board: state.board.map((row) => row.map((cell) => ({ ...cell, notes: { ...cell.notes } }))),
 	};
-	const cell = getCell(next.board, action.row, action.col);
-	if (cell.isGiven) {
-		return next; // ignore edits to givens
+	// Undo/Redo without coordinates
+	if (action.type === "undo") {
+		const prev = state.history.past[state.history.past.length - 1];
+		if (!prev) return state;
+		const newPast = state.history.past.slice(0, -1);
+		const newFuture = [{ board: state.board, livesRemaining: state.livesRemaining }, ...state.history.future];
+		return { ...state, board: prev.board, livesRemaining: prev.livesRemaining, history: { past: newPast, future: newFuture } };
 	}
-	if (action.type === "place") {
-		// reset notes/error first
-		cell.notes = {};
-		cell.isError = false;
-		if (action.value == null) {
-			cell.value = null;
-			return next;
-		}
-		if (!isValidPlacement(next.board, action.row, action.col, action.value)) {
+	if (action.type === "redo") {
+		const fut = state.history.future[0];
+		if (!fut) return state;
+		const newFuture = state.history.future.slice(1);
+		const newPast = [...state.history.past, { board: state.board, livesRemaining: state.livesRemaining }];
+		return { ...state, board: fut.board, livesRemaining: fut.livesRemaining, history: { past: newPast, future: newFuture } };
+	}
+
+	switch (action.type) {
+		case "place": {
+			next.history = {
+				past: [...state.history.past, { board: state.board, livesRemaining: state.livesRemaining }],
+				future: [],
+			};
+			const cell = getCell(next.board, action.row, action.col);
+			if (cell.isGiven) return next;
+			cell.notes = {};
+			cell.isError = false;
+			if (action.value == null) {
+				cell.value = null;
+				return next;
+			}
+			if (!isValidPlacement(next.board, action.row, action.col, action.value)) {
+				cell.value = action.value;
+				cell.isError = true;
+				next.livesRemaining = Math.max(0, next.livesRemaining - 1);
+				return next;
+			}
 			cell.value = action.value;
-			cell.isError = true;
-			next.livesRemaining = Math.max(0, next.livesRemaining - 1);
 			return next;
 		}
-		cell.value = action.value;
-		return next;
-	}
-	if (action.type === "note") {
-		if (cell.value) cell.value = null; // typing a note clears value
-		if (action.present) {
-			cell.notes[action.value] = true;
-		} else {
-			delete cell.notes[action.value];
+		case "note": {
+			next.history = {
+				past: [...state.history.past, { board: state.board, livesRemaining: state.livesRemaining }],
+				future: [],
+			};
+			const cell = getCell(next.board, action.row, action.col);
+			if (cell.isGiven) return next;
+			if (cell.value) cell.value = null; // typing a note clears value
+			if (action.present) {
+				cell.notes[action.value] = true;
+			} else {
+				delete cell.notes[action.value];
+			}
+			return next;
 		}
-		return next;
+		case "erase": {
+			next.history = {
+				past: [...state.history.past, { board: state.board, livesRemaining: state.livesRemaining }],
+				future: [],
+			};
+			const cell = getCell(next.board, action.row, action.col);
+			if (cell.isGiven) return next;
+			cell.value = null;
+			cell.notes = {};
+			cell.isError = false;
+			return next;
+		}
+		default:
+			return next;
 	}
-	if (action.type === "erase") {
-		cell.value = null;
-		cell.notes = {};
-		cell.isError = false;
-		return next;
-	}
-	return next;
 }
