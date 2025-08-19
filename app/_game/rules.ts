@@ -1,4 +1,4 @@
-import type { Board } from "./types";
+import type { Board, Digit } from "./types";
 import { getCell } from "./state";
 
 export function isSolved(board: Board): boolean {
@@ -31,6 +31,26 @@ export function isSolved(board: Board): boolean {
 		}
 	}
 	return true;
+}
+
+export function isValidPlacement(board: Board, row: number, col: number, value: Digit): boolean {
+    // Row
+    for (let c = 0; c < 9; c++) {
+        if (c !== col && getCell(board, row, c).value === value) return false;
+    }
+    // Column
+    for (let r = 0; r < 9; r++) {
+        if (r !== row && getCell(board, r, col).value === value) return false;
+    }
+    // Box
+    const br = Math.floor(row / 3) * 3;
+    const bc = Math.floor(col / 3) * 3;
+    for (let r = br; r < br + 3; r++) {
+        for (let c = bc; c < bc + 3; c++) {
+            if (!(r === row && c === col) && getCell(board, r, c).value === value) return false;
+        }
+    }
+    return true;
 }
 
 
