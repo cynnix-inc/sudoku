@@ -4,6 +4,7 @@ import Board from "./components/Board";
 import { initializeGame, applyAction } from "./_game/state";
 import type { Digit, GameAction } from "./_game/types";
 import Numpad from "./components/Numpad";
+import { loadProgress, saveProgress } from "./services/storage";
 
 export default function ClassicScreen() {
 	const [game, setGame] = useState(() =>
@@ -21,6 +22,20 @@ export default function ClassicScreen() {
 	const [seconds, setSeconds] = useState(0);
 	const [paused, setPaused] = useState(false);
 	const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
+
+	// Load progress on mount
+	useEffect(() => {
+		loadProgress<{ board: typeof game.board }>("sudoku-progress").then((saved) => {
+			if (saved && saved.board) {
+				setGame((prev) => ({ ...prev, board: saved.board }));
+			}
+		});
+	}, []);
+
+	// Persist on game changes
+	useEffect(() => {
+		saveProgress("sudoku-progress", { board: game.board });
+	}, [game.board]);
 
 	useEffect(() => {
 		if (paused) {
