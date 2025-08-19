@@ -25,6 +25,8 @@ This folder holds the **locked MVP spec** for Ultimate Sudoku and supporting QA 
 - Break work into Issues with clear Acceptance Criteria and Tech notes.
 - Link Issues under their Epic using the GitHub CLI sub-issue extension.
 
+Canonical guide: see `CONTRIBUTING.md` → "Epics, Issues, and Sub-issues" for creating sub-issues, labels, and milestones.
+
 Quick reference:
 ```bash
 # install extension

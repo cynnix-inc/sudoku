@@ -47,6 +47,9 @@ Definition of Done
   3. Promote via PR from `staging` to `main`.
   4. Hotfix: branch from `main`, PR to `main`, then PR back to `staging`.
 
+# Issue tracking (Epics, Issues, Sub-issues)
+- Canonical guidance for creating and linking sub-issues, labels, and milestones lives in `CONTRIBUTING.md` → "Epics, Issues, and Sub-issues".
+
 # Commit messages (Conventional Commits)
 - Format: `<type>(scope): summary`
 - Types: feat, fix, chore, docs, refactor, test, build, ci, perf
