@@ -65,6 +65,7 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 - We track large scopes as Epics (GitHub issues titled with `[Epic] ...`).
 - Implementation tasks are Issues; Epics link to their children via sub-issues.
 - Use the GitHub CLI sub-issues extension to manage hierarchy: see `gh-sub-issue`.
+- For driving an epic end-to-end (branching, CI gates, PR flow), see the automation template: `docs/templates/epic-automation.md`.
 
 ### Install the CLI extension (If not already installed)
 ```bash
