@@ -17,6 +17,9 @@ export default function Board({ board, selected, onSelect }: BoardProps) {
 						const isSelected = selected && selected.row === r && selected.col === c;
 						const borderColor = isSelected ? "#2563eb" : "#d1d5db";
 						const backgroundColor = cell.isGiven ? "#f4f4f5" : "#ffffff";
+						const noteDigits = Object.keys(cell.notes)
+							.map((k) => Number(k))
+							.sort((a, b) => a - b);
 						return (
 							<Pressable
 								key={c}
@@ -35,9 +38,20 @@ export default function Board({ board, selected, onSelect }: BoardProps) {
 									marginBottom: r % 3 === 2 ? 6 : 0,
 								}}
 							>
-								<Text style={{ fontSize: 18, fontWeight: cell.isGiven ? "700" : "400" }}>
-									{cell.value ?? ""}
-								</Text>
+								{cell.value != null ? (
+									<Text style={{ fontSize: 18, fontWeight: cell.isGiven ? "700" : "400" }}>
+										{cell.value}
+									</Text>
+								) : noteDigits.length > 0 ? (
+									<Text
+										testID={`cell-${r + 1}-${c + 1}-notes`}
+										style={{ fontSize: 10, color: "#6b7280" }}
+									>
+										{noteDigits.join("")}
+									</Text>
+								) : (
+									<Text style={{ fontSize: 18 }}>{""}</Text>
+								)}
 							</Pressable>
 						);
 					})}
