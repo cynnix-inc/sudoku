@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import Board from "./components/Board";
 import { initializeGame, applyAction } from "./_game/state";
@@ -18,10 +18,34 @@ export default function ClassicScreen() {
 	const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
 	const [lockedDigit, setLockedDigit] = useState<Digit | null>(null);
 	const [notesMode, setNotesMode] = useState(false);
+	const [seconds, setSeconds] = useState(0);
+	const [paused, setPaused] = useState(false);
+	const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
+
+	useEffect(() => {
+		if (paused) {
+			if (timerRef.current) globalThis.clearInterval(timerRef.current);
+			return;
+		}
+		timerRef.current = globalThis.setInterval(() => {
+			setSeconds((s) => s + 1);
+		}, 1000);
+		return () => {
+			if (timerRef.current) globalThis.clearInterval(timerRef.current);
+		};
+	}, [paused]);
+
+	// Idle auto-pause stub: in production, hook into AppState or visibilitychange
+	useEffect(() => {
+		// no-op stub
+	}, []);
 	return (
 		<View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 12 }}>
 			<Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 4 }}>Classic</Text>
 			<Text style={{ fontSize: 16, opacity: 0.7 }}>9×9 Classic Sudoku</Text>
+			<Text accessibilityLabel="Elapsed time" style={{ fontSize: 14, opacity: 0.8 }}>
+				Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
+			</Text>
 			<Text accessibilityLabel="Lives remaining" style={{ fontSize: 14, opacity: 0.8, marginBottom: 12 }}>
 				Lives: {game.livesRemaining}
 			</Text>
@@ -55,6 +79,23 @@ export default function ClassicScreen() {
 					}}
 				>
 					<Text style={{ fontSize: 14, fontWeight: notesMode ? "700" : "500" }}>{notesMode ? "Notes: ON" : "Notes: OFF"}</Text>
+				</Pressable>
+				<View style={{ width: 8 }} />
+				<Pressable
+					onPress={() => setPaused((p) => !p)}
+					accessibilityRole="button"
+					accessibilityLabel={paused ? "Resume timer" : "Pause timer"}
+					style={{
+						paddingHorizontal: 12,
+						paddingVertical: 6,
+						borderWidth: 1,
+						borderColor: paused ? "#2563eb" : "#d1d5db",
+						borderRadius: 6,
+						backgroundColor: paused ? "#dbeafe" : "#ffffff",
+						marginBottom: 8,
+					}}
+				>
+					<Text style={{ fontSize: 14, fontWeight: paused ? "700" : "500" }}>{paused ? "Resume" : "Pause"}</Text>
 				</Pressable>
 				<View style={{ width: 8 }} />
 				<Pressable
@@ -111,5 +152,3 @@ export default function ClassicScreen() {
 		</View>
 	);
 }
-
-
