@@ -65,7 +65,7 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 		const newPast = [...state.history.past, { board: state.board, livesRemaining: state.livesRemaining }];
 		return { ...state, board: fut.board, livesRemaining: fut.livesRemaining, history: { past: newPast, future: newFuture } };
 	}
-
+	// Coord-based actions with proper narrowing
 	switch (action.type) {
 		case "place": {
 			next.history = {
@@ -73,7 +73,7 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 				future: [],
 			};
 			const cell = getCell(next.board, action.row, action.col);
-			if (cell.isGiven) return next;
+			if (cell.isGiven) return next; // ignore edits to givens
 			cell.notes = {};
 			cell.isError = false;
 			if (action.value == null) {
