@@ -7,8 +7,10 @@ describe('ClassicScreen header/footer', () => {
         render(<ClassicScreen />);
         expect(screen.getByText('Classic')).toBeTruthy();
         expect(screen.getByText(/Mode: Classic/)).toBeTruthy();
-        expect(screen.getByLabelText('Elapsed time')).toBeTruthy();
-        expect(screen.getByLabelText('Lives remaining')).toBeTruthy();
+        const time = screen.getByLabelText('Elapsed time');
+        expect(time).toBeTruthy();
+        // Should include Lives in the same line
+        expect(time).toHaveTextContent(/Lives:/);
     });
 });
 
