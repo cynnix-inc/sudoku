@@ -18,8 +18,19 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 ## PR expectations
 - All checks must pass: lint, types, tests, build.
 - Add screenshots/GIF for UI changes.
-- Include DB/Migration notes if schema changes.
+- Include DB/Migration notes if schema changes (see `docs/db.md`).
 - Add Risks and Rollback plan when relevant.
+
+## Product scope and ADRs
+- MVP spec (source of truth): `docs/product/ultimate-sudoku-mvp-v0.9.md`
+- ADRs (update when decisions change): `docs/adr/` (index at `docs/adr/README.md`)
+
+## Acceptance criteria
+- MVP acceptance scenarios (Gherkin): `docs/qa/features/`
+
+## Platform setup
+- Android: `docs/android-setup.md`
+- iOS: `docs/ios-setup.md`
 
 ## Changing .cursor rules
 - Open a PR updating files under `.cursor/rules/`.

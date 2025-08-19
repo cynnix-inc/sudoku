@@ -1,23 +1,25 @@
 # Run Supabase migrations on push to staging and main
 # Uses supabase/setup-cli@v1 (keep updated to latest stable; e.g., v1.175.4 at time of writing)
 # Selects project by branch using secrets: SUPABASE_PROJECT_REF_STAGING and SUPABASE_PROJECT_REF_PROD
+# Docs: see `docs/db.md` for environments, required secrets, and promotion flow
 
 name: Supabase Migrations
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - staging
-      - main
+    branches: [staging, main]
 
 jobs:
   migrate:
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     env:
+      # Common
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       REF: ${{ github.ref_name == 'main' && secrets.SUPABASE_PROJECT_REF_PROD || secrets.SUPABASE_PROJECT_REF_STAGING }}
+      # DB password per environment (create these two secrets)
+      SUPABASE_DB_PASSWORD: ${{ github.ref_name == 'main' && secrets.SUPABASE_DB_PASSWORD_PROD || secrets.SUPABASE_DB_PASSWORD_STAGING }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,13 +35,13 @@ jobs:
         with:
           version: latest
 
-      - name: Verify CLI auth
-        run: supabase --version
+      - name: Login to Supabase (non-interactive)
+        run: supabase login --token "$SUPABASE_ACCESS_TOKEN"
 
-      - name: Link project
+      - name: Link project (non-interactive)
+        # SUPABASE_DB_PASSWORD is read by the CLI to avoid prompts
         run: supabase link --project-ref "$REF"
 
       - name: Push migrations
-        run: supabase db push
-
-
+        # Either rely on the link or pass --project-ref explicitly (both work)
+        run: supabase db push --linked

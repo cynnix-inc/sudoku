@@ -2,6 +2,8 @@
 
 This folder hosts database migrations and seed data for Ultimate Sudoku.
 
+For environments, local dev, and CI promotion, see `docs/db.md`.
+
 Option A: Local development
 - Install the CLI: `npm i -g supabase` or use Homebrew.
 - Start local stack: `supabase start`
