@@ -22,4 +22,10 @@
 
 See `CONTRIBUTING.md` for branching, commit style, quality gates, and PR expectations.
 
+### Tooling & Releases
 
+- Uses **Husky** + **lint-staged** to enforce linting and tests pre-commit
+- **Commitlint** enforces Conventional Commits
+- **Changesets** for versioning and changelog; base branch is `staging`
+- **Dependabot** keeps dependencies up to date
+- **Lighthouse CI** runs on PRs to `staging` for basic web performance checks
