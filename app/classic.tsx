@@ -53,6 +53,26 @@ export default function ClassicScreen() {
 				>
 					<Text style={{ fontSize: 14, fontWeight: notesMode ? "700" : "500" }}>{notesMode ? "Notes: ON" : "Notes: OFF"}</Text>
 				</Pressable>
+				<View style={{ width: 8 }} />
+				<Pressable
+					onPress={() => {
+						if (!selected) return;
+						setGame((prev) => applyAction(prev, { type: "erase", row: selected.row, col: selected.col }));
+					}}
+					accessibilityRole="button"
+					accessibilityLabel="Erase cell"
+					style={{
+						paddingHorizontal: 12,
+						paddingVertical: 6,
+						borderWidth: 1,
+						borderColor: "#d1d5db",
+						borderRadius: 6,
+						backgroundColor: "#ffffff",
+						marginBottom: 8,
+					}}
+				>
+					<Text style={{ fontSize: 14, fontWeight: "500" }}>Erase</Text>
+				</Pressable>
 			</View>
 			<Numpad
 				lockedDigit={lockedDigit}
