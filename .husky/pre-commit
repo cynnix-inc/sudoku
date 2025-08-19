@@ -1,0 +1,5 @@
+sh "$(dirname -- "$0")/_/husky.sh"
+
+# Lint staged files and run tests quickly
+npx --yes lint-staged || exit 1
+npm test --silent || exit 1
