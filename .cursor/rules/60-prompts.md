@@ -46,7 +46,7 @@ Purpose
 - Provide copy-pastable, safe templates that match this repo.
 
 Out of scope
-- Workflow and CI (see `50-devops.md`).
+- Workflow, issues, and labels (see `CONTRIBUTING.md` → "Epics, Issues, and Sub-issues"); CI (see `50-devops.md`).
 
 Priority
 - If rules conflict, this file yields to `50-devops.md` and `40-security.md`.
