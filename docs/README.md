@@ -19,3 +19,22 @@ This folder holds the **locked MVP spec** for Ultimate Sudoku and supporting QA 
 - Keep `/docs` at **repo root** for discoverability.  
 - Link from root `README.md` to `/docs/product/ultimate-sudoku-mvp-v0.9.md`.  
 - For Cursor: pin this doc in the sidebar and enable outline TOC for fast nav.
+
+## Planning Workflow (Epics, Issues, Sub-issues)
+- Track large scopes as Epics (issue title prefixed with `[Epic]`).
+- Break work into Issues with clear Acceptance Criteria and Tech notes.
+- Link Issues under their Epic using the GitHub CLI sub-issue extension.
+
+Quick reference:
+```bash
+# install extension
+gh extension install yahsan2/gh-sub-issue
+
+# link an existing issue under an epic
+gh sub-issue add <epic-number> <issue-number> -R cynnix-inc/sudoku
+
+# list sub-issues for an epic
+gh sub-issue list <epic-number> -R cynnix-inc/sudoku --state all
+```
+
+Extension docs: https://github.com/yahsan2/gh-sub-issue
