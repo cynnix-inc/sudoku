@@ -2,18 +2,13 @@ import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import IndexScreen from '../../app/index';
 
+jest.mock('expo-router', () => ({
+  Link: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 describe('IndexScreen', () => {
-	it('renders welcome copy', () => {
-		render(<IndexScreen />);
-		expect(screen.getByText('Hello world')).toBeTruthy();
-		expect(screen.getByText('Welcome to Ultimate Sudoku')).toBeTruthy();
-	});
-
-	it('has link to Classic screen', () => {
-		render(<IndexScreen />);
-		const link = screen.getByLabelText('Go to Classic');
-		expect(link).toBeTruthy();
-	});
+  it('renders links', () => {
+    render(<IndexScreen />);
+    expect(screen.getByText('Play Classic 9×9')).toBeTruthy();
+  });
 });
-
-

@@ -1,0 +1,38 @@
+name: Release Please (staging)
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Please
+        id: rp
+        uses: google-github-actions/release-please-action@v4
+        with:
+          command: release-pr
+          release-type: node
+          package-name: ultimate-sudoku
+          bump-minor-pre-major: true
+          target-branch: staging
+
+      - name: Enable auto-merge on Release PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Find the open Release Please PR on staging by label
+          PR_NUMBER=$(gh pr list --base staging --state open --label "autorelease: pending" --json number --jq '.[0].number')
+          if [ -z "${PR_NUMBER}" ]; then
+            echo "No open Release Please PR found to auto-merge."
+            exit 0
+          fi
+          gh pr merge "${PR_NUMBER}" --auto --merge
+
