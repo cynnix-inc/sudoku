@@ -5,6 +5,7 @@ import { initializeGame, applyAction } from "./_game/state";
 import type { Digit, GameAction } from "./_game/types";
 import Numpad from "./components/Numpad";
 import { loadProgress, saveProgress } from "./services/storage";
+import { Platform } from "react-native";
 
 export default function ClassicScreen() {
 	const [game, setGame] = useState(() =>
@@ -54,16 +55,47 @@ export default function ClassicScreen() {
 	useEffect(() => {
 		// no-op stub
 	}, []);
+
+	// Keyboard: arrows, digits, N, Backspace (web only)
+	useEffect(() => {
+		if (Platform.OS !== 'web') return;
+		type KeyEvt = { key: string };
+		const handler = (e: KeyEvt) => {
+			if (e.key === 'ArrowUp') setSelected((curr) => curr ? { row: Math.max(0, curr.row - 1), col: curr.col } : { row: 0, col: 0 });
+			else if (e.key === 'ArrowDown') setSelected((curr) => curr ? { row: Math.min(8, curr.row + 1), col: curr.col } : { row: 0, col: 0 });
+			else if (e.key === 'ArrowLeft') setSelected((curr) => curr ? { row: curr.row, col: Math.max(0, curr.col - 1) } : { row: 0, col: 0 });
+			else if (e.key === 'ArrowRight') setSelected((curr) => curr ? { row: curr.row, col: Math.min(8, curr.col + 1) } : { row: 0, col: 0 });
+			else if (/^[1-9]$/.test(e.key)) {
+				const d = Number(e.key) as Digit;
+				const value = lockedDigit ?? d;
+				setGame((prev) => {
+					const sel = selected ?? { row: 0, col: 0 };
+					return notesMode
+						? applyAction(prev, { type: 'note', row: sel.row, col: sel.col, value, present: true })
+						: applyAction(prev, { type: 'place', row: sel.row, col: sel.col, value })
+				});
+			} else if (e.key === 'Backspace') {
+				setGame((prev) => {
+					const sel = selected ?? { row: 0, col: 0 };
+					return applyAction(prev, { type: 'erase', row: sel.row, col: sel.col });
+				});
+			} else if (e.key.toLowerCase() === 'n') {
+				setNotesMode((p) => !p);
+			}
+		};
+		window.addEventListener('keydown', handler);
+		return () => window.removeEventListener('keydown', handler);
+	}, [selected, lockedDigit, notesMode]);
 	return (
 		<View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 12 }}>
-			<Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 4 }}>Classic</Text>
-			<Text style={{ fontSize: 16, opacity: 0.7 }}>9×9 Classic Sudoku</Text>
-			<Text accessibilityLabel="Elapsed time" style={{ fontSize: 14, opacity: 0.8 }}>
-				Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
-			</Text>
-			<Text accessibilityLabel="Lives remaining" style={{ fontSize: 14, opacity: 0.8, marginBottom: 12 }}>
-				Lives: {game.livesRemaining}
-			</Text>
+			{/* Header */}
+			<View style={{ alignItems: 'center', marginBottom: 8 }}>
+				<Text style={{ fontSize: 28, fontWeight: "700", marginBottom: 4 }}>Classic</Text>
+				<Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2 }}>Mode: Classic • Difficulty: {game.config.difficulty}</Text>
+				<Text accessibilityLabel="Elapsed time" style={{ fontSize: 12, opacity: 0.8 }}>
+					Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} • Lives: {game.livesRemaining}
+				</Text>
+			</View>
 			<Board
 				board={game.board}
 				selected={selected}
@@ -164,6 +196,10 @@ export default function ClassicScreen() {
 				}}
 				onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
 			/>
+			{/* Seed footer */}
+			<Text accessibilityLabel="Seed footer" style={{ fontSize: 12, opacity: 0.6, marginTop: 12 }}>
+				Seed: fixed-easy
+			</Text>
 		</View>
 	);
 }
