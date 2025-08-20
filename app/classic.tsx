@@ -61,21 +61,24 @@ export default function ClassicScreen() {
 		if (Platform.OS !== 'web') return;
 		type KeyEvt = { key: string };
 		const handler = (e: KeyEvt) => {
-			if (!selected) return;
-			if (e.key === 'ArrowUp') setSelected(({ row, col }) => ({ row: Math.max(0, row - 1), col }));
-			else if (e.key === 'ArrowDown') setSelected(({ row, col }) => ({ row: Math.min(8, row + 1), col }));
-			else if (e.key === 'ArrowLeft') setSelected(({ row, col }) => ({ row, col: Math.max(0, col - 1) }));
-			else if (e.key === 'ArrowRight') setSelected(({ row, col }) => ({ row, col: Math.min(8, col + 1) }));
+			if (e.key === 'ArrowUp') setSelected((curr) => curr ? { row: Math.max(0, curr.row - 1), col: curr.col } : { row: 0, col: 0 });
+			else if (e.key === 'ArrowDown') setSelected((curr) => curr ? { row: Math.min(8, curr.row + 1), col: curr.col } : { row: 0, col: 0 });
+			else if (e.key === 'ArrowLeft') setSelected((curr) => curr ? { row: curr.row, col: Math.max(0, curr.col - 1) } : { row: 0, col: 0 });
+			else if (e.key === 'ArrowRight') setSelected((curr) => curr ? { row: curr.row, col: Math.min(8, curr.col + 1) } : { row: 0, col: 0 });
 			else if (/^[1-9]$/.test(e.key)) {
 				const d = Number(e.key) as Digit;
 				const value = lockedDigit ?? d;
-				setGame((prev) =>
-					notesMode
-						? applyAction(prev, { type: 'note', row: selected.row, col: selected.col, value, present: true })
-						: applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value })
-				);
+				setGame((prev) => {
+					const sel = selected ?? { row: 0, col: 0 };
+					return notesMode
+						? applyAction(prev, { type: 'note', row: sel.row, col: sel.col, value, present: true })
+						: applyAction(prev, { type: 'place', row: sel.row, col: sel.col, value })
+				});
 			} else if (e.key === 'Backspace') {
-				setGame((prev) => applyAction(prev, { type: 'erase', row: selected.row, col: selected.col }));
+				setGame((prev) => {
+					const sel = selected ?? { row: 0, col: 0 };
+					return applyAction(prev, { type: 'erase', row: sel.row, col: sel.col });
+				});
 			} else if (e.key.toLowerCase() === 'n') {
 				setNotesMode((p) => !p);
 			}
