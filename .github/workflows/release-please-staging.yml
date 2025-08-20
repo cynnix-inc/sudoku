@@ -15,13 +15,13 @@ jobs:
     steps:
       - name: Release Please
         id: rp
-        uses: google-github-actions/release-please-action@v4
+        uses: googleapis/release-please-action@v4
         with:
-          command: release-pr
           release-type: node
           package-name: ultimate-sudoku
           bump-minor-pre-major: true
           target-branch: staging
+          skip-github-release: true
 
       - name: Enable auto-merge on Release PR
         env:
