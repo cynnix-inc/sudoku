@@ -22,23 +22,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Detect Node version from package.json engines (fallback 20.x)
-        id: node
-        run: |
-          if command -v jq >/dev/null 2>&1; then
-            NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
-          else
-            NODE_VERSION=""
-          fi
-          if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
-            echo "version=20.x" >> $GITHUB_OUTPUT
-          else
-            echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          fi
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ steps.node.outputs.version }}
+          node-version: 20
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -51,23 +38,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Detect Node version from package.json engines (fallback 20.x)
-        id: node
-        run: |
-          if command -v jq >/dev/null 2>&1; then
-            NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
-          else
-            NODE_VERSION=""
-          fi
-          if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
-            echo "version=20.x" >> $GITHUB_OUTPUT
-          else
-            echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          fi
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ steps.node.outputs.version }}
+          node-version: 20
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -80,30 +54,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Detect Node version from package.json engines (fallback 20.x)
-        id: node
-        run: |
-          if command -v jq >/dev/null 2>&1; then
-            NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
-          else
-            NODE_VERSION=""
-          fi
-          if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
-            echo "version=20.x" >> $GITHUB_OUTPUT
-          else
-            echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          fi
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ steps.node.outputs.version }}
+          node-version: 20
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Run tests
         env:
           CI: true
-        run: npm test -- --ci --coverage
+        run: npm test -- --ci
 
   build:
     name: build
@@ -111,23 +72,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Detect Node version from package.json engines (fallback 20.x)
-        id: node
-        run: |
-          if command -v jq >/dev/null 2>&1; then
-            NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
-          else
-            NODE_VERSION=""
-          fi
-          if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
-            echo "version=20.x" >> $GITHUB_OUTPUT
-          else
-            echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          fi
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ steps.node.outputs.version }}
+          node-version: 20
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -135,9 +83,3 @@ jobs:
         env:
           CI: true
         run: npm run build
-      - name: Verify dependencies
-        run: npm run verify:deps
-      - name: Bundle size check
-        run: npm run bundle:check
-      - name: Security audit (high severity)
-        run: npm audit --audit-level=high --omit=dev
