@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "verify:deps": "node scripts/verify-deps.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc -b",
+    "test": "jest",
+    "bundle:check": "node scripts/bundle-check.mjs"
+  }
+}
