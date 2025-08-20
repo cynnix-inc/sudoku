@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+### Patch Changes
+
+- 15572c3: doc and proc updates
+
 ## 1.0.0 (2025-08-20)
 
 ### Features
