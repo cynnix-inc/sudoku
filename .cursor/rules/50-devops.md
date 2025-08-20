@@ -1,22 +1,35 @@
-Rule: DevOps, CI, and Release
-Applies to: .github/**, apps/**, packages/\*\*
-Use when: configuring CI, adding scripts, preparing releases
-Avoid: manual steps that can be automated
-Definition of Done:
+Rule: DevOps, workflow, and release
+Applies to: entire repository
+Use when: configuring CI/CD, defining workflow, preparing releases
 
-- CI passes: type check, lint, tests, bundle size
-- Artifacts built for target platforms
+Purpose
+
+- Define required scripts, CI gates, branching, and commit style.
+
+Out of scope
+
+- Code style and architecture (see `10-style.md`, `20-architecture.md`).
+
+Priority
+
+- Wins over other files for workflow decisions (branching/commits/release).
+
+Definition of Done
+
+- CI passes: lint, typecheck, tests, build, bundle check
+- Security audit reviewed
 - Versioning and changelog updated
 - Rollback plan documented
 
-# CI Jobs
+# CI Jobs (npm scripts in this repo)
 
-- Install with `npm ci` (reproducible installs).
-- Cache npm via `actions/setup-node` cache: 'npm' with `cache-dependency-path: package-lock.json`.
-- Run scripts across workspaces with `npm run --workspaces <script>`.
+- Install with `npm ci`.
+- Node via Volta or `actions/setup-node` (Node 20). Cache: npm with `cache-dependency-path: package-lock.json`.
+- Run: `npm run lint`, `npm run typecheck`, `npm test -- --ci`, `npm run build`.
 - Enforce coverage thresholds from testing rules.
-- Bundle size check: fail if delta exceeds 5 percent.
-- Security audit: `npm audit --workspaces --audit-level=high --omit=dev` (allowlist justified exceptions only).
+- Bundle size check: `npm run bundle:check` (fail if delta > 5%).
+- Dependency verification: `npm run verify:deps`.
+- Security audit: `npm audit --audit-level=high --omit=dev` (allowlist justified exceptions only).
 
 # Release
 
@@ -26,21 +39,39 @@ Definition of Done:
 
 # Environments
 
-- Keep staging mirror close to production config.
+- Keep staging close to production config.
 - Feature flags controlled via config, not hard-coded.
 
-# npm-specific Notes (monorepo)
+# Workflow: Branching strategy
 
-- Lockfile: commit the root `package-lock.json`. Do not maintain per-package lockfiles.
-- Avoid implicit reliance on hoisted deps. Each workspace must list its direct deps.
-- Optional: add a `verify:deps` script using `npm ls --workspaces --all` or `depcheck` to fail on extraneous/missing deps.
+- Branches
+  - main: production
+  - staging: integration
+  - feat/_, fix/_: short-lived
+  - hotfix/\*: branch from main, then back-merge to staging
+- Flow
+  1. `git checkout staging && git pull && git checkout -b feat/<name>`
+  2. PR to `staging`. CI runs lint/types/tests/build.
+  3. Promote via PR from `staging` to `main`.
+  4. Hotfix: branch from `main`, PR to `main`, then PR back to `staging`.
 
-# Always / Never
+# Issue tracking (Epics, Issues, Sub-issues)
 
-- Always run security audit in CI and fail on high vulnerabilities.
-- Always sign builds where supported.
-- Never publish without automated checks.
-- Never keep long-lived feature branches without rebasing.
+- Canonical guidance for creating and linking sub-issues, labels, and milestones lives in `CONTRIBUTING.md` → "Epics, Issues, and Sub-issues".
+
+# Commit messages (Conventional Commits)
+
+- Format: `<type>(scope): summary`
+- Types: feat, fix, chore, docs, refactor, test, build, ci, perf
+- Examples:
+  - `feat(game): add candidate highlighting`
+  - `fix(ui): correct status bar color on Android`
+
+# Security (CI & dependencies)
+
+- Never commit secrets. Use env vars and platform secret stores.
+- Validate dependency licenses, sizes, and vulnerabilities before adding.
+- Fail CI on high vulnerabilities; justify any allowlists.
 
 ## Example: GitHub Actions outline (npm workspaces)
 
@@ -58,11 +89,18 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run --workspaces lint
-      - run: npm run --workspaces typecheck
-      - run: npm run --workspaces test
-      - run: npm run --workspaces build
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --ci
+      - run: npm run build
       - run: npm run verify:deps
-      - run: npm run --workspaces bundle:check
-      - run: npm audit --workspaces --audit-level=high --omit=dev
+      - run: npm run bundle:check
+      - run: npm audit --audit-level=high --omit=dev
 ```
+
+# Self-check
+
+- CI job runs `npm run lint`, `npm run typecheck`, `npm test -- --ci`, `npm run build`, `npm run verify:deps`, and `npm run bundle:check`.
+- Branching and commit messages follow this rule.
+- Security audit reviewed; any allowlists justified.
+- Release notes and rollback plan present when releasing.

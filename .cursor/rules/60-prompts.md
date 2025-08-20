@@ -1,15 +1,73 @@
-Rule: Task Macros for Cursor
-Applies to: apps/**, packages/**
+# Quick Git cheat sheet (repo workflow)
+
+Canonical sources: see `.cursor/rules/50-devops.md` and `CONTRIBUTING.md`. This is a convenience reference.
+
+- Start a feature branch from `staging`:
+
+```bash
+git checkout staging && git pull
+git checkout -b feat/<short-name>
+```
+
+- Make and commit changes (Conventional Commits):
+
+```bash
+git add -A
+git commit -m "feat(scope): short summary"
+```
+
+- Stay up to date with `staging` (rebase preferred):
+
+```bash
+git fetch origin
+git rebase origin/staging
+```
+
+- Push and open a PR to `staging`:
+
+```bash
+git push -u origin HEAD
+```
+
+- After a rebase, update your PR safely:
+
+```bash
+git push --force-with-lease
+```
+
+- Hotfix (urgent fix on production):
+
+```bash
+git checkout main && git pull
+git checkout -b hotfix/<short-name>
+# commit changes
+git push -u origin HEAD
+# PR to main, then back-merge to staging after merge
+```
+
+Rule: Approved prompt patterns for Cursor
+Applies to: `app/**`
 Use when: asking the assistant to scaffold or modify code
-Avoid: vague requests; always specify files and edits
-Definition of Done:
 
-- Files created or edited as listed
-- Tests added or updated
-- Docs and exports updated
-- CI passes locally
+Purpose
 
-# Macro: Create a new screen
+- Provide copy-pastable, safe templates that match this repo.
+
+Out of scope
+
+- Workflow, issues, and labels (see `CONTRIBUTING.md` → "Epics, Issues, and Sub-issues"); CI (see `50-devops.md`).
+
+Priority
+
+- If rules conflict, this file yields to `50-devops.md` and `40-security.md`.
+  Avoid: vague requests; always specify files and edits
+  Definition of Done:
+  - Files created or edited as listed
+  - Tests added or updated
+  - Docs and exports updated
+  - CI passes locally
+
+# Macro: Create a new screen (Expo Router)
 
 Prompt:
 """
@@ -18,9 +76,8 @@ Use functional components, TypeScript, and tokens from packages/ui.
 Add accessibility labels for interactive elements.
 Edits:
 
-- apps/mobile/app/<name>/index.tsx (new)
-- apps/mobile/test/<name>.test.tsx (new)
-- packages/ui/index.ts (ensure any new shared components are exported)
+- app/<name>/index.tsx (new)
+- **tests**/app/<name>.test.tsx (new)
 - docs/screens.md (append short usage snippet)
   Definition of Done:
 - Renders without errors via renderWithProviders
@@ -28,36 +85,34 @@ Edits:
 - Lint and typecheck pass
   """
 
-# Macro: Add a core solver strategy
+# Macro: Add a domain helper
 
 Prompt:
 """
-Implement a new Sudoku solver strategy named <StrategyName>.
+Implement a new Sudoku domain helper named <HelperName> in `app/lib`.
 Keep it pure and deterministic.
 Edits:
 
-- packages/core/solver/<strategyName>.ts (new)
-- packages/core/index.ts (export)
-- packages/core/**tests**/<strategyName>.test.ts (new)
-- docs/adr/YYYY-MM-DD-<strategyName>.md (new ADR if performance or API changes)
+- app/lib/<helperName>.ts (new)
+- **tests**/lib/<helperName>.test.ts (new)
+- docs/adr/YYYY-MM-DD-<helperName>.md (new ADR if performance or API changes)
   Definition of Done:
-- 100 percent coverage on this strategy
+- 100 percent coverage on this helper
 - No additional deps
 - Benchmarks documented in the ADR
   """
 
-# Macro: Add a UI component
+# Macro: Add a UI component (presentational)
 
 Prompt:
 """
-Create a reusable UI component <ComponentName> in packages/ui.
+Create a reusable UI component <ComponentName> under `app/components/`.
 Keep presentational only, no side effects.
 Edits:
 
-- packages/ui/src/<ComponentName>.tsx (new)
-- packages/ui/src/index.ts (export)
-- packages/ui/**tests**/<ComponentName>.test.tsx (new)
-- storybook or docs snippet under docs/ui.md (append)
+- app/components/<ComponentName>.tsx (new)
+- **tests**/components/<ComponentName>.test.tsx (new)
+- docs/ui.md (append snippet)
   Definition of Done:
 - Component renders and is accessible
 - Unit test verifies props and interactions
@@ -72,12 +127,19 @@ Add basic anonymous analytics with opt-out.
 Do not send PII.
 Edits:
 
-- apps/mobile/app/providers/analytics.ts (new)
-- apps/mobile/app/\_layout.tsx (initialize provider)
+- app/providers/analytics.ts (new)
+- app/\_layout.tsx (initialize provider)
 - docs/analytics.md (document events and opt-out)
-- tests for provider behavior in apps/mobile/test/analytics.test.tsx
+- **tests**/app/analytics.test.tsx (new)
+
+# Self-check
+
+- Prompts list exact files to edit and tests to add.
+- Paths use `app/` and `__tests__/` consistent with this repo.
+- Macros avoid adding new dependencies unless specified.
+- Resulting diffs pass `npm run lint`, `npm run typecheck`, and `npm test`.
   Definition of Done:
-- Events queued offline, sent over HTTPS
-- Opt-out respected across sessions
-- No PII, security checklist passes
-  """
+  - Events queued offline, sent over HTTPS
+  - Opt-out respected across sessions
+  - No PII, security checklist passes
+    """

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import Board from './components/Board';
-import { initializeGame, applyAction } from './_game/state';
-import type { Digit, GameAction } from './_game/types';
+import { initializeGame, applyAction } from './game/state';
+import type { Digit, GameAction } from './game/types';
 import Numpad from './components/Numpad';
 import { loadProgress, saveProgress } from './services/storage';
 
@@ -23,7 +23,6 @@ export default function ClassicScreen() {
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
 
-  // Refs to avoid stale closures in keyboard handler
   const selectedRef = useRef(selected);
   const lockedRef = useRef(lockedDigit);
   const notesModeRef = useRef(notesMode);
@@ -37,7 +36,6 @@ export default function ClassicScreen() {
     notesModeRef.current = notesMode;
   }, [notesMode]);
 
-  // Load progress on mount
   useEffect(() => {
     loadProgress<{ board: typeof game.board }>('sudoku-progress').then((saved) => {
       if (saved && saved.board) {
@@ -46,7 +44,6 @@ export default function ClassicScreen() {
     });
   }, []);
 
-  // Persist on game changes
   useEffect(() => {
     saveProgress('sudoku-progress', { board: game.board });
   }, [game.board]);
@@ -64,12 +61,10 @@ export default function ClassicScreen() {
     };
   }, [paused]);
 
-  // Idle auto-pause stub: in production, hook into AppState or visibilitychange
   useEffect(() => {
-    // no-op stub
+    // no-op stub for idle/visibility
   }, []);
 
-  // Keyboard: arrows, digits, N, Backspace (web only) - stable handler via refs
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     type KeyEvt = { key: string };
