@@ -8,10 +8,10 @@
     "node": ">=20 <21"
   },
   "scripts": {
-    "dev": "expo start",
-    "web": "expo start --web",
-    "android": "expo run:android",
-    "native:prebuild": "expo prebuild",
+    "dev": "npx expo start",
+    "web": "npx expo start --web",
+    "android": "npx expo run:android",
+    "native:prebuild": "npx expo prebuild",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "format": "prettier --check .",
     "typecheck": "tsc --pretty --noEmit",
@@ -20,7 +20,7 @@
     "bundle:check": "node scripts/bundle-check.mjs",
     "deps:verify": "node scripts/verify-deps.mjs",
     "verify:deps": "node scripts/verify-deps.mjs",
-    "ios": "expo run:ios",
+    "ios": "npx expo run:ios",
     "build": "npx expo export --platform web --output-dir dist",
     "ci": "npm run lint && npm run typecheck && npm test -- --ci && npm run build",
     "prepare": "husky",
