@@ -15,8 +15,20 @@ try {
   const out = run('npm ls --workspaces --all --json');
   json = JSON.parse(out);
 } catch (e) {
-  console.error('Failed to run `npm ls`:', e?.stdout?.toString?.() || e.message);
-  process.exit(1);
+  const errOut = e?.stdout?.toString?.() || e?.stderr?.toString?.() || e.message;
+  // Fallback for repositories without workspaces: run without the --workspaces flag
+  if (errOut && errOut.includes('No workspaces found')) {
+    try {
+      const out = run('npm ls --all --json');
+      json = JSON.parse(out);
+    } catch (inner) {
+      console.error('Failed to run `npm ls` (fallback):', inner?.stdout?.toString?.() || inner?.stderr?.toString?.() || inner.message);
+      process.exit(1);
+    }
+  } else {
+    console.error('Failed to run `npm ls`:', errOut);
+    process.exit(1);
+  }
 }
 
 let issues = [];
