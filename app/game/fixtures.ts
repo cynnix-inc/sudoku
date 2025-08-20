@@ -2,7 +2,7 @@ import type { Digit } from './types';
 
 export type Given = { row: number; col: number; value: Digit };
 
-export const FIXED_EASY_SEED = 'fixed-easy';
+export const FIXED_EASY_SEED = '482913';
 
 // A simple, playable easy puzzle fixture. Not necessarily unique/optimal; used for slice bring-up.
 // Minimal givens aligned with existing tests for the classic slice
