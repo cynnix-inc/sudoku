@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Classic: Seed footer now supports copy-to-clipboard with confirmation toast (Issue #63).
+
 ## v0.9 — 2025-08-20
 
 - Clarified MVP layout specs: numpad single row aligned to grid; tools as icon-only below numpad; hearts-only lives; timer right-aligned with icon-only pause (refs #110, #111, #112, #116).

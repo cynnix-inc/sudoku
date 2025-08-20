@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- feat(ui): classic Seed footer copy-to-clipboard with confirmation toast (refs #63)
+
 ## 1.0.0 (2025-08-20)
 
 ### Features

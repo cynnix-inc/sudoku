@@ -45,6 +45,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",
     "expo": "53.0.20",
+    "expo-clipboard": "~6.0.3",
     "expo-haptics": "~14.1.4",
     "expo-linear-gradient": "~14.1.5",
     "expo-router": "~5.1.4",
