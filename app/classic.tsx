@@ -1,20 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import Board from './components/Board';
 import { initializeGame, applyAction } from './game/state';
 import type { Digit, GameAction } from './game/types';
 import Numpad from './components/Numpad';
 import { loadProgress, saveProgress } from './services/storage';
+import { ThemeContext } from './_layout';
+import Header from './components/Header';
+import SeedFooter from './components/SeedFooter';
+import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
 
 export default function ClassicScreen() {
+  const theme = useContext(ThemeContext);
+  const [seed] = useState<string>(FIXED_EASY_SEED);
   const [game, setGame] = useState(() =>
-    initializeGame(
-      [
-        { row: 0, col: 0, value: 5 as Digit },
-        { row: 1, col: 3, value: 2 as Digit },
-      ],
-      { difficulty: 'easy', maxLives: 3 },
-    ),
+    initializeGame(seedToGivens(seed) as { row: number; col: number; value: Digit }[], {
+      difficulty: 'easy',
+      maxLives: 3,
+    }),
   );
   const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
   const [lockedDigit, setLockedDigit] = useState<Digit | null>(null);
@@ -67,29 +70,40 @@ export default function ClassicScreen() {
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    type KeyEvt = { key: string };
+    type KeyEvt = { key: string; preventDefault?: () => void };
     const handler = (e: KeyEvt) => {
+      const tryPrevent = () => {
+        // Some test environments do not provide preventDefault
+        if (typeof e.preventDefault === 'function') {
+          e.preventDefault();
+        }
+      };
       if (e.key === 'ArrowUp') {
+        tryPrevent();
         const curr = selectedRef.current;
         const next = curr ? { row: Math.max(0, curr.row - 1), col: curr.col } : { row: 0, col: 0 };
         selectedRef.current = next;
         setSelected(next);
       } else if (e.key === 'ArrowDown') {
+        tryPrevent();
         const curr = selectedRef.current;
         const next = curr ? { row: Math.min(8, curr.row + 1), col: curr.col } : { row: 0, col: 0 };
         selectedRef.current = next;
         setSelected(next);
       } else if (e.key === 'ArrowLeft') {
+        tryPrevent();
         const curr = selectedRef.current;
         const next = curr ? { row: curr.row, col: Math.max(0, curr.col - 1) } : { row: 0, col: 0 };
         selectedRef.current = next;
         setSelected(next);
       } else if (e.key === 'ArrowRight') {
+        tryPrevent();
         const curr = selectedRef.current;
         const next = curr ? { row: curr.row, col: Math.min(8, curr.col + 1) } : { row: 0, col: 0 };
         selectedRef.current = next;
         setSelected(next);
       } else if (/^[1-9]$/.test(e.key)) {
+        tryPrevent();
         const d = Number(e.key) as Digit;
         const value = lockedRef.current ?? d;
         setGame((prev) => {
@@ -99,11 +113,13 @@ export default function ClassicScreen() {
             : applyAction(prev, { type: 'place', row: sel.row, col: sel.col, value });
         });
       } else if (e.key === 'Backspace') {
+        tryPrevent();
         setGame((prev) => {
           const sel = selectedRef.current ?? { row: 0, col: 0 };
           return applyAction(prev, { type: 'erase', row: sel.row, col: sel.col });
         });
       } else if (e.key.toLowerCase() === 'n') {
+        tryPrevent();
         const next = !notesModeRef.current;
         notesModeRef.current = next;
         setNotesMode(next);
@@ -115,17 +131,11 @@ export default function ClassicScreen() {
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 12 }}>
-      {/* Header */}
-      <View style={{ alignItems: 'center', marginBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: '700', marginBottom: 4 }}>Classic</Text>
-        <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2 }}>
-          Mode: Classic • Difficulty: {game.config.difficulty}
-        </Text>
-        <Text accessibilityLabel="Elapsed time" style={{ fontSize: 12, opacity: 0.8 }}>
-          Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')} • Lives:{' '}
-          {game.livesRemaining}
-        </Text>
-      </View>
+      <Header
+        difficulty={game.config.difficulty}
+        livesRemaining={game.livesRemaining}
+        seconds={seconds}
+      />
       <Board
         board={game.board}
         selected={selected}
@@ -156,13 +166,21 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: notesMode ? '#2563eb' : '#d1d5db',
+            borderColor: notesMode ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: notesMode ? '#dbeafe' : '#ffffff',
+            backgroundColor: notesMode
+              ? theme.isDark
+                ? '#0b3a64'
+                : '#dbeafe'
+              : theme.isDark
+                ? '#0f1115'
+                : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: notesMode ? '700' : '500' }}>
+          <Text
+            style={{ fontSize: 14, fontWeight: notesMode ? '700' : '500', color: theme.foreground }}
+          >
             {notesMode ? 'Notes: ON' : 'Notes: OFF'}
           </Text>
         </Pressable>
@@ -175,13 +193,21 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: paused ? '#2563eb' : '#d1d5db',
+            borderColor: paused ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: paused ? '#dbeafe' : '#ffffff',
+            backgroundColor: paused
+              ? theme.isDark
+                ? '#0b3a64'
+                : '#dbeafe'
+              : theme.isDark
+                ? '#0f1115'
+                : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: paused ? '700' : '500' }}>
+          <Text
+            style={{ fontSize: 14, fontWeight: paused ? '700' : '500', color: theme.foreground }}
+          >
             {paused ? 'Resume' : 'Pause'}
           </Text>
         </Pressable>
@@ -199,13 +225,13 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: '#d1d5db',
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: '#ffffff',
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '500' }}>Erase</Text>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Erase</Text>
         </Pressable>
         <View style={{ width: 8 }} />
         <Pressable
@@ -216,13 +242,13 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: '#d1d5db',
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: '#ffffff',
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '500' }}>Undo</Text>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Undo</Text>
         </Pressable>
         <View style={{ width: 8 }} />
         <Pressable
@@ -233,13 +259,13 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: '#d1d5db',
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: '#ffffff',
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '500' }}>Redo</Text>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Redo</Text>
         </Pressable>
       </View>
       <Numpad
@@ -261,10 +287,7 @@ export default function ClassicScreen() {
         }}
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
-      {/* Seed footer */}
-      <Text accessibilityLabel="Seed footer" style={{ fontSize: 12, opacity: 0.6, marginTop: 12 }}>
-        Seed: fixed-easy
-      </Text>
+      <SeedFooter seed={seed} />
     </View>
   );
 }
