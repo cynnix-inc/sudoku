@@ -1,57 +1,59 @@
-Rule: Architecture and Module Boundaries
-Applies to: apps/**, packages/**
-Use when: designing features, refactoring, adding dependencies
-Avoid: cross-layer imports that break boundaries
-Definition of Done:
+Architecture and layering
 
-- Module boundaries respected (UI does not contain domain logic)
-- Data flow is unidirectional and explicit
-- New dependency reviewed for size, license, and security
-- ADR added for impactful decisions
+When to use: designing features, refactoring, or adding dependencies.
 
-# Architecture
+Purpose
 
-- Monorepo with clear separation:
-  - packages/core: Sudoku engine, validation, generation, serialization.
-  - packages/ui: Pure presentational components with styles and a11y.
-  - apps/\*: Composition, navigation, platform-specific glue.
-  - packages/testing: shared test utilities.
+- Keep a clean separation of concerns and predictable data flow in `app/**`.
 
-## Data and State
+Out of scope
 
-- App state lives in app layer. Core exposes pure functions, no side effects.
-- Prefer React hooks and Context over adding state libraries.
-- Side effects isolated behind services (e.g., storage, network). Pure core.
+- Code style minutiae (see `20-style-guide.md`).
+- CI and workflow (see `50-devops.md`).
 
-## Dependency Rules
+Priority
 
-- core has zero React or platform dependencies.
-- ui depends only on React, React Native primitives, and design tokens.
-- apps can depend on ui and core, not vice versa.
+- If rules conflict with style, this file wins.
 
-## npm Workspaces Discipline
+# Layers
 
-- Each workspace must declare all direct dependencies it imports (no relying on hoisted copies).
-- Use package entry points to import across workspaces (e.g., `@ultimate-sudoko/core`), not relative paths.
-- If a workspace needs a devDependency for its own tests/build, declare it locally or expose via a shared `packages/config`.
-- Consider adding ESLint `no-restricted-imports` to block cross-package relative imports.
+- UI: screens and presentational components in `app/`.
+- State/Hooks/Services: `app/state/`, `app/hooks/`, `app/services/`.
+- Domain logic: pure modules in `app/game/`.
 
-## Always / Never
+# Allowed imports
 
-- Always keep core deterministic and pure.
-- Always document public APIs in core.
-- Never import app code from packages.
-- Never mix navigation with domain logic.
+- UI → state/hooks/services, domain (`app/game/`).
+- Hooks/services → domain (`app/game/`).
+- Domain (`app/game/`) → no React, no platform APIs.
 
-## ADRs
+# Forbidden
 
-- Use docs/adr/YYYY-MM-DD-short-title.md for decisions that affect architecture, libraries, or data shape.
-- Template includes: Context, Decision, Alternatives, Consequences.
+- UI importing storage/network modules directly.
+- Cross-feature deep imports that bypass public modules.
 
-## Example
+# Data and effects
 
-- Adding a new solver strategy:
-  - Implement in packages/core/solver/<strategy>.ts
-  - Export via packages/core/index.ts
-  - Add unit tests under packages/core/**tests**/<strategy>.test.ts
-  - Add an ADR if this changes performance characteristics.
+- Keep domain pure and deterministic.
+- Isolate I/O (storage, network) behind service modules in `app/services/`.
+
+# ADRs
+
+- Use `docs/adr/YYYY-MM-DD-short-title.md` for decisions affecting architecture, libraries, or data shape.
+- Include: Context, Decision, Alternatives, Consequences.
+
+# Performance and logging
+
+- Keep renders cheap; avoid heavy computation in render paths.
+- Log at boundaries; avoid noisy logs inside tight loops.
+
+# Anti-patterns (Non-examples)
+
+- `app/<screen>/index.tsx` importing `AsyncStorage` or `supabase` directly.
+- Domain functions that mutate global state or depend on time/IO.
+
+# Self-check
+
+- New code fits one layer and imports only from allowed layers.
+- Domain modules have unit tests and no React or platform imports.
+- Side effects are in services; UI stays presentational.

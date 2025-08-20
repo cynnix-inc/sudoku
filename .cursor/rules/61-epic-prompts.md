@@ -1,4 +1,6 @@
-# Epic Prompts
+# Epic prompts
+
+When to use: automating epic work or finalizing epics into `staging`.
 
 These prompts define how to automate Epic work and finalize it into staging.  
 They follow repository standards from `.cursor/rules` and guidance in `docs/README.md`.  
