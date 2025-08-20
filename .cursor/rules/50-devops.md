@@ -1,6 +1,6 @@
-Rule: DevOps, workflow, and release
-Applies to: entire repository
-Use when: configuring CI/CD, defining workflow, preparing releases
+DevOps, CI, and releases
+
+When to use: configuring CI/CD, defining workflow, and preparing releases.
 
 Purpose
 
@@ -8,7 +8,7 @@ Purpose
 
 Out of scope
 
-- Code style and architecture (see `10-style.md`, `20-architecture.md`).
+- Code style and architecture (see `20-style-guide.md`, `10-architecture.md`).
 
 Priority
 
