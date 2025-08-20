@@ -5,6 +5,7 @@ import { initializeGame, applyAction } from "./_game/state";
 import type { Digit, GameAction } from "./_game/types";
 import Numpad from "./components/Numpad";
 import { loadProgress, saveProgress } from "./services/storage";
+import { Platform } from "react-native";
 
 export default function ClassicScreen() {
 	const [game, setGame] = useState(() =>
@@ -54,6 +55,34 @@ export default function ClassicScreen() {
 	useEffect(() => {
 		// no-op stub
 	}, []);
+
+	// Keyboard: arrows, digits, N, Backspace (web only)
+	useEffect(() => {
+		if (Platform.OS !== 'web') return;
+		type KeyEvt = { key: string };
+		const handler = (e: KeyEvt) => {
+			if (!selected) return;
+			if (e.key === 'ArrowUp') setSelected(({ row, col }) => ({ row: Math.max(0, row - 1), col }));
+			else if (e.key === 'ArrowDown') setSelected(({ row, col }) => ({ row: Math.min(8, row + 1), col }));
+			else if (e.key === 'ArrowLeft') setSelected(({ row, col }) => ({ row, col: Math.max(0, col - 1) }));
+			else if (e.key === 'ArrowRight') setSelected(({ row, col }) => ({ row, col: Math.min(8, col + 1) }));
+			else if (/^[1-9]$/.test(e.key)) {
+				const d = Number(e.key) as Digit;
+				const value = lockedDigit ?? d;
+				setGame((prev) =>
+					notesMode
+						? applyAction(prev, { type: 'note', row: selected.row, col: selected.col, value, present: true })
+						: applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value })
+				);
+			} else if (e.key === 'Backspace') {
+				setGame((prev) => applyAction(prev, { type: 'erase', row: selected.row, col: selected.col }));
+			} else if (e.key.toLowerCase() === 'n') {
+				setNotesMode((p) => !p);
+			}
+		};
+		window.addEventListener('keydown', handler);
+		return () => window.removeEventListener('keydown', handler);
+	}, [selected, lockedDigit, notesMode]);
 	return (
 		<View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 12 }}>
 			{/* Header */}
