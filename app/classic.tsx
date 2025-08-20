@@ -8,17 +8,16 @@ import { loadProgress, saveProgress } from './services/storage';
 import { ThemeContext } from './_layout';
 import Header from './components/Header';
 import SeedFooter from './components/SeedFooter';
+import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
 
 export default function ClassicScreen() {
   const theme = useContext(ThemeContext);
+  const [seed] = useState<string>(FIXED_EASY_SEED);
   const [game, setGame] = useState(() =>
-    initializeGame(
-      [
-        { row: 0, col: 0, value: 5 as Digit },
-        { row: 1, col: 3, value: 2 as Digit },
-      ],
-      { difficulty: 'easy', maxLives: 3 },
-    ),
+    initializeGame(seedToGivens(seed) as { row: number; col: number; value: Digit }[], {
+      difficulty: 'easy',
+      maxLives: 3,
+    }),
   );
   const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
   const [lockedDigit, setLockedDigit] = useState<Digit | null>(null);
@@ -288,7 +287,7 @@ export default function ClassicScreen() {
         }}
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
-      <SeedFooter seed="fixed-easy" />
+      <SeedFooter seed={seed} />
     </View>
   );
 }
