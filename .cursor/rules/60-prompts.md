@@ -1,53 +1,6 @@
-# Quick Git cheat sheet (repo workflow)
+Cursor task macros
 
-Canonical sources: see `.cursor/rules/50-devops.md` and `CONTRIBUTING.md`. This is a convenience reference.
-
-- Start a feature branch from `staging`:
-
-```bash
-git checkout staging && git pull
-git checkout -b feat/<short-name>
-```
-
-- Make and commit changes (Conventional Commits):
-
-```bash
-git add -A
-git commit -m "feat(scope): short summary"
-```
-
-- Stay up to date with `staging` (rebase preferred):
-
-```bash
-git fetch origin
-git rebase origin/staging
-```
-
-- Push and open a PR to `staging`:
-
-```bash
-git push -u origin HEAD
-```
-
-- After a rebase, update your PR safely:
-
-```bash
-git push --force-with-lease
-```
-
-- Hotfix (urgent fix on production):
-
-```bash
-git checkout main && git pull
-git checkout -b hotfix/<short-name>
-# commit changes
-git push -u origin HEAD
-# PR to main, then back-merge to staging after merge
-```
-
-Rule: Approved prompt patterns for Cursor
-Applies to: `app/**`
-Use when: asking the assistant to scaffold or modify code
+When to use: asking the assistant to scaffold or modify code in `app/**`.
 
 Purpose
 
@@ -60,8 +13,8 @@ Out of scope
 Priority
 
 - If rules conflict, this file yields to `50-devops.md` and `40-security.md`.
-  Avoid: vague requests; always specify files and edits
-  Definition of Done:
+- Avoid vague requests; always specify files and edits.
+- Definition of Done:
   - Files created or edited as listed
   - Tests added or updated
   - Docs and exports updated
@@ -72,7 +25,7 @@ Priority
 Prompt:
 """
 Create a new screen called <Name> using Expo Router.
-Use functional components, TypeScript, and tokens from packages/ui.
+Use functional components and TypeScript.
 Add accessibility labels for interactive elements.
 Edits:
 
@@ -89,12 +42,12 @@ Edits:
 
 Prompt:
 """
-Implement a new Sudoku domain helper named <HelperName> in `app/lib`.
+Implement a new Sudoku domain helper named <HelperName> in `app/game`.
 Keep it pure and deterministic.
 Edits:
 
-- app/lib/<helperName>.ts (new)
-- **tests**/lib/<helperName>.test.ts (new)
+- app/game/<helperName>.ts (new)
+- **tests**/game/<helperName>.test.ts (new)
 - docs/adr/YYYY-MM-DD-<helperName>.md (new ADR if performance or API changes)
   Definition of Done:
 - 100 percent coverage on this helper
