@@ -71,29 +71,40 @@ export default function ClassicScreen() {
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    type KeyEvt = { key: string };
+    type KeyEvt = { key: string; preventDefault?: () => void };
     const handler = (e: KeyEvt) => {
+      const tryPrevent = () => {
+        // Some test environments do not provide preventDefault
+        if (typeof e.preventDefault === 'function') {
+          e.preventDefault();
+        }
+      };
       if (e.key === 'ArrowUp') {
+        tryPrevent();
         const curr = selectedRef.current;
         const next = curr ? { row: Math.max(0, curr.row - 1), col: curr.col } : { row: 0, col: 0 };
         selectedRef.current = next;
         setSelected(next);
       } else if (e.key === 'ArrowDown') {
+        tryPrevent();
         const curr = selectedRef.current;
         const next = curr ? { row: Math.min(8, curr.row + 1), col: curr.col } : { row: 0, col: 0 };
         selectedRef.current = next;
         setSelected(next);
       } else if (e.key === 'ArrowLeft') {
+        tryPrevent();
         const curr = selectedRef.current;
         const next = curr ? { row: curr.row, col: Math.max(0, curr.col - 1) } : { row: 0, col: 0 };
         selectedRef.current = next;
         setSelected(next);
       } else if (e.key === 'ArrowRight') {
+        tryPrevent();
         const curr = selectedRef.current;
         const next = curr ? { row: curr.row, col: Math.min(8, curr.col + 1) } : { row: 0, col: 0 };
         selectedRef.current = next;
         setSelected(next);
       } else if (/^[1-9]$/.test(e.key)) {
+        tryPrevent();
         const d = Number(e.key) as Digit;
         const value = lockedRef.current ?? d;
         setGame((prev) => {
@@ -103,11 +114,13 @@ export default function ClassicScreen() {
             : applyAction(prev, { type: 'place', row: sel.row, col: sel.col, value });
         });
       } else if (e.key === 'Backspace') {
+        tryPrevent();
         setGame((prev) => {
           const sel = selectedRef.current ?? { row: 0, col: 0 };
           return applyAction(prev, { type: 'erase', row: sel.row, col: sel.col });
         });
       } else if (e.key.toLowerCase() === 'n') {
+        tryPrevent();
         const next = !notesModeRef.current;
         notesModeRef.current = next;
         setNotesMode(next);
