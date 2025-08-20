@@ -6,6 +6,8 @@ import type { Digit, GameAction } from './game/types';
 import Numpad from './components/Numpad';
 import { loadProgress, saveProgress } from './services/storage';
 import { ThemeContext } from './_layout';
+import Header from './components/Header';
+import SeedFooter from './components/SeedFooter';
 
 export default function ClassicScreen() {
   const theme = useContext(ThemeContext);
@@ -117,22 +119,11 @@ export default function ClassicScreen() {
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 12 }}>
-      {/* Header */}
-      <View style={{ alignItems: 'center', marginBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: '700', marginBottom: 4, color: theme.foreground }}>
-          Classic
-        </Text>
-        <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2, color: theme.foreground }}>
-          Mode: Classic • Difficulty: {game.config.difficulty}
-        </Text>
-        <Text
-          accessibilityLabel="Elapsed time"
-          style={{ fontSize: 12, opacity: 0.8, color: theme.foreground }}
-        >
-          Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')} • Lives:{' '}
-          {game.livesRemaining}
-        </Text>
-      </View>
+      <Header
+        difficulty={game.config.difficulty}
+        livesRemaining={game.livesRemaining}
+        seconds={seconds}
+      />
       <Board
         board={game.board}
         selected={selected}
@@ -284,13 +275,7 @@ export default function ClassicScreen() {
         }}
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
-      {/* Seed footer */}
-      <Text
-        accessibilityLabel="Seed footer"
-        style={{ fontSize: 12, opacity: 0.6, marginTop: 12, color: theme.foreground }}
-      >
-        Seed: fixed-easy
-      </Text>
+      <SeedFooter seed="fixed-easy" />
     </View>
   );
 }
