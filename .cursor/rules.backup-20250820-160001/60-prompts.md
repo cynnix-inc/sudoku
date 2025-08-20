@@ -139,10 +139,10 @@ Edits:
 - Macros avoid adding new dependencies unless specified.
 - Resulting diffs pass `npm run lint`, `npm run typecheck`, and `npm test`.
   Definition of Done:
-- Events queued offline, sent over HTTPS
-- Opt-out respected across sessions
-- No PII, security checklist passes
-  """
+  - Events queued offline, sent over HTTPS
+  - Opt-out respected across sessions
+  - No PII, security checklist passes
+    """
 
 # 📝 Issue / Feedback Template
 
@@ -160,10 +160,3 @@ Next Steps Checklist:
 - If not already covered:
   -- Update relevant documentation.
   -- Create new GitHub issues with clear titles, descriptions, and acceptance criteria.
-
-Consistency Requirements:
-To keep everything aligned, update the following where applicable:
-
-- ADR (architecture decision record) — capture rationale for changes.
-- QA feature files — reflect updated behavior for automated testing.
-- Tests — ensure coverage reflects the new layout, icon usage, numeric seed display, and undo/lives rule.

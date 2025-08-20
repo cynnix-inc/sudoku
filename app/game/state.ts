@@ -62,7 +62,8 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     return {
       ...state,
       board: prev.board,
-      livesRemaining: prev.livesRemaining,
+      // Lives must be unaffected by history actions per MVP
+      livesRemaining: state.livesRemaining,
       history: { past: newPast, future: newFuture },
     };
   }
@@ -77,7 +78,8 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     return {
       ...state,
       board: fut.board,
-      livesRemaining: fut.livesRemaining,
+      // Lives must be unaffected by history actions per MVP
+      livesRemaining: state.livesRemaining,
       history: { past: newPast, future: newFuture },
     };
   }

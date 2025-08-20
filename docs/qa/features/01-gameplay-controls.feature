@@ -27,6 +27,13 @@ Feature: Gameplay and controls (MVP)
     When I tap multiple empty cells
     Then 7 is placed in each cell
 
+  @mvp @lock @tools @issue-118
+  Scenario: Lock toggle in tool row locks the active digit
+    Given digit 4 is the active input
+    And I toggle the Lock icon in the tool row ON
+    When I tap multiple empty cells
+    Then 4 is placed in each tapped cell until I toggle Lock OFF
+
   @mvp @erase
   Scenario: Erase a value and its notes
     Given a cell contains a value and notes
@@ -48,6 +55,28 @@ Feature: Gameplay and controls (MVP)
     And when I tap Redo
     Then the erase is reapplied
 
+  @mvp @undo @lives
+  Scenario: Undo/Redo does not change lives
+    Given I have made a mistake that decremented lives
+    When I tap Undo
+    Then the board state reverts but the lives count remains unchanged
+    And when I tap Redo
+    Then the board state reapplies and the lives count remains unchanged
+
+  @mvp @ui @numpad @issue-110
+  Scenario: Numpad is a single row aligned to the grid
+    Given the game screen is visible
+    When the numpad renders
+    Then digits 1 through 9 appear on a single row without wrapping
+    And the numpad width aligns to the grid width
+
+  @mvp @ui @tools @issue-111
+  Scenario: Tools are icon-only and below the numpad
+    Given the game screen is visible
+    When the tool row renders
+    Then I see icon-only buttons for Hint, Undo, Redo, Lock, Notes, and Erase below the numpad
+    And each tool has an accessible label
+
   @mvp @seed
   Scenario: Seed copy in footer
     Given the footer displays the puzzle seed
@@ -62,6 +91,13 @@ Feature: Gameplay and controls (MVP)
     Then the game shows a pause overlay and stops the timer
     When I resume
     Then gameplay and timer continue
+
+  @mvp @highlight @issue-115
+  Scenario: Highlight same digits when selecting a number
+    Given the grid contains multiple cells with the value 6
+    When I select a cell that has the value 6
+    Then all cells with value 6 are highlighted
+    And the numpad key 6 is highlighted
 
   @mvp @idle
   Scenario: Idle auto-pause
