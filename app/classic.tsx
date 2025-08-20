@@ -1,12 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import Board from './components/Board';
 import { initializeGame, applyAction } from './game/state';
 import type { Digit, GameAction } from './game/types';
 import Numpad from './components/Numpad';
 import { loadProgress, saveProgress } from './services/storage';
+import { ThemeContext } from './_layout';
 
 export default function ClassicScreen() {
+  const theme = useContext(ThemeContext);
   const [game, setGame] = useState(() =>
     initializeGame(
       [
@@ -117,11 +119,16 @@ export default function ClassicScreen() {
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 12 }}>
       {/* Header */}
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: '700', marginBottom: 4 }}>Classic</Text>
-        <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2 }}>
+        <Text style={{ fontSize: 28, fontWeight: '700', marginBottom: 4, color: theme.foreground }}>
+          Classic
+        </Text>
+        <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2, color: theme.foreground }}>
           Mode: Classic • Difficulty: {game.config.difficulty}
         </Text>
-        <Text accessibilityLabel="Elapsed time" style={{ fontSize: 12, opacity: 0.8 }}>
+        <Text
+          accessibilityLabel="Elapsed time"
+          style={{ fontSize: 12, opacity: 0.8, color: theme.foreground }}
+        >
           Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')} • Lives:{' '}
           {game.livesRemaining}
         </Text>
@@ -156,13 +163,21 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: notesMode ? '#2563eb' : '#d1d5db',
+            borderColor: notesMode ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: notesMode ? '#dbeafe' : '#ffffff',
+            backgroundColor: notesMode
+              ? theme.isDark
+                ? '#0b3a64'
+                : '#dbeafe'
+              : theme.isDark
+                ? '#0f1115'
+                : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: notesMode ? '700' : '500' }}>
+          <Text
+            style={{ fontSize: 14, fontWeight: notesMode ? '700' : '500', color: theme.foreground }}
+          >
             {notesMode ? 'Notes: ON' : 'Notes: OFF'}
           </Text>
         </Pressable>
@@ -175,13 +190,21 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: paused ? '#2563eb' : '#d1d5db',
+            borderColor: paused ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: paused ? '#dbeafe' : '#ffffff',
+            backgroundColor: paused
+              ? theme.isDark
+                ? '#0b3a64'
+                : '#dbeafe'
+              : theme.isDark
+                ? '#0f1115'
+                : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: paused ? '700' : '500' }}>
+          <Text
+            style={{ fontSize: 14, fontWeight: paused ? '700' : '500', color: theme.foreground }}
+          >
             {paused ? 'Resume' : 'Pause'}
           </Text>
         </Pressable>
@@ -199,13 +222,13 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: '#d1d5db',
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: '#ffffff',
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '500' }}>Erase</Text>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Erase</Text>
         </Pressable>
         <View style={{ width: 8 }} />
         <Pressable
@@ -216,13 +239,13 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: '#d1d5db',
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: '#ffffff',
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '500' }}>Undo</Text>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Undo</Text>
         </Pressable>
         <View style={{ width: 8 }} />
         <Pressable
@@ -233,13 +256,13 @@ export default function ClassicScreen() {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderWidth: 1,
-            borderColor: '#d1d5db',
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: '#ffffff',
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '500' }}>Redo</Text>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Redo</Text>
         </Pressable>
       </View>
       <Numpad
@@ -262,7 +285,10 @@ export default function ClassicScreen() {
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
       {/* Seed footer */}
-      <Text accessibilityLabel="Seed footer" style={{ fontSize: 12, opacity: 0.6, marginTop: 12 }}>
+      <Text
+        accessibilityLabel="Seed footer"
+        style={{ fontSize: 12, opacity: 0.6, marginTop: 12, color: theme.foreground }}
+      >
         Seed: fixed-easy
       </Text>
     </View>
