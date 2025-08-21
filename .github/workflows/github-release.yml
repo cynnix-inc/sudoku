@@ -1,0 +1,22 @@
+name: github_release
+
+on:
+  push:
+    branches:
+      - staging
+
+permissions:
+  contents: write
+
+jobs:
+  github_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Release from tags
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          target-branch: staging
+          skip-github-pull-request: true
+          skip-labeling: true
+
