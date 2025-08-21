@@ -44,6 +44,30 @@ if (typeof g.window.addEventListener !== 'function') {
   };
 }
 
+// Provide a minimal document event API for tests that rely on visibilitychange
+if (typeof g.document === 'undefined') {
+  g.document = {};
+}
+if (typeof g.document.addEventListener !== 'function') {
+  const docListeners: Record<string, Array<(e: unknown) => void>> = {};
+  g.document.hidden = false;
+  g.document.addEventListener = (type: string, handler: (e: unknown) => void) => {
+    docListeners[type] = docListeners[type] || [];
+    docListeners[type].push(handler);
+  };
+  g.document.removeEventListener = (type: string, handler: (e: unknown) => void) => {
+    const arr = docListeners[type];
+    if (!arr) return;
+    const idx = arr.indexOf(handler);
+    if (idx !== -1) arr.splice(idx, 1);
+  };
+  g.document.dispatchEvent = (evt: { type: string }) => {
+    const arr = docListeners[evt.type] || [];
+    for (const h of arr) h(evt);
+    return true;
+  };
+}
+
 // Silence console.warn from env guards in tests, but keep others
 const originalWarn = console.warn;
 beforeAll(() => {
