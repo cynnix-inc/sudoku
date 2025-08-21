@@ -27,6 +27,12 @@ Feature: Gameplay and controls (MVP)
     When I press the N key
     Then notes mode toggles
 
+  @mvp @storage @issue-107
+  Scenario: Persist UI toggles across sessions
+    Given I enable notes mode and pause the game and lock a digit
+    When I restart the app
+    Then notes mode, paused state, and the locked digit are restored
+
   @mvp @lock
   Scenario: Numpad lock places repeated digit
     Given the numpad lock is enabled on digit 7
