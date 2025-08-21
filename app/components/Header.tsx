@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ThemeContext } from '../_layout';
 import type { GameConfig } from '../game/types';
 
@@ -22,16 +23,39 @@ export default function Header({
       <Text style={{ fontSize: 28, fontWeight: '700', marginBottom: 4, color: theme.foreground }}>
         {mode}
       </Text>
-      <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2, color: theme.foreground }}>
-        Mode: {mode} • Difficulty: {difficulty}
-      </Text>
-      <Text
-        accessibilityLabel="Elapsed time"
-        style={{ fontSize: 12, opacity: 0.8, color: theme.foreground }}
+      {/* Row with centered mode/difficulty and right-aligned timer */}
+      <View style={{ width: 36 * 9, position: 'relative', alignItems: 'center' }}>
+        <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2, color: theme.foreground }}>
+          Mode: {mode} • Difficulty: {difficulty}
+        </Text>
+        <Text
+          accessibilityLabel="Elapsed time"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            fontSize: 12,
+            opacity: 0.8,
+            color: theme.foreground,
+          }}
+        >
+          {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+        </Text>
+      </View>
+      {/* Hearts-only lives row with accessible label */}
+      <View
+        accessibilityLabel={`${livesRemaining} lives remaining`}
+        style={{ flexDirection: 'row', gap: 4, marginTop: 2 }}
       >
-        Time: {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')} • Lives:{' '}
-        {livesRemaining}
-      </Text>
+        {[0, 1, 2].map((i) => (
+          <MaterialIcons
+            key={i}
+            name={i < livesRemaining ? 'favorite' : 'favorite-border'}
+            size={16}
+            color={theme.isDark ? '#f87171' : '#ef4444'}
+          />
+        ))}
+      </View>
     </View>
   );
 }
