@@ -22,6 +22,13 @@ Feature: Gameplay and controls (MVP)
     Then digits 1–9 appear in a single row without wrapping
     And the numpad width matches the grid width
 
+  @mvp @ui @issue-111
+  Scenario: Tools are icon-only buttons below the numpad
+    Given the Classic screen is rendered
+    When the tools render
+    Then Notes, Pause/Resume, Erase, Undo, and Redo are icon-only buttons
+    And each tool exposes a clear accessible label for screen readers
+
   @mvp @web @keyboard @issue-106
   Scenario: Prevent browser shortcuts and scrolling for handled keys on web
     Given the Classic screen is focused in a web environment
