@@ -3,6 +3,7 @@ import { View, Text, Pressable, Platform, AppState, type AppStateStatus } from '
 import Board from './components/Board';
 import { initializeGame, applyAction } from './game/state';
 import type { Digit, GameAction } from './game/types';
+import { isSolved } from './game/rules';
 import Numpad from './components/Numpad';
 import { loadProgress, saveProgress } from './services/storage';
 import { ThemeContext } from './_layout';
@@ -38,6 +39,29 @@ export default function ClassicScreen() {
   useEffect(() => {
     notesModeRef.current = notesMode;
   }, [notesMode]);
+
+  const gameOver = game.livesRemaining === 0;
+  const solved = isSolved(game.board);
+  const finished = gameOver || solved;
+
+  function restartWithSameSeed() {
+    const reset = initializeGame(
+      seedToGivens(seed) as { row: number; col: number; value: Digit }[],
+      {
+        difficulty: 'easy',
+        maxLives: 3,
+      },
+    );
+    setGame(reset);
+    setSelected({ row: 0, col: 0 });
+    selectedRef.current = { row: 0, col: 0 };
+    setLockedDigit(null);
+    lockedRef.current = null;
+    setNotesMode(false);
+    notesModeRef.current = false;
+    setPaused(false);
+    setSeconds(0);
+  }
 
   useEffect(() => {
     type SavedShape = {
@@ -397,6 +421,44 @@ export default function ClassicScreen() {
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
       <SeedFooter seed={seed} />
+      {finished ? (
+        <View
+          accessibilityLabel={solved ? 'Puzzle solved' : 'Game over'}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: theme.isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <Text style={{ fontSize: 20, fontWeight: '700', color: theme.foreground }}>
+            {solved ? 'Puzzle solved!' : 'Game over'}
+          </Text>
+          <View style={{ height: 12 }} />
+          <Pressable
+            onPress={restartWithSameSeed}
+            accessibilityRole="button"
+            accessibilityLabel="Restart puzzle"
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderWidth: 1,
+              borderColor: theme.isDark ? '#374151' : '#d1d5db',
+              borderRadius: 6,
+              backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
+            }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '600', color: theme.foreground }}>
+              Restart
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
