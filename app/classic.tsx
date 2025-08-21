@@ -40,16 +40,39 @@ export default function ClassicScreen() {
   }, [notesMode]);
 
   useEffect(() => {
-    loadProgress<{ board: typeof game.board }>('sudoku-progress').then((saved) => {
-      if (saved && saved.board) {
-        setGame((prev) => ({ ...prev, board: saved.board }));
+    type SavedShape = {
+      board?: typeof game.board;
+      notesMode?: boolean;
+      paused?: boolean;
+      lockedDigit?: Digit | null;
+    };
+    loadProgress<SavedShape>('sudoku-progress').then((saved) => {
+      if (!saved) return;
+      if (saved.board) {
+        setGame((prev) => ({ ...prev, board: saved.board! }));
+      }
+      if (typeof saved.notesMode === 'boolean') {
+        setNotesMode(saved.notesMode);
+        notesModeRef.current = saved.notesMode;
+      }
+      if (typeof saved.paused === 'boolean') {
+        setPaused(saved.paused);
+      }
+      if (typeof saved.lockedDigit === 'number' || saved.lockedDigit === null) {
+        setLockedDigit(saved.lockedDigit ?? null);
+        lockedRef.current = saved.lockedDigit ?? null;
       }
     });
   }, []);
 
   useEffect(() => {
-    saveProgress('sudoku-progress', { board: game.board });
-  }, [game.board]);
+    saveProgress('sudoku-progress', {
+      board: game.board,
+      notesMode: notesModeRef.current,
+      paused,
+      lockedDigit: lockedRef.current,
+    });
+  }, [game.board, paused, notesMode, lockedDigit]);
 
   useEffect(() => {
     if (paused) {
