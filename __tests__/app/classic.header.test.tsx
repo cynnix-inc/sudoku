@@ -22,4 +22,12 @@ describe('ClassicScreen header/footer', () => {
     expect(screen.getByLabelText(/\d+ lives remaining/)).toBeTruthy();
   });
   it.todo('shows timer value with an adjacent icon-only pause control (no textual "Timer" label)');
+
+  it('right-aligns the timer within header width (@issue-112)', () => {
+    render(<ClassicScreen />);
+    const time = screen.getByLabelText('Elapsed time');
+    // Ensure style positions the timer to the right within the header row container
+    expect(time.props.style.position).toBe('absolute');
+    expect(time.props.style.right).toBe(0);
+  });
 });
