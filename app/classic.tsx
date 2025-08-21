@@ -45,6 +45,16 @@ export default function ClassicScreen() {
   const solved = isSolved(game.board);
   const finished = gameOver || solved;
 
+  // Safely derive the currently selected cell's digit (if any)
+  const selectedDigit: Digit | null = (() => {
+    if (!selected) return null;
+    const row = game.board[selected.row];
+    if (!row) return null;
+    const cell = row[selected.col];
+    const value = cell?.value;
+    return typeof value === 'number' ? (value as Digit) : null;
+  })();
+
   function restartWithSameSeed() {
     const reset = initializeGame(
       seedToGivens(seed) as { row: number; col: number; value: Digit }[],
@@ -273,13 +283,7 @@ export default function ClassicScreen() {
       <Board
         board={game.board}
         selected={selected}
-        highlightDigit={
-          // Prefer active numpad lock; otherwise highlight by selected cell value
-          (lockedDigit as Digit | null) ??
-          ((selected && game.board[selected.row][selected.col].value
-            ? (game.board[selected.row][selected.col].value as Digit)
-            : null) as Digit | null)
-        }
+        highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
           selectedRef.current = { row: r, col: c };
@@ -300,12 +304,7 @@ export default function ClassicScreen() {
       />
       <Numpad
         lockedDigit={lockedDigit}
-        highlightDigit={
-          (lockedDigit as Digit | null) ??
-          ((selected && game.board[selected.row][selected.col].value
-            ? (game.board[selected.row][selected.col].value as Digit)
-            : null) as Digit | null)
-        }
+        highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
         onDigit={(d) => {
           if (!selected) return;
           const value = lockedDigit ?? d;
