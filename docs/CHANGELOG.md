@@ -9,6 +9,7 @@
 - Classic: End-state banner (solved/game over) and restart with same seed; add BDD @issue-108 and tests (Issue #108).
 - Classic: Accessibility polish for cells' screen reader labels; updated BDD @issue-109 and added tests (Issue #109).
 - Classic: Numpad aligns to grid width; single-row layout; BDD/tests added (Issue #110).
+- Classic: Tools moved below numpad as icon-only buttons with a11y labels; BDD added (Issue #111).
 
 ## v0.9 — 2025-08-20
 
