@@ -66,6 +66,7 @@ export default function SeedFooter({ seed }: SeedFooterProps) {
         onPress={() => copySeedToClipboard(seed)}
         accessibilityRole="button"
         accessibilityLabel="Copy seed"
+        accessibilityHint="Copies the puzzle seed to the clipboard"
         style={{
           marginTop: 6,
           paddingHorizontal: 8,
