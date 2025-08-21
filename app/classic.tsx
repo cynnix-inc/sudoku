@@ -70,7 +70,15 @@ export default function ClassicScreen() {
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    type KeyEvt = { key: string; preventDefault?: () => void };
+    type KeyEvt = {
+      key: string;
+      preventDefault?: () => void;
+      // Modifiers for shortcut prevention
+      ctrlKey?: boolean;
+      metaKey?: boolean;
+      altKey?: boolean;
+      shiftKey?: boolean;
+    };
     const handler = (e: KeyEvt) => {
       const tryPrevent = () => {
         // Some test environments do not provide preventDefault
@@ -78,6 +86,22 @@ export default function ClassicScreen() {
           e.preventDefault();
         }
       };
+      // Prevent common browser shortcuts during gameplay
+      const isCmdOrCtrl = !!(e.ctrlKey || e.metaKey);
+      const lowerKey = e.key.toLowerCase();
+      if (
+        isCmdOrCtrl &&
+        (lowerKey === 'r' || // refresh
+          lowerKey === 'w' || // close tab
+          lowerKey === 'f' || // find
+          lowerKey === 'p' || // print
+          lowerKey === 's') // save
+      ) {
+        tryPrevent();
+        return;
+      }
+
+      // Core gameplay keys
       if (e.key === 'ArrowUp') {
         tryPrevent();
         const curr = selectedRef.current;
@@ -123,6 +147,9 @@ export default function ClassicScreen() {
         const next = !notesModeRef.current;
         notesModeRef.current = next;
         setNotesMode(next);
+      } else if (e.key === 'Tab' || e.key === ' ') {
+        // Prevent focus leaving the board or page scrolling when pressing Tab/Space
+        tryPrevent();
       }
     };
     window.addEventListener('keydown', handler);
