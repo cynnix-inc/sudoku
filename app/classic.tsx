@@ -21,7 +21,7 @@ export default function ClassicScreen() {
       maxLives: 3,
     }),
   );
-  const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
+  const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
   const [lockedDigit, setLockedDigit] = useState<Digit | null>(null);
   const [notesMode, setNotesMode] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -273,6 +273,13 @@ export default function ClassicScreen() {
       <Board
         board={game.board}
         selected={selected}
+        highlightDigit={
+          // Prefer active numpad lock; otherwise highlight by selected cell value
+          (lockedDigit as Digit | null) ??
+          ((selected && game.board[selected.row][selected.col].value
+            ? (game.board[selected.row][selected.col].value as Digit)
+            : null) as Digit | null)
+        }
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
           selectedRef.current = { row: r, col: c };
@@ -293,6 +300,12 @@ export default function ClassicScreen() {
       />
       <Numpad
         lockedDigit={lockedDigit}
+        highlightDigit={
+          (lockedDigit as Digit | null) ??
+          ((selected && game.board[selected.row][selected.col].value
+            ? (game.board[selected.row][selected.col].value as Digit)
+            : null) as Digit | null)
+        }
         onDigit={(d) => {
           if (!selected) return;
           const value = lockedDigit ?? d;
