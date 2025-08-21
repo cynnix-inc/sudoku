@@ -11,6 +11,7 @@
 - Classic: Numpad aligns to grid width; single-row layout; BDD/tests added (Issue #110).
 - Classic: Tools moved below numpad as icon-only buttons with a11y labels; BDD added (Issue #111).
 - Classic: Header shows hearts-only lives with accessible label; timer right-aligned (Issue #112).
+- Classic: Undo/Redo does not change lives; BDD tagged @issue-113 (Issue #113).
 
 ## v0.9 — 2025-08-20
 

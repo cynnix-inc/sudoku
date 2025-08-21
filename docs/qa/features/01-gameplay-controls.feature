@@ -81,7 +81,7 @@ Feature: Gameplay and controls (MVP)
     And when I tap Redo
     Then the erase is reapplied
 
-  @mvp @undo @lives
+  @mvp @undo @lives @issue-113
   Scenario: Undo/Redo does not change lives
     Given I have made a mistake that decremented lives
     When I tap Undo
