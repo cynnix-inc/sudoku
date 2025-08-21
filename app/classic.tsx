@@ -21,7 +21,7 @@ export default function ClassicScreen() {
       maxLives: 3,
     }),
   );
-  const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
+  const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
   const [lockedDigit, setLockedDigit] = useState<Digit | null>(null);
   const [notesMode, setNotesMode] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -44,6 +44,16 @@ export default function ClassicScreen() {
   const gameOver = game.livesRemaining === 0;
   const solved = isSolved(game.board);
   const finished = gameOver || solved;
+
+  // Safely derive the currently selected cell's digit (if any)
+  const selectedDigit: Digit | null = (() => {
+    if (!selected) return null;
+    const row = game.board[selected.row];
+    if (!row) return null;
+    const cell = row[selected.col];
+    const value = cell?.value;
+    return typeof value === 'number' ? (value as Digit) : null;
+  })();
 
   function restartWithSameSeed() {
     const reset = initializeGame(
@@ -273,6 +283,7 @@ export default function ClassicScreen() {
       <Board
         board={game.board}
         selected={selected}
+        highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
           selectedRef.current = { row: r, col: c };
@@ -293,6 +304,7 @@ export default function ClassicScreen() {
       />
       <Numpad
         lockedDigit={lockedDigit}
+        highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
         onDigit={(d) => {
           if (!selected) return;
           const value = lockedDigit ?? d;
