@@ -1,0 +1,49 @@
+name: Release PR (staging)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Release for merged Release PRs (staging)
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          release-type: node
+          target-branch: staging
+          repo-url: ${{ github.repository }}
+          include-component-in-tag: false
+          skip-github-pull-request: true
+          skip-github-release: false
+
+      - name: Open or update Release PR (staging)
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          release-type: node
+          target-branch: staging
+          repo-url: ${{ github.repository }}
+          include-component-in-tag: false
+          skip-github-pull-request: false
+          skip-github-release: true
+          skip-labeling: false
+
+      - name: Enable auto-merge on Release PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Find the open Release Please PR on staging by label
+          PR_NUMBER=$(gh pr list --repo "${{ github.repository }}" --base staging --state open --label "autorelease: pending" --json number --jq '.[0].number')
+          if [ -z "${PR_NUMBER:-}" ]; then
+            echo "No open Release Please PR found to auto-merge."
+            exit 0
+          fi
+          gh pr merge "${PR_NUMBER}" --repo "${{ github.repository }}" --auto --merge
+
