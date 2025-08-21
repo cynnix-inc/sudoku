@@ -1,6 +1,6 @@
 {
   "name": "ultimate-sudoku",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "directories": {
     "doc": "docs"
   },
@@ -24,6 +24,7 @@
     "build": "npx expo export --platform web --output-dir dist",
     "ci": "npm run lint && npm run typecheck && npm test -- --ci && npm run build",
     "prepare": "husky",
+    "commit": "npx git-cz || true",
     "lint-staged": "lint-staged"
   },
   "keywords": [],
