@@ -12,7 +12,7 @@ export type BoardProps = {
 export default function Board({ board, selected, onSelect }: BoardProps) {
   const theme = useContext(ThemeContext);
   return (
-    <View>
+    <View accessibilityLabel="Sudoku board" accessibilityRole="none">
       {board.map((row, r) => (
         <View key={r} style={{ flexDirection: 'row' }}>
           {row.map((cell, c) => {
@@ -44,6 +44,9 @@ export default function Board({ board, selected, onSelect }: BoardProps) {
                 onPress={() => onSelect(r, c)}
                 accessibilityRole="button"
                 accessibilityLabel={`Cell ${r + 1},${c + 1}`}
+                accessibilityHint={`${
+                  cell.value != null ? `Value ${cell.value}` : 'Empty'
+                }${cell.isGiven ? ', given' : ''}${cell.isError ? ', error' : ''}`}
                 style={{
                   width: 36,
                   height: 36,

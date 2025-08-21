@@ -28,7 +28,7 @@ Feature: UI/UX and accessibility (MVP)
   Scenario: Screen reader labels for cells
     Given a cell receives focus
     Then the screen reader announces row and column
-    And announces the value or "empty"
+    And announces the value or "empty" and whether it is a given
 
   @mvp @a11y @ui @issue-112
   Scenario: Hearts-only lives with accessible label
