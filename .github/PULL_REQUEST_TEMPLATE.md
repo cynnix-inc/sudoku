@@ -1,10 +1,28 @@
+<!-- Title must be a Conventional Commit, e.g. feat(game): add candidate highlighting -->
+
+### Summary
+
+- What changed and why?
+
+### User impact
+
+- Briefly describe the user-facing effect
+
+### Technical notes
+
+- Key implementation notes, risks, and follow-ups
+
+### Breaking changes
+
+- If any, add a `BREAKING CHANGE:` footer in the commit body.
+
 ## What changed
 
-- 
+-
 
 ## Screenshots / GIF (if UI)
 
-- 
+-
 
 ## DB changes (if any)
 
@@ -48,6 +66,7 @@ List known risks and how to roll back.
 ## DB / Migration Notes
 
 ## Test Checklist
+
 - [ ] Lint passes
 - [ ] Types pass
 - [ ] Unit tests added/updated
@@ -56,5 +75,3 @@ List known risks and how to roll back.
 ## Risks / Rollback
 
 ## Linked Issue
-
-
