@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Classic: Seed footer now supports copy-to-clipboard with confirmation toast (Issue #63).
+- Classic: Auto-pause implemented for AppState (native) and visibility/blur (web). Tagged BDD with @issue-105 (Issue #105).
 
 ## v0.9 — 2025-08-20
 

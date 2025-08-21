@@ -84,7 +84,7 @@ Feature: Gameplay and controls (MVP)
     Then the seed string is copied to the clipboard
     And a confirmation is displayed
 
-  @mvp @pause
+  @mvp @pause @issue-105
   Scenario: Manual pause and resume
     Given a running game
     When I tap the pause control
@@ -99,7 +99,7 @@ Feature: Gameplay and controls (MVP)
     Then all cells with value 6 are highlighted
     And the numpad key 6 is highlighted
 
-  @mvp @idle
+  @mvp @idle @issue-105
   Scenario: Idle auto-pause
     Given Auto-pause is on with a 2 minute timeout
     When I am inactive for 2 minutes
