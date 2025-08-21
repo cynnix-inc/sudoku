@@ -15,6 +15,12 @@ Feature: Gameplay and controls (MVP)
     When I press a number key "1"
     Then the cell shows 1
 
+  @mvp @web @keyboard @issue-106
+  Scenario: Prevent browser shortcuts and scrolling for handled keys on web
+    Given the Classic screen is focused in a web environment
+    When I press handled keys like Arrow keys, digits, Backspace, or N
+    Then the app prevents default browser behavior such as scrolling or shortcuts
+
   @mvp @notes
   Scenario: Toggle notes mode
     Given a selected cell
