@@ -17,23 +17,22 @@ jobs:
         id: rp
         uses: googleapis/release-please-action@v4
         with:
-          release-type: node
-          package-name: ultimate-sudoku
-          bump-minor-pre-major: true
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
           target-branch: staging
-          skip-github-release: true
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          skip-github-release: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable auto-merge on Release PR
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           # Find the open Release Please PR on staging by label
-          PR_NUMBER=$(gh pr list --base staging --state open --label "autorelease: pending" --json number --jq '.[0].number')
+          PR_NUMBER=$(gh pr list --repo "${GITHUB_REPOSITORY}" --base staging --state open --label "autorelease: pending" --json number --jq '.[0].number')
           if [ -z "${PR_NUMBER}" ]; then
             echo "No open Release Please PR found to auto-merge."
             exit 0
           fi
-          gh pr merge "${PR_NUMBER}" --auto --merge
+          gh pr merge "${PR_NUMBER}" --auto --merge --repo "${GITHUB_REPOSITORY}"
 
