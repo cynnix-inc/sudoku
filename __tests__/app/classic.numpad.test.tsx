@@ -28,4 +28,12 @@ describe('ClassicScreen + Numpad integration', () => {
       expect(el).toBeTruthy();
     }
   });
+
+  it('numpad is a single row aligned to the grid width (@issue-110)', () => {
+    render(<ClassicScreen />);
+    const row = screen.getByTestId('numpad-row');
+    expect(row.props.style.flexDirection).toBe('row');
+    // 9 cells * 36px with two 6px gutters after 3rd and 6th digit
+    expect(row.props.style.width).toBe(36 * 9 + 2 * 6);
+  });
 });
