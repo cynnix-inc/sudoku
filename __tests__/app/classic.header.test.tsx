@@ -17,6 +17,9 @@ describe('ClassicScreen header/footer', () => {
     expect(seedFooter).toHaveTextContent(/Seed: \d+/);
   });
 
-  it.todo('renders hearts-only lives with an accessible label (no textual "Lives" label)');
+  it('renders hearts-only lives with an accessible label (no textual "Lives" label)', () => {
+    render(<ClassicScreen />);
+    expect(screen.getByLabelText(/\d+ lives remaining/)).toBeTruthy();
+  });
   it.todo('shows timer value with an adjacent icon-only pause control (no textual "Timer" label)');
 });
