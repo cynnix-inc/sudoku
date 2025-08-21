@@ -77,7 +77,7 @@ Feature: Gameplay and controls (MVP)
     Then I see icon-only buttons for Hint, Undo, Redo, Lock, Notes, and Erase below the numpad
     And each tool has an accessible label
 
-  @mvp @seed
+  @mvp @seed @issue-63
   Scenario: Seed copy in footer
     Given the footer displays the puzzle seed
     When I tap the seed copy control
