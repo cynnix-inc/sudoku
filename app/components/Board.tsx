@@ -1,15 +1,16 @@
 import React, { useContext } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import type { Board as BoardType } from '../game/types';
+import type { Board as BoardType, Digit } from '../game/types';
 import { ThemeContext } from '../_layout';
 
 export type BoardProps = {
   board: BoardType;
   selected: { row: number; col: number } | null;
   onSelect: (row: number, col: number) => void;
+  highlightDigit?: Digit | null;
 };
 
-export default function Board({ board, selected, onSelect }: BoardProps) {
+export default function Board({ board, selected, onSelect, highlightDigit = null }: BoardProps) {
   const theme = useContext(ThemeContext);
   return (
     <View accessibilityLabel="Sudoku board" accessibilityRole="none">
@@ -17,13 +18,16 @@ export default function Board({ board, selected, onSelect }: BoardProps) {
         <View key={r} style={{ flexDirection: 'row' }}>
           {row.map((cell, c) => {
             const isSelected = selected && selected.row === r && selected.col === c;
+            const isHighlighted = highlightDigit != null && cell.value === highlightDigit;
             const borderColor = cell.isError
               ? '#ef4444'
               : isSelected
                 ? '#60a5fa'
-                : theme.isDark
-                  ? '#374151'
-                  : '#d1d5db';
+                : isHighlighted
+                  ? '#93c5fd'
+                  : theme.isDark
+                    ? '#374151'
+                    : '#d1d5db';
             const backgroundColor = cell.isGiven
               ? theme.isDark
                 ? '#111827'
@@ -46,7 +50,10 @@ export default function Board({ board, selected, onSelect }: BoardProps) {
                 accessibilityLabel={`Cell ${r + 1},${c + 1}`}
                 accessibilityHint={`${
                   cell.value != null ? `Value ${cell.value}` : 'Empty'
-                }${cell.isGiven ? ', given' : ''}${cell.isError ? ', error' : ''}`}
+                }${cell.isGiven ? ', given' : ''}${cell.isError ? ', error' : ''}${
+                  isHighlighted ? ', highlighted' : ''
+                }`}
+                testID={`cell-${r + 1}-${c + 1}${isHighlighted ? '-highlight' : ''}`}
                 style={{
                   width: 36,
                   height: 36,

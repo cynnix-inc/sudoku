@@ -22,7 +22,10 @@ describe('ClassicScreen + Numpad integration', () => {
   it('renders digits 1..9 (single-row visual policy covered in docs)', () => {
     render(<ClassicScreen />);
     for (let i = 1; i <= 9; i++) {
-      expect(screen.getByLabelText(`Digit ${i}`)).toBeTruthy();
+      // When a given exists (5 at 1,1), 5 may be highlighted initially depending on selection state
+      const el =
+        screen.getByLabelText(`Digit ${i}`) || screen.getByLabelText(`Digit ${i} highlighted`);
+      expect(el).toBeTruthy();
     }
   });
 });
