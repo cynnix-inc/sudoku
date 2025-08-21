@@ -75,6 +75,12 @@ Feature: Gameplay and controls (MVP)
     And when I tap Redo
     Then the board state reapplies and the lives count remains unchanged
 
+  @mvp @end @issue-108
+  Scenario: End-state banner and restart
+    Given I have solved the puzzle or lost all lives
+    Then I see an end-state banner with a message
+    And I can restart the puzzle with the same seed
+
   @mvp @ui @numpad @issue-110
   Scenario: Numpad is a single row aligned to the grid
     Given the game screen is visible
