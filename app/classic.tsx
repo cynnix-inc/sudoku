@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Platform } from 'react-native';
+import { View, Text, Pressable, Platform, AppState, type AppStateStatus } from 'react-native';
 import Board from './components/Board';
 import { initializeGame, applyAction } from './game/state';
 import type { Digit, GameAction } from './game/types';
@@ -65,12 +65,79 @@ export default function ClassicScreen() {
   }, [paused]);
 
   useEffect(() => {
-    // no-op stub for idle/visibility
+    // Auto-pause when app is backgrounded or page is hidden
+    let removeAppState: (() => void) | undefined;
+
+    // Native: AppState listener
+    try {
+      const appStateChange = (nextState: AppStateStatus) => {
+        if (nextState === 'background' || nextState === 'inactive') {
+          if (timerRef.current) globalThis.clearInterval(timerRef.current);
+          setPaused(true);
+        }
+      };
+      const sub = AppState.addEventListener('change', appStateChange);
+      removeAppState = () => sub.remove();
+    } catch {
+      // AppState may not be available in some environments (e.g., web/jsdom)
+    }
+
+    // Web-like environments: if document exists, listen for visibility/blur
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyDoc = document as any;
+      const onVisibility = () => {
+        try {
+          const hidden = !!anyDoc.hidden;
+          if (hidden) {
+            if (timerRef.current) globalThis.clearInterval(timerRef.current);
+            setPaused(true);
+          }
+        } catch {
+          // ignore
+        }
+      };
+      const onBlur = () => {
+        if (timerRef.current) globalThis.clearInterval(timerRef.current);
+        setPaused(true);
+      };
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('visibilitychange', onVisibility);
+        if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+          window.addEventListener('blur', onBlur);
+        }
+        return () => {
+          try {
+            document.removeEventListener('visibilitychange', onVisibility);
+            if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+              window.removeEventListener('blur', onBlur);
+            }
+          } catch {
+            // ignore
+          }
+          if (removeAppState) removeAppState();
+        };
+      }
+    } catch {
+      // ignore non-browser environments
+    }
+
+    return () => {
+      if (removeAppState) removeAppState();
+    };
   }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    type KeyEvt = { key: string; preventDefault?: () => void };
+    type KeyEvt = {
+      key: string;
+      preventDefault?: () => void;
+      // Modifiers for shortcut prevention
+      ctrlKey?: boolean;
+      metaKey?: boolean;
+      altKey?: boolean;
+      shiftKey?: boolean;
+    };
     const handler = (e: KeyEvt) => {
       const tryPrevent = () => {
         // Some test environments do not provide preventDefault
@@ -78,6 +145,22 @@ export default function ClassicScreen() {
           e.preventDefault();
         }
       };
+      // Prevent common browser shortcuts during gameplay
+      const isCmdOrCtrl = !!(e.ctrlKey || e.metaKey);
+      const lowerKey = e.key.toLowerCase();
+      if (
+        isCmdOrCtrl &&
+        (lowerKey === 'r' || // refresh
+          lowerKey === 'w' || // close tab
+          lowerKey === 'f' || // find
+          lowerKey === 'p' || // print
+          lowerKey === 's') // save
+      ) {
+        tryPrevent();
+        return;
+      }
+
+      // Core gameplay keys
       if (e.key === 'ArrowUp') {
         tryPrevent();
         const curr = selectedRef.current;
@@ -123,6 +206,9 @@ export default function ClassicScreen() {
         const next = !notesModeRef.current;
         notesModeRef.current = next;
         setNotesMode(next);
+      } else if (e.key === 'Tab' || e.key === ' ') {
+        // Prevent focus leaving the board or page scrolling when pressing Tab/Space
+        tryPrevent();
       }
     };
     window.addEventListener('keydown', handler);
