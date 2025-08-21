@@ -49,7 +49,12 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 
 - Format: `<type>(scope): short summary`
 - Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`.
-- Example: `feat(game): add candidate highlighting`.
+- Examples:
+  - `feat(game): add candidate highlighting`
+  - `fix(storage): persist notes when undoing`
+  - `chore(ci): speed up Jest by caching node_modules`
+- Rules enforced via Commitlint in CI and locally via Husky hook.
+- Use `npm run commit` to get an interactive prompt (optional).
 
 ## Rebase and sync
 

@@ -1,5 +1,12 @@
 #!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
 # Skip commitlint in CI (GitHub Actions sets CI=true)
+if [ "${CI:-}" = "true" ]; then
+  exit 0
+fi
+
+npx --yes commitlint --edit "$1"
 [ -n "$CI" ] && exit 0
 
 npx --yes commitlint --edit "$1"

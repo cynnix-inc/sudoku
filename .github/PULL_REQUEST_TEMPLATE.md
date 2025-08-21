@@ -1,10 +1,34 @@
+<!-- Title MUST be a Conventional Commit when squash-merging -->
+<!-- Example: feat(game): add candidate highlighting -->
+
+## Summary
+
+- What does this change do?
+
+## User impact
+
+- End-user visible changes, bug fixes, or performance improvements.
+
+## Technical notes
+
+- Key implementation details, risks, or follow-ups.
+
+## Checklist
+
+- [ ] Title follows Conventional Commits
+- [ ] Tests added/updated where appropriate
+- [ ] Docs/ADR updated if needed
+
+<!-- For breaking changes add either `!` in the type (feat!: ...) or include: -->
+<!-- BREAKING CHANGE: description of the breaking change -->
+
 ## What changed
 
-- 
+-
 
 ## Screenshots / GIF (if UI)
 
-- 
+-
 
 ## DB changes (if any)
 
@@ -48,6 +72,7 @@ List known risks and how to roll back.
 ## DB / Migration Notes
 
 ## Test Checklist
+
 - [ ] Lint passes
 - [ ] Types pass
 - [ ] Unit tests added/updated
@@ -56,5 +81,3 @@ List known risks and how to roll back.
 ## Risks / Rollback
 
 ## Linked Issue
-
-
