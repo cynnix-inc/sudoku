@@ -1,0 +1,38 @@
+name: release_pr
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Please (open/update release PR)
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          target-branch: staging
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          skip-github-pull-request: false
+
+      - name: Enable auto-merge on Release PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          PR_NUMBER=$(gh pr list --base staging --state open --label "autorelease: pending" --json number --jq '.[0].number' --repo "${GITHUB_REPOSITORY}")
+          if [ -z "${PR_NUMBER}" ]; then
+            echo "No open Release Please PR found to auto-merge."
+            exit 0
+          fi
+          gh pr merge "${PR_NUMBER}" --auto --merge --repo "${GITHUB_REPOSITORY}"
+
