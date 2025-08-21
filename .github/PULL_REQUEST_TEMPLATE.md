@@ -1,26 +1,20 @@
-<!-- Title MUST be a Conventional Commit when squash-merging -->
-<!-- Example: feat(game): add candidate highlighting -->
+<!-- Title must be a Conventional Commit, e.g. feat(game): add candidate highlighting -->
 
-## Summary
+### Summary
 
-- What does this change do?
+- What changed and why?
 
-## User impact
+### User impact
 
-- End-user visible changes, bug fixes, or performance improvements.
+- Briefly describe the user-facing effect
 
-## Technical notes
+### Technical notes
 
-- Key implementation details, risks, or follow-ups.
+- Key implementation notes, risks, and follow-ups
 
-## Checklist
+### Breaking changes
 
-- [ ] Title follows Conventional Commits
-- [ ] Tests added/updated where appropriate
-- [ ] Docs/ADR updated if needed
-
-<!-- For breaking changes add either `!` in the type (feat!: ...) or include: -->
-<!-- BREAKING CHANGE: description of the breaking change -->
+- If any, add a `BREAKING CHANGE:` footer in the commit body.
 
 ## What changed
 

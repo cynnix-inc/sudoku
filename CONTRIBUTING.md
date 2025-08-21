@@ -53,8 +53,9 @@ Thank you for contributing! Please follow this guide to keep the project healthy
   - `feat(game): add candidate highlighting`
   - `fix(storage): persist notes when undoing`
   - `chore(ci): speed up Jest by caching node_modules`
-- Rules enforced via Commitlint in CI and locally via Husky hook.
-- Use `npm run commit` to get an interactive prompt (optional).
+- Use squash merge; PR title must be a Conventional Commit (becomes the squash commit message).
+- Breaking changes: add `!` after type (e.g., `feat!:`) or include a `BREAKING CHANGE:` footer.
+- Branch naming: `type/scope-short-slug` (e.g., `feat/game-candidates`).
 
 ## Rebase and sync
 
@@ -71,6 +72,7 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 
 - We use Changesets to manage versions and changelogs.
 - Base branch for Changesets is `staging`. Create a changeset with `npx changeset` when your PR has user-visible changes.
+- Conventional commits power release notes quality and are enforced by CI and pre-commit hooks.
 
 ## Supabase migrations
 
