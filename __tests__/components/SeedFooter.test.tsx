@@ -33,6 +33,7 @@ describe('SeedFooter', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(seed));
     expect(await screen.findByLabelText('Seed copied')).toBeTruthy();
   });
+
   it('falls back gracefully if Clipboard API is missing (no throw)', async () => {
     const seed = 'abc123';
     (globalThis as unknown as { navigator?: unknown }).navigator = undefined;
