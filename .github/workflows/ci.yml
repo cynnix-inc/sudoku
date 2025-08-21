@@ -141,5 +141,3 @@ jobs:
         run: npm run bundle:check
       - name: Security audit (high severity)
         run: npm audit --audit-level=high --omit=dev
-
-
