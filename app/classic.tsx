@@ -3,6 +3,8 @@ import { View, Text, Pressable, Platform, AppState, type AppStateStatus } from '
 import Board from './components/Board';
 import { initializeGame, applyAction } from './game/state';
 import type { Digit, GameAction } from './game/types';
+import { isSolved } from './game/rules';
+import { MaterialIcons } from '@expo/vector-icons';
 import Numpad from './components/Numpad';
 import { loadProgress, saveProgress } from './services/storage';
 import { ThemeContext } from './_layout';
@@ -39,17 +41,63 @@ export default function ClassicScreen() {
     notesModeRef.current = notesMode;
   }, [notesMode]);
 
+  const gameOver = game.livesRemaining === 0;
+  const solved = isSolved(game.board);
+  const finished = gameOver || solved;
+
+  function restartWithSameSeed() {
+    const reset = initializeGame(
+      seedToGivens(seed) as { row: number; col: number; value: Digit }[],
+      {
+        difficulty: 'easy',
+        maxLives: 3,
+      },
+    );
+    setGame(reset);
+    setSelected({ row: 0, col: 0 });
+    selectedRef.current = { row: 0, col: 0 };
+    setLockedDigit(null);
+    lockedRef.current = null;
+    setNotesMode(false);
+    notesModeRef.current = false;
+    setPaused(false);
+    setSeconds(0);
+  }
+
   useEffect(() => {
-    loadProgress<{ board: typeof game.board }>('sudoku-progress').then((saved) => {
-      if (saved && saved.board) {
-        setGame((prev) => ({ ...prev, board: saved.board }));
+    type SavedShape = {
+      board?: typeof game.board;
+      notesMode?: boolean;
+      paused?: boolean;
+      lockedDigit?: Digit | null;
+    };
+    loadProgress<SavedShape>('sudoku-progress').then((saved) => {
+      if (!saved) return;
+      if (saved.board) {
+        setGame((prev) => ({ ...prev, board: saved.board! }));
+      }
+      if (typeof saved.notesMode === 'boolean') {
+        setNotesMode(saved.notesMode);
+        notesModeRef.current = saved.notesMode;
+      }
+      if (typeof saved.paused === 'boolean') {
+        setPaused(saved.paused);
+      }
+      if (typeof saved.lockedDigit === 'number' || saved.lockedDigit === null) {
+        setLockedDigit(saved.lockedDigit ?? null);
+        lockedRef.current = saved.lockedDigit ?? null;
       }
     });
   }, []);
 
   useEffect(() => {
-    saveProgress('sudoku-progress', { board: game.board });
-  }, [game.board]);
+    saveProgress('sudoku-progress', {
+      board: game.board,
+      notesMode: notesModeRef.current,
+      paused,
+      lockedDigit: lockedRef.current,
+    });
+  }, [game.board, paused, notesMode, lockedDigit]);
 
   useEffect(() => {
     if (paused) {
@@ -243,117 +291,6 @@ export default function ClassicScreen() {
           }
         }}
       />
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-        <Pressable
-          onPress={() => setNotesMode((p) => !p)}
-          accessibilityRole="button"
-          accessibilityLabel={notesMode ? 'Disable notes mode' : 'Enable notes mode'}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderWidth: 1,
-            borderColor: notesMode ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
-            borderRadius: 6,
-            backgroundColor: notesMode
-              ? theme.isDark
-                ? '#0b3a64'
-                : '#dbeafe'
-              : theme.isDark
-                ? '#0f1115'
-                : '#ffffff',
-            marginBottom: 8,
-          }}
-        >
-          <Text
-            style={{ fontSize: 14, fontWeight: notesMode ? '700' : '500', color: theme.foreground }}
-          >
-            {notesMode ? 'Notes: ON' : 'Notes: OFF'}
-          </Text>
-        </Pressable>
-        <View style={{ width: 8 }} />
-        <Pressable
-          onPress={() => setPaused((p) => !p)}
-          accessibilityRole="button"
-          accessibilityLabel={paused ? 'Resume timer' : 'Pause timer'}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderWidth: 1,
-            borderColor: paused ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
-            borderRadius: 6,
-            backgroundColor: paused
-              ? theme.isDark
-                ? '#0b3a64'
-                : '#dbeafe'
-              : theme.isDark
-                ? '#0f1115'
-                : '#ffffff',
-            marginBottom: 8,
-          }}
-        >
-          <Text
-            style={{ fontSize: 14, fontWeight: paused ? '700' : '500', color: theme.foreground }}
-          >
-            {paused ? 'Resume' : 'Pause'}
-          </Text>
-        </Pressable>
-        <View style={{ width: 8 }} />
-        <Pressable
-          onPress={() => {
-            if (!selected) return;
-            setGame((prev) =>
-              applyAction(prev, { type: 'erase', row: selected.row, col: selected.col }),
-            );
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Erase cell"
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderWidth: 1,
-            borderColor: theme.isDark ? '#374151' : '#d1d5db',
-            borderRadius: 6,
-            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
-            marginBottom: 8,
-          }}
-        >
-          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Erase</Text>
-        </Pressable>
-        <View style={{ width: 8 }} />
-        <Pressable
-          onPress={() => setGame((prev) => applyAction(prev, { type: 'undo' } as GameAction))}
-          accessibilityRole="button"
-          accessibilityLabel="Undo move"
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderWidth: 1,
-            borderColor: theme.isDark ? '#374151' : '#d1d5db',
-            borderRadius: 6,
-            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
-            marginBottom: 8,
-          }}
-        >
-          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Undo</Text>
-        </Pressable>
-        <View style={{ width: 8 }} />
-        <Pressable
-          onPress={() => setGame((prev) => applyAction(prev, { type: 'redo' } as GameAction))}
-          accessibilityRole="button"
-          accessibilityLabel="Redo move"
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderWidth: 1,
-            borderColor: theme.isDark ? '#374151' : '#d1d5db',
-            borderRadius: 6,
-            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
-            marginBottom: 8,
-          }}
-        >
-          <Text style={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>Redo</Text>
-        </Pressable>
-      </View>
       <Numpad
         lockedDigit={lockedDigit}
         onDigit={(d) => {
@@ -373,7 +310,160 @@ export default function ClassicScreen() {
         }}
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
+      <View
+        testID="tools-row"
+        style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}
+      >
+        <Pressable
+          onPress={() => setNotesMode((p) => !p)}
+          accessibilityRole="button"
+          accessibilityLabel={notesMode ? 'Disable notes mode' : 'Enable notes mode'}
+          style={{
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: notesMode ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
+            borderRadius: 6,
+            backgroundColor: notesMode
+              ? theme.isDark
+                ? '#0b3a64'
+                : '#dbeafe'
+              : theme.isDark
+                ? '#0f1115'
+                : '#ffffff',
+            marginRight: 6,
+          }}
+        >
+          <MaterialIcons name="edit" size={20} color={theme.foreground} />
+        </Pressable>
+        <Pressable
+          onPress={() => setPaused((p) => !p)}
+          accessibilityRole="button"
+          accessibilityLabel={paused ? 'Resume timer' : 'Pause timer'}
+          style={{
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: paused ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
+            borderRadius: 6,
+            backgroundColor: paused
+              ? theme.isDark
+                ? '#0b3a64'
+                : '#dbeafe'
+              : theme.isDark
+                ? '#0f1115'
+                : '#ffffff',
+            marginRight: 6,
+          }}
+        >
+          <MaterialIcons
+            name={paused ? 'play-arrow' : 'pause'}
+            size={20}
+            color={theme.foreground}
+          />
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            if (!selected) return;
+            setGame((prev) =>
+              applyAction(prev, { type: 'erase', row: selected.row, col: selected.col }),
+            );
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Erase cell"
+          style={{
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
+            borderRadius: 6,
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
+            marginRight: 6,
+          }}
+        >
+          <MaterialIcons name="backspace" size={20} color={theme.foreground} />
+        </Pressable>
+        <Pressable
+          onPress={() => setGame((prev) => applyAction(prev, { type: 'undo' } as GameAction))}
+          accessibilityRole="button"
+          accessibilityLabel="Undo move"
+          style={{
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
+            borderRadius: 6,
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
+            marginRight: 6,
+          }}
+        >
+          <MaterialIcons name="undo" size={20} color={theme.foreground} />
+        </Pressable>
+        <Pressable
+          onPress={() => setGame((prev) => applyAction(prev, { type: 'redo' } as GameAction))}
+          accessibilityRole="button"
+          accessibilityLabel="Redo move"
+          style={{
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
+            borderRadius: 6,
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
+          }}
+        >
+          <MaterialIcons name="redo" size={20} color={theme.foreground} />
+        </Pressable>
+      </View>
       <SeedFooter seed={seed} />
+      {finished ? (
+        <View
+          accessibilityLabel={solved ? 'Puzzle solved' : 'Game over'}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: theme.isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <Text style={{ fontSize: 20, fontWeight: '700', color: theme.foreground }}>
+            {solved ? 'Puzzle solved!' : 'Game over'}
+          </Text>
+          <View style={{ height: 12 }} />
+          <Pressable
+            onPress={restartWithSameSeed}
+            accessibilityRole="button"
+            accessibilityLabel="Restart puzzle"
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderWidth: 1,
+              borderColor: theme.isDark ? '#374151' : '#d1d5db',
+              borderRadius: 6,
+              backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
+            }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '600', color: theme.foreground }}>
+              Restart
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }

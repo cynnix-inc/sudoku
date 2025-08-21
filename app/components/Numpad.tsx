@@ -15,11 +15,11 @@ export default function Numpad({ lockedDigit, onDigit, onToggleLock }: NumpadPro
   const theme = useContext(ThemeContext);
   return (
     <View style={{ marginTop: 16 }}>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: 36 * 9 + 8 }}>
-        {digits.map((d) => {
+      <View testID="numpad-row" style={{ flexDirection: 'row', width: 36 * 9 + 2 * 6 }}>
+        {digits.map((d, idx) => {
           const isLocked = lockedDigit === d;
           return (
-            <View key={d} style={{ marginRight: 4, marginBottom: 8 }}>
+            <View key={d} style={{ marginRight: idx % 3 === 2 ? 6 : 0, marginBottom: 0 }}>
               <Pressable
                 onPress={() => onDigit(d)}
                 onLongPress={() => onToggleLock(d)}
