@@ -15,6 +15,13 @@ Feature: Gameplay and controls (MVP)
     When I press a number key "1"
     Then the cell shows 1
 
+  @mvp @ui @web @issue-110
+  Scenario: Numpad aligns to board and does not wrap
+    Given the game screen on a common device width
+    When the numpad renders
+    Then digits 1–9 appear in a single row without wrapping
+    And the numpad width matches the grid width
+
   @mvp @web @keyboard @issue-106
   Scenario: Prevent browser shortcuts and scrolling for handled keys on web
     Given the Classic screen is focused in a web environment
