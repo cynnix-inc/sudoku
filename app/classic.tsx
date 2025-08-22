@@ -279,6 +279,8 @@ export default function ClassicScreen() {
         difficulty={game.config.difficulty}
         livesRemaining={game.livesRemaining}
         seconds={seconds}
+        paused={paused}
+        onTogglePause={() => setPaused((p) => !p)}
       />
       <Board
         board={game.board}
@@ -351,35 +353,7 @@ export default function ClassicScreen() {
         >
           <MaterialIcons name="edit" size={20} color={theme.foreground} />
         </Pressable>
-        <Pressable
-          onPress={() => setPaused((p) => !p)}
-          accessibilityRole="button"
-          accessibilityLabel={paused ? 'Resume timer' : 'Pause timer'}
-          accessibilityHint={paused ? 'Resumes the game timer' : 'Pauses the game timer'}
-          style={{
-            width: 36,
-            height: 36,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: paused ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
-            borderRadius: 6,
-            backgroundColor: paused
-              ? theme.isDark
-                ? '#0b3a64'
-                : '#dbeafe'
-              : theme.isDark
-                ? '#0f1115'
-                : '#ffffff',
-            marginRight: 6,
-          }}
-        >
-          <MaterialIcons
-            name={paused ? 'play-arrow' : 'pause'}
-            size={20}
-            color={theme.foreground}
-          />
-        </Pressable>
+
         <Pressable
           onPress={() => {
             if (!selected) return;
