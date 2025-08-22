@@ -96,6 +96,7 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 - We track large scopes as Epics (GitHub issues titled with `[Epic] ...`).
 - Implementation tasks are Issues; Epics link to their children via sub-issues.
 - Use the GitHub CLI sub-issues extension to manage hierarchy: see `gh-sub-issue`.
+- For driving an epic end-to-end (branching, CI gates, PR flow), see the automation template: `docs/templates/epic-automation.md`.
 
 ### Install the CLI extension (If not already installed)
 
@@ -200,6 +201,7 @@ gh label create area/<new-area> -R cynnix-inc/sudoku --color BFD4F2 --descriptio
 - Set `priority/p0` for crashes/data loss/security; `priority/p1` if major but not catastrophic; otherwise `priority/p2`.
 - Add `mode/*` if the bug is specific to a game mode.
 - Add a milestone (e.g., "MVP v0.9") if it must land in that release; otherwise omit.
+- Template: see `docs/templates/bug-sub-issue.md` for a copy/paste body and CLI examples.
 
 Reference: `gh-sub-issue` usage and options are documented here: https://github.com/yahsan2/gh-sub-issue
 

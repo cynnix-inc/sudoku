@@ -10,8 +10,6 @@ describe('RootLayout', () => {
 		// Toggle exists and can be pressed (we don't have a router context here)
 		const toggle = screen.getByLabelText('Toggle color theme');
 		fireEvent.press(toggle);
-		// Index should include a Classic link rendered by nested route
-		// Note: we only assert that label exists when Index is mounted within router
 	});
 });
 
