@@ -1,10 +1,6 @@
 import { defineFeature, loadFeature } from 'jest-cucumber';
 
-// Scope to only the @utc-tagged scenario to avoid requiring step definitions
-// for unrelated scenarios in the shared Daily feature file.
-const feature = loadFeature('docs/qa/features/02-modes-daily.feature', {
-  tagFilter: '@utc',
-});
+const feature = loadFeature('docs/qa/features/02-modes-daily.feature');
 
 // Minimal pure function that replicates the spec seed rule for test purposes
 export function buildDailySeed(utcDate: string, patternId: number, difficulty: string): string {

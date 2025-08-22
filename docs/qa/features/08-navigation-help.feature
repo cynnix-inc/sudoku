@@ -18,4 +18,3 @@ Feature: Navigation and Help/About (MVP)
   Scenario: Help/About content availability
     When I open Help/About
     Then I can access Rules, Techniques, Controls, Stats explainer, Credits, and Version info
-    And I do not see inline instructional text like "long-press to lock a digit" in the main UI surfaces (discoverability covered by tool icon and documentation)

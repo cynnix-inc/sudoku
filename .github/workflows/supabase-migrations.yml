@@ -40,7 +40,7 @@ jobs:
 
       - name: Link project (non-interactive)
         # SUPABASE_DB_PASSWORD is read by the CLI to avoid prompts
-        run: supabase link --project-ref "$REF" --password "$SUPABASE_DB_PASSWORD"
+        run: supabase link --project-ref "$REF"
 
       - name: Push migrations
         # Either rely on the link or pass --project-ref explicitly (both work)
