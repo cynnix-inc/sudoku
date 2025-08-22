@@ -46,7 +46,7 @@ Feature: UI/UX and accessibility (MVP)
     Given the game is running
     When I view the header
     Then I see the time value and a pause icon
-    And I do not see a textual label for "Timer"
+    And I do not see a textual label like "Timer", "Mode:", or "Difficulty:"
     When I activate the pause icon
     Then the game pauses and the timer stops
 

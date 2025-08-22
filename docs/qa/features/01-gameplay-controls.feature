@@ -110,11 +110,11 @@ Feature: Gameplay and controls (MVP)
     And each tool has an accessible label
 
   @mvp @seed @issue-63
-  Scenario: Seed copy in footer
-    Given the footer displays the puzzle seed
-    When I tap the seed copy control
+  Scenario: Seed value is tappable to copy
+    Given the footer displays the puzzle seed as a numeric string
+    When I tap the seed value itself
     Then the seed string is copied to the clipboard
-    And a confirmation is displayed
+    And a subtle confirmation is displayed
 
   @mvp @pause @issue-105
   Scenario: Manual pause and resume
