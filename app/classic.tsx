@@ -19,6 +19,7 @@ import { ThemeContext } from './_layout';
 import Header from './components/Header';
 import SeedFooter from './components/SeedFooter';
 import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
+import { recordResult } from './services/stats';
 
 export default function ClassicScreen() {
   const theme = useContext(ThemeContext);
@@ -53,6 +54,7 @@ export default function ClassicScreen() {
   const gameOver = game.livesRemaining === 0;
   const solved = isSolved(game.board);
   const finished = gameOver || solved;
+  const hasRecordedRef = useRef(false);
 
   // Safely derive the currently selected cell's digit (if any)
   const selectedDigit: Digit | null = (() => {
@@ -83,6 +85,20 @@ export default function ClassicScreen() {
     setSeconds(0);
   }
 
+  useEffect(() => {
+    // On first transition to finished, record stats once
+    if (finished && !hasRecordedRef.current) {
+      hasRecordedRef.current = true;
+      const result = solved ? 'win' : ('loss' as const);
+      void recordResult(game.config.difficulty, result, seconds);
+    }
+  }, [finished, solved, game.config.difficulty, seconds]);
+
+  useEffect(() => {
+    if (!finished) {
+      hasRecordedRef.current = false;
+    }
+  }, [finished]);
   useEffect(() => {
     type SavedShape = {
       board?: typeof game.board;
