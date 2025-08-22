@@ -1,10 +1,12 @@
-import type { Digit } from '../types';
+import type { Digit, Difficulty } from '../types';
 import { createRng, hashStringToSeed, shuffled } from './random';
 import { cloneGrid, countSolutions } from './solver';
+import { DIFFICULTY_THRESHOLDS } from './difficulty';
 
 export type GenerateOptions = {
   seed: string;
-  minClues?: number; // rough target
+  difficulty?: Difficulty; // if provided, aim to meet clue thresholds
+  minClues?: number; // legacy/override
 };
 
 export type GeneratedPuzzle = {
@@ -14,7 +16,7 @@ export type GeneratedPuzzle = {
 
 // Very basic generator: fill a complete valid grid randomly, then remove clues while preserving uniqueness
 export function generatePuzzle(options: GenerateOptions): GeneratedPuzzle {
-  const { seed, minClues = 28 } = options;
+  const { seed, difficulty, minClues } = options;
   const rng = createRng(hashStringToSeed(seed));
 
   // Step 1: generate full solution by backtracking with randomized order
@@ -64,8 +66,9 @@ export function generatePuzzle(options: GenerateOptions): GeneratedPuzzle {
   );
   const puzzle = cloneGrid(solution);
   let clues = 81;
+  const targetMin = minClues ?? (difficulty ? DIFFICULTY_THRESHOLDS[difficulty].minClues : 28);
   for (const [r, c] of cells) {
-    if (clues <= minClues) break;
+    if (clues <= targetMin) break;
     const backup = puzzle[r]![c]!;
     puzzle[r]![c] = null;
     const gridCopy = cloneGrid(puzzle);

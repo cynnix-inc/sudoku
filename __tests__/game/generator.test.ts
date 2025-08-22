@@ -1,4 +1,5 @@
 import { generatePuzzle } from '../../app/game/engine/generator';
+import { isClueCountInDifficulty } from '../../app/game/engine/difficulty';
 import { countSolutions, cloneGrid } from '../../app/game/engine/solver';
 
 describe('generator (#159)', () => {
@@ -29,5 +30,11 @@ describe('generator (#159)', () => {
     expect(
       countSolutions(grid as unknown as (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | null)[][], 2),
     ).toBe(1);
+  });
+
+  it('aims clue count to match difficulty thresholds when provided', () => {
+    const { givens } = generatePuzzle({ seed: 'seed-medium', difficulty: 'medium' });
+    const clues = givens.length;
+    expect(isClueCountInDifficulty('medium', clues)).toBe(true);
   });
 });
