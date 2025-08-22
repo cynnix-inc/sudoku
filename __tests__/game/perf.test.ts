@@ -3,9 +3,10 @@ import { generatePuzzle } from '../../app/game/engine/generator';
 import { solveWithStrategies } from '../../app/game/engine/strategy';
 import { initializeGame } from '../../app/game/state';
 
-// Soft thresholds chosen to be generous in CI environments
-const GENERATE_MS_SOFT_LIMIT = 700; // ms
-const SINGLES_MS_SOFT_LIMIT = 700; // ms
+// Soft thresholds chosen to be generous; CI is slower, use higher caps there
+const isCI = !!process.env['CI'];
+const GENERATE_MS_SOFT_LIMIT = isCI ? 900 : 700; // ms
+const SINGLES_MS_SOFT_LIMIT = isCI ? 900 : 700; // ms
 
 function measureMs(fn: () => void): number {
   const start = Date.now();
@@ -13,8 +14,8 @@ function measureMs(fn: () => void): number {
   return Date.now() - start;
 }
 
-// Skip perf tests on CI to avoid flakiness due to shared runners or throttling
-const maybeDescribe = process.env['CI'] ? describe.skip : describe;
+// On CI, still run but with relaxed thresholds above
+const maybeDescribe = describe;
 
 maybeDescribe('performance benchmarks (#162)', () => {
   it('generates a medium puzzle under soft limit', () => {
