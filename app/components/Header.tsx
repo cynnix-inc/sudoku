@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemeContext } from '../_layout';
-import type { GameConfig } from '../game/types';
+import type { GameConfig } from '../_game/types';
 
 type HeaderProps = {
   mode?: string;

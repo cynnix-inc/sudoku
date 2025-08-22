@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Board from './components/Board';
 import { initializeGame, applyAction } from './game/state';
-import type { Digit, GameAction } from './game/types';
+import type { Digit, GameAction } from './_game/types';
 import { isSolved } from './game/rules';
 import { MaterialIcons } from '@expo/vector-icons';
 import Numpad from './components/Numpad';

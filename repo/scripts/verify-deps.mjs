@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /* eslint-env node */
+/* global console, process */
 /**
  * verify-deps.mjs
  * Checks all workspaces for missing/extraneous dependencies using `npm ls --workspaces --json`.

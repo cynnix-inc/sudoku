@@ -1,4 +1,5 @@
-/* eslint-env jest */
+/* eslint-env jest, node */
+/* global beforeAll, afterAll */
 import React from 'react';
 import { jest } from '@jest/globals';
 

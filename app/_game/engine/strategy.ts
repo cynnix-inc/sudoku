@@ -1,4 +1,4 @@
-import type { Board, Digit } from '../../game/types';
+import type { Board, Digit } from '../types';
 import { getCell } from '../../game/state';
 import { isValidPlacement } from '../../game/rules';
 
@@ -102,8 +102,8 @@ export function solveWithStrategies(
   techniques: Technique[] = ['nakedSingle', 'hiddenSingle'],
   maxIterations = 1000,
 ): { solved: boolean; steps: StrategyStep[] } {
-  const board: Board = input.map((row) =>
-    row.map((cell) => ({ ...cell, notes: { ...cell.notes } })),
+  const board: Board = input.map((row: Board[number]) =>
+    row.map((cell: Board[number][number]) => ({ ...cell, notes: { ...cell.notes } })),
   );
   const steps: StrategyStep[] = [];
   let iter = 0;

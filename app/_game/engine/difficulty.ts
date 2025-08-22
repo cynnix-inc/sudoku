@@ -1,4 +1,4 @@
-import type { Difficulty } from '../../game/types';
+import type { Difficulty } from '../types';
 
 export type DifficultyThreshold = {
   minClues: number;
@@ -9,11 +9,11 @@ export type DifficultyThreshold = {
 // Easy: ≥34 clues
 // Medium: 28–33 clues
 // Hard: 24–27 clues
-export const DIFFICULTY_THRESHOLDS: Record<Difficulty, DifficultyThreshold> = {
+export const DIFFICULTY_THRESHOLDS = {
   easy: { minClues: 34, maxClues: 81 },
   medium: { minClues: 28, maxClues: 33 },
   hard: { minClues: 24, maxClues: 27 },
-};
+} as const satisfies Record<Difficulty, DifficultyThreshold>;
 
 export function isClueCountInDifficulty(difficulty: Difficulty, clueCount: number): boolean {
   const t = DIFFICULTY_THRESHOLDS[difficulty];

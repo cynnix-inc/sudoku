@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /* eslint-env node */
+/* global console, process */
 /**
  * scripts/bundle-check.mjs
  * Compares built bundle sizes in ./dist to previous baseline in ./dist-baseline (or a JSON file).
