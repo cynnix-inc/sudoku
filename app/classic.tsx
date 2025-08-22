@@ -330,6 +330,7 @@ export default function ClassicScreen() {
           onPress={() => setNotesMode((p) => !p)}
           accessibilityRole="button"
           accessibilityLabel={notesMode ? 'Disable notes mode' : 'Enable notes mode'}
+          accessibilityHint="Toggles whether taps add notes instead of placing values"
           style={{
             width: 36,
             height: 36,
@@ -354,6 +355,7 @@ export default function ClassicScreen() {
           onPress={() => setPaused((p) => !p)}
           accessibilityRole="button"
           accessibilityLabel={paused ? 'Resume timer' : 'Pause timer'}
+          accessibilityHint={paused ? 'Resumes the game timer' : 'Pauses the game timer'}
           style={{
             width: 36,
             height: 36,
@@ -387,6 +389,7 @@ export default function ClassicScreen() {
           }}
           accessibilityRole="button"
           accessibilityLabel="Erase cell"
+          accessibilityHint="Clears the value or note in the selected cell"
           style={{
             width: 36,
             height: 36,
@@ -405,6 +408,7 @@ export default function ClassicScreen() {
           onPress={() => setGame((prev) => applyAction(prev, { type: 'undo' } as GameAction))}
           accessibilityRole="button"
           accessibilityLabel="Undo move"
+          accessibilityHint="Reverts the last action without changing lives"
           style={{
             width: 36,
             height: 36,
@@ -423,6 +427,7 @@ export default function ClassicScreen() {
           onPress={() => setGame((prev) => applyAction(prev, { type: 'redo' } as GameAction))}
           accessibilityRole="button"
           accessibilityLabel="Redo move"
+          accessibilityHint="Reapplies the last undone action without changing lives"
           style={{
             width: 36,
             height: 36,
