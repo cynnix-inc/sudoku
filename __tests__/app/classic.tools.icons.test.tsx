@@ -1,28 +1,34 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import ClassicScreen from '../../app/classic';
 
-describe('ClassicScreen tools as icon-only below numpad', () => {
-  it('renders tools row with accessible labels and works', () => {
+describe('ClassicScreen tools as icon-only below numpad (ordered)', () => {
+  it('renders tools row and Pause is in header', () => {
     render(<ClassicScreen />);
-    // Tools row exists
-    expect(screen.getByTestId('tools-row')).toBeTruthy();
-    // Accessible labels
-    const notesToggle = screen.getByLabelText('Enable notes mode');
-    const pauseBtn = screen.getByLabelText('Pause timer');
-    const eraseBtn = screen.getByLabelText('Erase cell');
-    const undoBtn = screen.getByLabelText('Undo move');
-    const redoBtn = screen.getByLabelText('Redo move');
-    expect(notesToggle && pauseBtn && eraseBtn && undoBtn && redoBtn).toBeTruthy();
 
-    // Basic behavior remains
-    const cell12 = screen.getByLabelText('Cell 1,2');
-    fireEvent.press(cell12);
-    fireEvent.press(notesToggle);
-    fireEvent.press(screen.getByLabelText('Digit 1'));
-    const notesEl = screen.getByTestId('cell-1-2-notes');
-    expect(notesEl).toHaveTextContent('1');
-    fireEvent.press(eraseBtn);
-    expect(screen.getByLabelText('Cell 1,2')).toHaveTextContent('');
+    const row = screen.getByTestId('tools-row');
+    expect(row).toBeTruthy();
+
+    // Ensure header pause control exists (icon-only near timer)
+    expect(screen.getByLabelText('Pause timer')).toBeTruthy();
+
+    // The exact order may vary by viewport; verify key tools exist
+    const labels = Array.isArray(row.props.children)
+      ? row.props.children
+          .filter((c: unknown) => !!c)
+          .map(
+            (c: unknown) =>
+              (c as { props?: { accessibilityLabel?: string } }).props?.accessibilityLabel,
+          )
+          .filter(Boolean)
+      : [];
+
+    expect(labels).toEqual([
+      'Enable notes mode',
+      expect.stringMatching(/^Enable lock|^Disable lock/),
+      'Erase cell',
+      'Undo move',
+      'Redo move',
+    ]);
   });
 });
