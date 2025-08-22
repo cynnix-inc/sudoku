@@ -123,17 +123,17 @@
 
 ```
  -------------------------------------------------
-| [Home]        Classic – Hard           03:42 ⏸ |
-| ♥♥♥                                           |
+| [Home]    Ultimate Sudoku    Classic – Hard  03:42 ⏸ |
+| ♥♥♥                                               |
  -------------------------------------------------
-|                Sudoku 9×9 Grid                 |
-|   (aligned above numbers)                      |
+|                Sudoku 9×9 Grid                     |
+|   (aligned above numbers)                          |
  -------------------------------------------------
 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
  -------------------------------------------------
-| Hint | Undo | Redo |   | Lock | Notes | Erase  |
+| Hint | Undo | Redo |   | Lock | Notes | Erase      |
  -------------------------------------------------
-|           Seed: #482913   [Tap to Copy]        |
+|                #482913  (tap to copy)              |
  -------------------------------------------------
 ```
 
@@ -141,7 +141,7 @@ Specs:
 
 - Numpad renders in a single row with width matched to the grid; no wrapping to a second line.
 - Tools render as icon-only buttons below the numpad (accessible labels required).
-- Header layout: Mode – Difficulty centered; time value right‑aligned on the first row; Pause/Resume is an icon-only control adjacent to the time; Lives shown immediately below as hearts icons only (no textual label). The textual label “Timer” is not shown (see #116).
+- Header layout: Product title "Ultimate Sudoku" is shown tastefully; Mode – Difficulty shown without textual prefixes; time value right‑aligned with an icon-only Pause/Resume control; Lives shown as hearts icons only (no textual label). The textual label “Timer” is not shown (see #116).
 - Lock is available as an icon toggle in the tool row, and also via long‑press on a numpad digit (see #118).
 - Selecting or activating a digit highlights matching values across the grid and the corresponding numpad key (see #115).
 
@@ -258,7 +258,7 @@ Key child issues (selected)
 - Local + Cloud storage (baseline + monitoring)
 - Confetti (basic), haptics, timer, stats
 - Home button navigation + Help/About
-- Footer game seed (copy)
+- Footer game seed shown as a numeric string; tapping the seed value copies to clipboard with subtle hover/focus affordance and confirmation
 - Icon-only pause integrated with timer; no “Timer” text label (#116)
 - Highlight same digit when active selection changes (#115)
 - Lock toggle available in tool row and via long‑press (#118)

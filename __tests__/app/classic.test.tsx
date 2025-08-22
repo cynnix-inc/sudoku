@@ -5,8 +5,8 @@ import ClassicScreen from '../../app/classic';
 describe('ClassicScreen', () => {
   it('renders header', () => {
     render(<ClassicScreen />);
-    expect(screen.getByText('Classic')).toBeTruthy();
-    expect(screen.getByText(/Mode: Classic/)).toBeTruthy();
+    expect(screen.getAllByText(/Classic/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Mode:\s*Classic[\s\S]*Difficulty:\s*easy/)).toBeTruthy();
     expect(screen.getByLabelText('Elapsed time')).toBeTruthy();
   });
 

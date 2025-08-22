@@ -5,8 +5,8 @@ import ClassicScreen from '../../app/classic';
 describe('ClassicScreen header/footer', () => {
   it('renders header with mode, difficulty, and time (no textual "Timer" label)', () => {
     render(<ClassicScreen />);
-    expect(screen.getByText('Classic')).toBeTruthy();
-    expect(screen.getByText(/Mode: Classic/)).toBeTruthy();
+    expect(screen.getAllByText(/Classic/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Mode:\s*Classic[\s\S]*Difficulty:\s*easy/)).toBeTruthy();
     const time = screen.getByLabelText('Elapsed time');
     expect(time).toBeTruthy();
   });
@@ -14,7 +14,7 @@ describe('ClassicScreen header/footer', () => {
   it('renders numeric seed in footer', () => {
     render(<ClassicScreen />);
     const seedFooter = screen.getByLabelText('Seed footer');
-    expect(seedFooter).toHaveTextContent(/Seed: \d+/);
+    expect(seedFooter).toHaveTextContent(/Seed:? \d+/);
   });
 
   it('renders hearts-only lives with an accessible label (no textual "Lives" label)', () => {
