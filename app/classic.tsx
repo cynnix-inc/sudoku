@@ -356,6 +356,57 @@ export default function ClassicScreen() {
 
         <Pressable
           onPress={() => {
+            if (lockedDigit != null) {
+              setLockedDigit(null);
+              lockedRef.current = null;
+              return;
+            }
+            if (selectedDigit != null) {
+              setLockedDigit(selectedDigit);
+              lockedRef.current = selectedDigit;
+            }
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={
+            lockedDigit != null
+              ? 'Disable lock'
+              : selectedDigit != null
+                ? `Enable lock on digit ${selectedDigit}`
+                : 'Enable lock'
+          }
+          accessibilityHint={
+            lockedDigit != null
+              ? 'Disables digit lock'
+              : 'Locks the active digit for repeated placement'
+          }
+          style={{
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: lockedDigit != null ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
+            borderRadius: 6,
+            backgroundColor:
+              lockedDigit != null
+                ? theme.isDark
+                  ? '#0b3a64'
+                  : '#dbeafe'
+                : theme.isDark
+                  ? '#0f1115'
+                  : '#ffffff',
+            marginRight: 6,
+          }}
+        >
+          <MaterialIcons
+            name={lockedDigit != null ? 'lock' : 'lock-open'}
+            size={20}
+            color={theme.foreground}
+          />
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
             if (!selected) return;
             setGame((prev) =>
               applyAction(prev, { type: 'erase', row: selected.row, col: selected.col }),
