@@ -17,6 +17,7 @@ Feature: Modes and Daily calendar (MVP)
   Scenario: Daily displays a numeric seed
     Given I open the Daily puzzle
     Then I see the puzzle seed displayed as a numeric string in the footer
+    And tapping the seed value copies it to the clipboard
 
   @mvp @daily @calendar
   Scenario: Calendar shows streaks and allows past plays
