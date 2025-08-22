@@ -8,10 +8,18 @@ export type BoardProps = {
   selected: { row: number; col: number } | null;
   onSelect: (row: number, col: number) => void;
   highlightDigit?: Digit | null;
+  cellSize?: number;
 };
 
-export default function Board({ board, selected, onSelect, highlightDigit = null }: BoardProps) {
+export default function Board({
+  board,
+  selected,
+  onSelect,
+  highlightDigit = null,
+  cellSize = 36,
+}: BoardProps) {
   const theme = useContext(ThemeContext);
+  const bandGap = 6;
   return (
     <View accessibilityLabel="Sudoku board" accessibilityRole="none">
       {board.map((row, r) => (
@@ -55,21 +63,21 @@ export default function Board({ board, selected, onSelect, highlightDigit = null
                 }`}
                 testID={`cell-${r + 1}-${c + 1}${isHighlighted ? '-highlight' : ''}`}
                 style={{
-                  width: 36,
-                  height: 36,
+                  width: cellSize,
+                  height: cellSize,
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderWidth: 1,
                   borderColor,
                   backgroundColor,
-                  marginRight: c % 3 === 2 ? 6 : 0,
-                  marginBottom: r % 3 === 2 ? 6 : 0,
+                  marginRight: c % 3 === 2 ? bandGap : 0,
+                  marginBottom: r % 3 === 2 ? bandGap : 0,
                 }}
               >
                 {cell.value != null ? (
                   <Text
                     style={{
-                      fontSize: 18,
+                      fontSize: Math.max(14, Math.round(cellSize * 0.5)),
                       fontWeight: cell.isGiven ? '700' : '400',
                       color: theme.foreground,
                     }}

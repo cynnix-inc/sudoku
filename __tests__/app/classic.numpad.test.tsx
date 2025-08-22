@@ -33,7 +33,7 @@ describe('ClassicScreen + Numpad integration', () => {
     render(<ClassicScreen />);
     const row = screen.getByTestId('numpad-row');
     expect(row.props.style.flexDirection).toBe('row');
-    // 9 cells * 36px with two 6px gutters after 3rd and 6th digit
-    expect(row.props.style.width).toBe(36 * 9 + 2 * 6);
+    // Width is responsive but must be at least the baseline width
+    expect(row.props.style.width).toBeGreaterThanOrEqual(36 * 9 + 2 * 6);
   });
 });

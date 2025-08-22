@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemeContext } from '../_layout';
 import type { GameConfig } from '../game/types';
@@ -9,6 +9,9 @@ type HeaderProps = {
   difficulty: GameConfig['difficulty'];
   livesRemaining: number;
   seconds: number;
+  paused?: boolean;
+  onTogglePause?: () => void;
+  boardPixelWidth?: number;
 };
 
 export default function Header({
@@ -16,6 +19,9 @@ export default function Header({
   difficulty,
   livesRemaining,
   seconds,
+  paused = false,
+  onTogglePause,
+  boardPixelWidth,
 }: HeaderProps) {
   const theme = useContext(ThemeContext);
   return (
@@ -23,8 +29,10 @@ export default function Header({
       <Text style={{ fontSize: 28, fontWeight: '700', marginBottom: 4, color: theme.foreground }}>
         {mode}
       </Text>
-      {/* Row with centered mode/difficulty and right-aligned timer */}
-      <View style={{ width: 36 * 9, position: 'relative', alignItems: 'center' }}>
+      {/* Row with centered mode/difficulty and right-aligned timer + icon-only pause */}
+      <View
+        style={{ width: boardPixelWidth ?? 36 * 9, position: 'relative', alignItems: 'center' }}
+      >
         <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2, color: theme.foreground }}>
           Mode: {mode} • Difficulty: {difficulty}
         </Text>
@@ -32,7 +40,7 @@ export default function Header({
           accessibilityLabel="Elapsed time"
           style={{
             position: 'absolute',
-            right: 0,
+            right: 24,
             top: 0,
             fontSize: 12,
             opacity: 0.8,
@@ -41,6 +49,27 @@ export default function Header({
         >
           {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
         </Text>
+        <Pressable
+          onPress={() => onTogglePause && onTogglePause()}
+          accessibilityRole="button"
+          accessibilityLabel={paused ? 'Resume timer' : 'Pause timer'}
+          accessibilityHint={paused ? 'Resumes the game timer' : 'Pauses the game timer'}
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: -2,
+            width: 20,
+            height: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <MaterialIcons
+            name={paused ? 'play-arrow' : 'pause'}
+            size={18}
+            color={theme.foreground}
+          />
+        </Pressable>
       </View>
       {/* Hearts-only lives row with accessible label */}
       <View

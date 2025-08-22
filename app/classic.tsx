@@ -1,5 +1,13 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Platform, AppState, type AppStateStatus } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Platform,
+  AppState,
+  type AppStateStatus,
+  useWindowDimensions,
+} from 'react-native';
 import Board from './components/Board';
 import { initializeGame, applyAction } from './game/state';
 import type { Digit, GameAction } from './game/types';
@@ -14,6 +22,7 @@ import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
 
 export default function ClassicScreen() {
   const theme = useContext(ThemeContext);
+  const { width: windowWidth } = useWindowDimensions();
   const [seed] = useState<string>(FIXED_EASY_SEED);
   const [game, setGame] = useState(() =>
     initializeGame(seedToGivens(seed) as { row: number; col: number; value: Digit }[], {
@@ -273,17 +282,30 @@ export default function ClassicScreen() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // Compute responsive cell size: ensure grid fits within viewport padding and min hit size
+  const containerPadding = 12;
+  const bandGap = 6;
+  const minHit = 44;
+  const maxBoardWidth = Math.max(0, windowWidth - containerPadding * 2);
+  const computedCell = Math.floor((maxBoardWidth - bandGap * 2) / 9);
+  const cellSize = Math.max(minHit, Math.min(48, computedCell || 36));
+  const boardPixelWidth = cellSize * 9 + bandGap * 2;
+
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 12 }}>
       <Header
         difficulty={game.config.difficulty}
         livesRemaining={game.livesRemaining}
         seconds={seconds}
+        paused={paused}
+        onTogglePause={() => setPaused((p) => !p)}
+        boardPixelWidth={boardPixelWidth}
       />
       <Board
         board={game.board}
         selected={selected}
         highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
+        cellSize={cellSize}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
           selectedRef.current = { row: r, col: c };
@@ -305,6 +327,7 @@ export default function ClassicScreen() {
       <Numpad
         lockedDigit={lockedDigit}
         highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
+        cellSize={cellSize}
         onDigit={(d) => {
           if (!selected) return;
           const value = lockedDigit ?? d;
@@ -351,35 +374,58 @@ export default function ClassicScreen() {
         >
           <MaterialIcons name="edit" size={20} color={theme.foreground} />
         </Pressable>
+
         <Pressable
-          onPress={() => setPaused((p) => !p)}
+          onPress={() => {
+            if (lockedDigit != null) {
+              setLockedDigit(null);
+              lockedRef.current = null;
+              return;
+            }
+            if (selectedDigit != null) {
+              setLockedDigit(selectedDigit);
+              lockedRef.current = selectedDigit;
+            }
+          }}
           accessibilityRole="button"
-          accessibilityLabel={paused ? 'Resume timer' : 'Pause timer'}
-          accessibilityHint={paused ? 'Resumes the game timer' : 'Pauses the game timer'}
+          accessibilityLabel={
+            lockedDigit != null
+              ? 'Disable lock'
+              : selectedDigit != null
+                ? `Enable lock on digit ${selectedDigit}`
+                : 'Enable lock'
+          }
+          accessibilityHint={
+            lockedDigit != null
+              ? 'Disables digit lock'
+              : 'Locks the active digit for repeated placement'
+          }
           style={{
             width: 36,
             height: 36,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 1,
-            borderColor: paused ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
+            borderColor: lockedDigit != null ? '#60a5fa' : theme.isDark ? '#374151' : '#d1d5db',
             borderRadius: 6,
-            backgroundColor: paused
-              ? theme.isDark
-                ? '#0b3a64'
-                : '#dbeafe'
-              : theme.isDark
-                ? '#0f1115'
-                : '#ffffff',
+            backgroundColor:
+              lockedDigit != null
+                ? theme.isDark
+                  ? '#0b3a64'
+                  : '#dbeafe'
+                : theme.isDark
+                  ? '#0f1115'
+                  : '#ffffff',
             marginRight: 6,
           }}
         >
           <MaterialIcons
-            name={paused ? 'play-arrow' : 'pause'}
+            name={lockedDigit != null ? 'lock' : 'lock-open'}
             size={20}
             color={theme.foreground}
           />
         </Pressable>
+
         <Pressable
           onPress={() => {
             if (!selected) return;
