@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2
+
+### Patch Changes
+
+- c58ac52: doc and proc updates
+
 ## Unreleased
 
 ### Features
