@@ -11,6 +11,7 @@ type HeaderProps = {
   seconds: number;
   paused?: boolean;
   onTogglePause?: () => void;
+  boardPixelWidth?: number;
 };
 
 export default function Header({
@@ -20,6 +21,7 @@ export default function Header({
   seconds,
   paused = false,
   onTogglePause,
+  boardPixelWidth,
 }: HeaderProps) {
   const theme = useContext(ThemeContext);
   return (
@@ -28,7 +30,9 @@ export default function Header({
         {mode}
       </Text>
       {/* Row with centered mode/difficulty and right-aligned timer + icon-only pause */}
-      <View style={{ width: 36 * 9, position: 'relative', alignItems: 'center' }}>
+      <View
+        style={{ width: boardPixelWidth ?? 36 * 9, position: 'relative', alignItems: 'center' }}
+      >
         <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2, color: theme.foreground }}>
           Mode: {mode} • Difficulty: {difficulty}
         </Text>

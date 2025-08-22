@@ -18,6 +18,7 @@ describe('Numpad component', () => {
     render(<Numpad lockedDigit={null} onDigit={jest.fn()} onToggleLock={jest.fn()} />);
     const row = screen.getByTestId('numpad-row');
     expect(row.props.style.flexDirection).toBe('row');
-    expect(row.props.style.width).toBe(36 * 9 + 2 * 6);
+    // Width is responsive; should be at least the baseline 36*9 + 2*6
+    expect(row.props.style.width).toBeGreaterThanOrEqual(36 * 9 + 2 * 6);
   });
 });
