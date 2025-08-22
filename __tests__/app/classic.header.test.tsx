@@ -21,13 +21,20 @@ describe('ClassicScreen header/footer', () => {
     render(<ClassicScreen />);
     expect(screen.getByLabelText(/\d+ lives remaining/)).toBeTruthy();
   });
-  it.todo('shows timer value with an adjacent icon-only pause control (no textual "Timer" label)');
+  it('shows timer value with an adjacent icon-only pause control (no textual "Timer" label)', () => {
+    render(<ClassicScreen />);
+    const time = screen.getByLabelText('Elapsed time');
+    expect(time).toBeTruthy();
+    // Pause icon control exists with accessible label
+    expect(screen.getByLabelText('Pause timer')).toBeTruthy();
+  });
 
   it('right-aligns the timer within header width (@issue-112)', () => {
     render(<ClassicScreen />);
     const time = screen.getByLabelText('Elapsed time');
     // Ensure style positions the timer to the right within the header row container
     expect(time.props.style.position).toBe('absolute');
-    expect(time.props.style.right).toBe(0);
+    // Now offset by 24 to make room for the pause icon
+    expect(time.props.style.right).toBe(24);
   });
 });

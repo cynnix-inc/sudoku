@@ -49,9 +49,9 @@ finalize_epic_pr() {
 	if [[ -n "$root_pkg" ]]; then
 		pushd "$root_pkg" >/dev/null
 		echo "Running: npm ci"
-		npm ci --prefer-offline --no-audit || true
+		npm ci --prefer-offline --no-audit
 		echo "Running: npm run ci"
-		npm run -s ci || true
+		npm run -s ci
 		popd >/dev/null
 	else
 		echo "No package.json found at repo root or under ultimate-sudoku/. Skipping CI."
