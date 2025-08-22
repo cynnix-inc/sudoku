@@ -8,10 +8,9 @@
 
 ## [1.1.1](https://github.com/cynnix-inc/sudoku/compare/v1.1.0...v1.1.1) (2025-08-22)
 
-
 ### Bug Fixes
 
-* **ci:** repair release-please JSON files; relax CI perf threshold ([#207](https://github.com/cynnix-inc/sudoku/issues/207)) ([cb76615](https://github.com/cynnix-inc/sudoku/commit/cb76615c20c0dc003d1c8c8521780f0aeb38add8))
+- **ci:** repair release-please JSON files; relax CI perf threshold ([#207](https://github.com/cynnix-inc/sudoku/issues/207)) ([cb76615](https://github.com/cynnix-inc/sudoku/commit/cb76615c20c0dc003d1c8c8521780f0aeb38add8))
 
 ## [1.1.0](https://github.com/cynnix-inc/sudoku/compare/v1.0.0...v1.1.0) (2025-08-21)
 
@@ -63,7 +62,7 @@
 
 ### Docs
 
-- clarify MVP layout (numpad single row, tools icons below, hearts-only lives, timer icon-only), seed display policy (numeric; fixture updated), undo/redo lives rule, and same-digit highlight; add QA scenarios and spec tracking (refs #110, #111, #112, #113, #114, #115, #116, #117, #118)
+- clarify MVP layout (numpad single row, tools icons below, hearts-only lives, timer icon-only), seed display policy (numeric; fixture updated), undo/redo lives rule, and same-digit highlight; add QA scenarios and spec tracking (refs #110, #111, #112, #115, #116, #117, #118)
 
 ### Reverts
 

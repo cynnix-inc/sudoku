@@ -1,6 +1,6 @@
-import { initializeGame, applyAction, createEmptyBoard, getCell } from '../../app/game/state';
-import { isSolved } from '../../app/game/rules';
-import type { Digit, GameConfig } from '../../app/game/types';
+import { initializeGame, applyAction, createEmptyBoard, getCell } from '../../app/_game/state';
+import { isSolved } from '../../app/_game/rules';
+import type { Digit, GameConfig } from '../../app/_game/types';
 
 const easyConfig: GameConfig = { difficulty: 'easy', maxLives: 3 };
 

@@ -8,7 +8,6 @@ This file tracks upcoming QA/BDD enhancements. Prefer creating GitHub Issues for
   - [ ] Add steps for gameplay controls (lock, notes, erase) referencing `01-gameplay-controls.feature`
   - [ ] Add steps for stats calculations referencing `05-stats-reporting.feature`
   - [ ] Add a tiny shared test helper for seeded puzzles
-  - [ ] Reflect seed tap-to-copy (no dedicated copy button) in steps
 - CI:
   - [ ] Add a separate `test-bdd` job in `.github/workflows/test.yml` (allow soft-fail initially)
 

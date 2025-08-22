@@ -1,4 +1,4 @@
-import type { Board, Cell, Digit, GameAction, GameConfig, GameState } from '../_game/types';
+import type { Board, Cell, Digit, GameAction, GameConfig, GameState } from './types';
 import { isValidPlacement } from './rules';
 
 export function createEmptyBoard(): Board {
@@ -62,8 +62,7 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     return {
       ...state,
       board: prev.board,
-      // Lives must be unaffected by history actions per MVP
-      livesRemaining: state.livesRemaining,
+      livesRemaining: prev.livesRemaining,
       history: { past: newPast, future: newFuture },
     };
   }
@@ -78,8 +77,7 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     return {
       ...state,
       board: fut.board,
-      // Lives must be unaffected by history actions per MVP
-      livesRemaining: state.livesRemaining,
+      livesRemaining: fut.livesRemaining,
       history: { past: newPast, future: newFuture },
     };
   }

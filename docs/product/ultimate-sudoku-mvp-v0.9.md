@@ -24,12 +24,10 @@
 - **Tools**: Undo/Redo, Hint, Lock, Notes, Erase, toggle Error Highlighting, Auto-candidates (configurable), Auto-advance (configurable).
 - **Seed numbers (givens)**: Subtle/visible styling; tap/click to copy that digit to the active input.
 - **Timer** with manual pause & idle auto-pause.
-- **Highlight same digit**: Selecting a placed digit in the grid or activating a digit on the numpad highlights all cells with that value and the corresponding numpad key (see #115).
-- **Lock discoverability**: Provide a dedicated Lock toggle button in the tool row in addition to long‑press on a numpad digit (see #118).
 - **Lives**:
   - **Zen/Practice** (Phase 2+): Slider 1–10 + 11 (Unlimited).
   - **Classic & Daily**: Pre-determined per difficulty (Phase 1).
-- **Game Seed**: Footer displays unique seed ID for puzzle reproduction. Tap = copy to clipboard (Phase 1). For display, seeds should be numeric strings (internal representation may differ); Classic and Daily should both surface numeric seeds.
+- **Game Seed**: Footer displays unique seed ID for puzzle reproduction. Tap = copy to clipboard (Phase 1).
 
 ### Modes
 
@@ -123,27 +121,19 @@
 
 ```
  -------------------------------------------------
-| [Home]    Ultimate Sudoku    Classic – Hard  03:42 ⏸ |
-| ♥♥♥                                               |
+| [Home]        Classic – Hard       Timer 03:42 |
+| Lives ♥♥♥                                   3  |
  -------------------------------------------------
-|                Sudoku 9×9 Grid                     |
-|   (aligned above numbers)                          |
+|                Sudoku 9×9 Grid                 |
+|   (aligned above numbers)                      |
  -------------------------------------------------
 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
  -------------------------------------------------
-| Hint | Undo | Redo |   | Lock | Notes | Erase      |
+| Hint | Undo | Redo |   | Lock | Notes | Erase  |
  -------------------------------------------------
-|                #482913  (tap to copy)              |
+|           Seed: #482913   [Tap to Copy]        |
  -------------------------------------------------
 ```
-
-Specs:
-
-- Numpad renders in a single row with width matched to the grid; no wrapping to a second line.
-- Tools render as icon-only buttons below the numpad (accessible labels required).
-- Header layout: Product title "Ultimate Sudoku" is shown tastefully; Mode – Difficulty shown without textual prefixes; time value right‑aligned with an icon-only Pause/Resume control; Lives shown as hearts icons only (no textual label). The textual label “Timer” is not shown (see #116).
-- Lock is available as an icon toggle in the tool row, and also via long‑press on a numpad digit (see #118).
-- Selecting or activating a digit highlights matching values across the grid and the corresponding numpad key (see #115).
 
 ### 5.2 Daily Calendar
 
@@ -227,28 +217,6 @@ Tooltip examples:
 
 ## 6) Roadmap
 
-Tracking (GitHub issue IDs)
-
-- Epic: Classic – #14
-- Epic: Daily – #15
-- Epic: Difficulty Engine – #16
-- Epic: Hints – #18
-- Epic: Stats – #19
-- Epic: Storage & Sync – #20
-- Epic: Accessibility & UX – #21
-- Epic: Navigation/Settings/Help – #22
-- Epic: Developer Tools – #23
-
-Key child issues (selected)
-
-- Classic: #24–#37, #63, #110, #111, #112, #113, #114, #115, #118
-- Daily: #38–#40, #49–#50
-- Hints: #41–#44
-- Stats: #45–#47
-- Storage & Sync: #48, #52–#54
-- Accessibility & UX: #57, #60, #117
-- Navigation/Settings/Help: #61–#62, #116
-
 ### MVP Scope (Phase 1)
 
 - Core 9×9 gameplay & controls
@@ -258,11 +226,7 @@ Key child issues (selected)
 - Local + Cloud storage (baseline + monitoring)
 - Confetti (basic), haptics, timer, stats
 - Home button navigation + Help/About
-- Footer game seed shown as a numeric string; tapping the seed value copies to clipboard with subtle hover/focus affordance and confirmation
-- Icon-only pause integrated with timer; no “Timer” text label (#116)
-- Highlight same digit when active selection changes (#115)
-- Lock toggle available in tool row and via long‑press (#118)
-- Responsive web layout for board, numpad, and tool row (#117)
+- Footer game seed (copy)
 
 ### Phase 2+
 
@@ -306,16 +270,13 @@ Key child issues (selected)
 - **Place Digit (keyboard)**: Given selected empty cell → When pressing 1–9 → Then value placed.
 - **Notes Toggle (keyboard)**: Given selected cell → When pressing `N` → Then notes mode toggles; entries add/toggle pencil marks.
 - **Numpad Lock**: Given lock on digit 7 → When tapping multiple cells → Then 7 placed until lock changes.
-- **Lock Toggle (tool row) [#118]**: Given a running game → When toggling the Lock icon in the tool row with digit 4 active → Then digit 4 remains active for repeated placement until Lock is toggled off.
 - **Eraser (value)**: Given value + notes → When erasing → Then value and cell notes cleared.
 - **Eraser (notes only)**: Given notes only + digit 3 selected → When erasing → Then note 3 toggled; with no digit selected → all notes cleared.
 - **Undo/Redo**: Given prior actions → When Undo → Then last action reverted; Redo reapplies.
-- **Lives unaffected by history**: Given livesRemaining is X after any mistake → When Undo or Redo → Then livesRemaining remains X (Undo/Redo must not change lives).
 - **Seed‑Copy (in‑grid)**: Given a given digit → When tapped → Then active digit set; board unchanged.
 - **Seed‑Copy (footer tool)**: Given seed shown → When tap copy → Then seed string copied; confirmation toast shows.
 - **Timer & Pause**: Given active game → When pause → Then overlay shows; timer stops; resume continues.
 - **Idle Auto‑Pause**: Given ON and inactivity threshold → When idle duration elapses or app is backgrounded → Then game pauses.
-- **Highlight Same Digit [#115]**: Given a selected cell with value N or an active numpad digit N → When selection/activation occurs → Then all cells with value N and numpad key N are highlighted; clearing selection removes highlight.
 
 ### 9.2 Modes
 
@@ -359,8 +320,6 @@ Key child issues (selected)
 - **Keyboard Navigation**: Given keyboard → When using arrows → Then focus moves with visible ring.
 - **Color & Contrast**: Given default/dark themes → When rendering UI → Then key elements meet WCAG AA contrast.
 - **Screen Reader Labels**: Given focused cell → When read → Then row/column and value/empty (+ candidate count if applicable).
-- **Timer UI [#116]**: Given a running game → When viewing the header → Then the time is shown without a textual label and a pause/resume icon is adjacent; tapping the icon pauses/resumes.
-- **Responsive Web Layout [#117]**: Given a small mobile viewport (≤400px) → When rendering the board → Then the grid is fully visible, numpad is single‑row, tool icons have ≥44×44 hit targets; Given a tablet/desktop viewport (≥768px) → Then the grid is centered with breathing room and the numpad aligns to the grid width without wrapping.
 
 ### 9.8 Navigation & Help
 

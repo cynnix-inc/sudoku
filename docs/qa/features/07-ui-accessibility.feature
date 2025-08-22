@@ -28,34 +28,4 @@ Feature: UI/UX and accessibility (MVP)
   Scenario: Screen reader labels for cells
     Given a cell receives focus
     Then the screen reader announces row and column
-    And announces the value or "empty" and whether it is a given
-
-  @mvp @a11y @ui @issue-112
-  Scenario: Hearts-only lives with accessible label
-    Given the header renders lives as hearts icons only
-    Then the lives container exposes an accessible label like "3 lives remaining"
-
-  @mvp @a11y @ui @tools @issue-111
-  Scenario: Tool icons have descriptive labels and focus rings
-    Given the tool row shows icon-only buttons
-    When I navigate by keyboard or screen reader
-    Then each tool announces a descriptive label (e.g., "Undo move") and shows a visible focus indicator
-
-  @mvp @ui @timer @issue-116
-  Scenario: Timer uses icon-only pause control without label
-    Given the game is running
-    When I view the header
-    Then I see the time value and a pause icon
-    And I do not see a textual label like "Timer", "Mode:", or "Difficulty:"
-    When I activate the pause icon
-    Then the game pauses and the timer stops
-
-  @mvp @ui @responsive @issue-117
-  Scenario: Responsive layout across mobile and desktop
-    Given a small mobile viewport width
-    When the game screen renders
-    Then the 9×9 grid is fully visible without overflow
-    And the numpad remains a single row with adequate hit targets
-    Given a tablet or desktop viewport
-    When the game screen renders
-    Then the grid is centered with spacing and the numpad aligns to the grid width
+    And announces the value or "empty"

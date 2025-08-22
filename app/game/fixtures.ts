@@ -1,4 +1,4 @@
-import type { Digit } from './types';
+import type { Digit } from '../_game/types';
 
 export type Given = { row: number; col: number; value: Digit };
 
