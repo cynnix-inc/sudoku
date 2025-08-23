@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/cynnix-inc/sudoku/compare/v1.2.2...v1.3.0) (2025-08-23)
+
+
+### Features
+
+* **ui:** header, difficulty, lives, timer, seed footer; align engine wrappers ([#214](https://github.com/cynnix-inc/sudoku/issues/214)) ([df264f6](https://github.com/cynnix-inc/sudoku/commit/df264f64e39e985751e797af9c0fe4464a76c557))
+
 ## [1.2.2](https://github.com/cynnix-inc/sudoku/compare/v1.2.1...v1.2.2) (2025-08-23)
 
 
