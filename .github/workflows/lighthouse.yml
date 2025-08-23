@@ -1,46 +1,14 @@
-name: Lighthouse CI
+name: Lighthouse CI (removed)
 
 on:
-  pull_request:
-    branches: [ staging ]
-
-permissions:
-  contents: read
+  workflow_call:
+    inputs: {}
+    secrets: {}
 
 jobs:
-  lhci:
+  noop:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Detect Node version from package.json engines (fallback 20.x)
-        id: node
-        run: |
-          if command -v jq >/dev/null 2>&1; then
-            NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
-          else
-            NODE_VERSION=""
-          fi
-          if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
-            echo "version=20.x" >> $GITHUB_OUTPUT
-          else
-            echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ steps.node.outputs.version }}
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build web
-        run: npm run build
-
-      - name: Run Lighthouse CI
-        run: npx --yes @lhci/cli autorun --upload.target=temporary-public-storage --collect.staticDistDir=dist
+      - run: echo "Lighthouse CI workflow removed; Netlify Lighthouse plugin handles audits."
 
 
