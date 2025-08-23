@@ -59,5 +59,3 @@ List all sub-issues under an epic:
 ```powershell
 gh sub-issue list <EPIC_NUMBER> -R cynnix-inc/sudoku --state all
 ```
-
-

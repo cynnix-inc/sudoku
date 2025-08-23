@@ -15,4 +15,22 @@ describe('difficulty thresholds (#160)', () => {
     expect(isClueCountInDifficulty('hard', 25)).toBe(true);
     expect(isClueCountInDifficulty('hard', 33)).toBe(false);
   });
+
+  it('defines thresholds for expert/master/extreme', () => {
+    expect(DIFFICULTY_THRESHOLDS.expert.minClues).toBe(22);
+    expect(DIFFICULTY_THRESHOLDS.expert.maxClues).toBe(25);
+    expect(DIFFICULTY_THRESHOLDS.master.minClues).toBe(20);
+    expect(DIFFICULTY_THRESHOLDS.master.maxClues).toBe(23);
+    expect(DIFFICULTY_THRESHOLDS.extreme.minClues).toBe(17);
+    expect(DIFFICULTY_THRESHOLDS.extreme.maxClues).toBe(20);
+  });
+
+  it('validates expert/master/extreme clue ranges', () => {
+    expect(isClueCountInDifficulty('expert', 22)).toBe(true);
+    expect(isClueCountInDifficulty('expert', 26)).toBe(false);
+    expect(isClueCountInDifficulty('master', 20)).toBe(true);
+    expect(isClueCountInDifficulty('master', 24)).toBe(false);
+    expect(isClueCountInDifficulty('extreme', 18)).toBe(true);
+    expect(isClueCountInDifficulty('extreme', 21)).toBe(false);
+  });
 });

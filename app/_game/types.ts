@@ -2,13 +2,13 @@
 
 export type Digit = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert' | 'master' | 'extreme';
 
 export type Cell = {
   row: number;
   col: number;
   value: Digit | null;
-  notes: Partial<Record<Digit, boolean>>;
+  notes: Partial<Record<Digit, true>>;
   isGiven: boolean;
   isError: boolean;
 };
