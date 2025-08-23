@@ -1,11 +1,16 @@
 # Changelog
 
-## [1.2.0](https://github.com/cynnix-inc/sudoku/compare/v1.1.1...v1.2.0) (2025-08-23)
+## [1.2.1](https://github.com/cynnix-inc/sudoku/compare/v1.2.0...v1.2.1) (2025-08-23)
 
+### Bug Fixes
+
+- **ci:** ensure release labels; add release-please config/manifest; release only on tags ([#240](https://github.com/cynnix-inc/sudoku/issues/240)) ([2d63453](https://github.com/cynnix-inc/sudoku/commit/2d6345336a3e506c407562f339fc7097dbfc1e54))
+
+## [1.2.0](https://github.com/cynnix-inc/sudoku/compare/v1.1.1...v1.2.0) (2025-08-23)
 
 ### Features
 
-* **engine,#159-#163:** difficulty tiers; mask-driven generator; rating; daily; tests; docs ([#223](https://github.com/cynnix-inc/sudoku/issues/223)) ([26fd5bc](https://github.com/cynnix-inc/sudoku/commit/26fd5bc7701d00aaab54b1fd03ac9c7eb790592b))
+- **engine,#159-#163:** difficulty tiers; mask-driven generator; rating; daily; tests; docs ([#223](https://github.com/cynnix-inc/sudoku/issues/223)) ([26fd5bc](https://github.com/cynnix-inc/sudoku/commit/26fd5bc7701d00aaab54b1fd03ac9c7eb790592b))
 
 ## 1.1.2
 
