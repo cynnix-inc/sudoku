@@ -1,6 +1,8 @@
 import type { Board, Cell, Digit, GameAction, GameConfig, GameState } from '../_game/types';
 import { isValidPlacement } from './rules';
 
+export * from '../_game/state';
+
 export function createEmptyBoard(): Board {
   const board: Board = [];
   for (let r = 0; r < 9; r++) {

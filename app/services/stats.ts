@@ -1,26 +1,20 @@
-import type { GameConfig } from '../game/types';
+import type { GameConfig } from '../_game/types';
 import { loadProgress, saveProgress } from './storage';
 
 export type StatsResult = 'win' | 'loss';
 
 export type StatsData = {
   schemaVersion: 1;
-  totals: {
-    played: number;
-    wins: number;
-    losses: number;
-  };
+  totals: { played: number; wins: number; losses: number };
   bestTimeByDifficulty: Partial<Record<GameConfig['difficulty'], number>>;
 };
 
-const STATS_KEY = 'sudoku-stats';
-
 export async function loadStats(): Promise<StatsData | null> {
-  return loadProgress<StatsData>(STATS_KEY);
+  return loadProgress<StatsData>('sudoku-stats');
 }
 
 export async function saveStats(data: StatsData): Promise<void> {
-  await saveProgress(STATS_KEY, data);
+  await saveProgress('sudoku-stats', data);
 }
 
 export async function recordResult(

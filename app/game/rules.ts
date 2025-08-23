@@ -1,10 +1,10 @@
-// Wrapper exports for Jest spy-ability; delegates to canonical _game rules
-import * as baseRules from '../_game/rules';
+import * as base from '../_game/rules';
+import type { Board, Digit } from '../_game/types';
 
-export function isValidPlacement(...args: Parameters<typeof baseRules.isValidPlacement>) {
-  return baseRules.isValidPlacement(...args);
+export function isValidPlacement(...args: Parameters<typeof base.isValidPlacement>): boolean {
+  return base.isValidPlacement(...(args as [Board, number, number, Digit]));
 }
 
-export function isSolved(...args: Parameters<typeof baseRules.isSolved>) {
-  return baseRules.isSolved(...args);
+export function isSolved(...args: Parameters<typeof base.isSolved>): boolean {
+  return base.isSolved(...(args as [Board]));
 }
