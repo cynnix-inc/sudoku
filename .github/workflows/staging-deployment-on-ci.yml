@@ -1,0 +1,45 @@
+name: staging-deployment-on-ci
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  mark_staging_deployment:
+    name: Create GitHub Deployment after CI success (PRs → staging)
+    runs-on: ubuntu-latest
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests &&
+      contains(join(github.event.workflow_run.pull_requests.*.base.ref, ','), 'staging')
+    steps:
+      - name: Start deployment (staging)
+        id: start
+        uses: bobheadxi/deployments@v1
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: staging
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Finish deployment (success)
+        uses: bobheadxi/deployments@v1
+        with:
+          step: finish
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: staging
+          ref: ${{ github.event.workflow_run.head_sha }}
+          status: success
+          deployment_id: ${{ steps.start.outputs.deployment_id }}
+
+
