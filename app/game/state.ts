@@ -1,4 +1,4 @@
-import type { Board, Cell, Digit, GameAction, GameConfig, GameState } from '../_game/types';
+import type { Board, Cell, Digit, GameAction, GameConfig, GameState } from './types';
 import { isValidPlacement } from './rules';
 
 export function createEmptyBoard(): Board {

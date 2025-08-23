@@ -61,3 +61,17 @@ if (issues.length) {
 } else {
   console.log('Dependency verification passed: no extraneous/invalid deps detected across workspaces.');
 }
+
+// CI guard: fail if any source files import from app/_game
+try {
+  const out = execSync('rg --hidden --glob "!node_modules/**" "app/_game" -n', {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).toString('utf8');
+  if (out && out.trim().length > 0) {
+    console.error('\nCI guard: Found references to app/_game. Please import from app/game instead.');
+    console.error(out);
+    process.exit(3);
+  }
+} catch {
+  // ripgrep exits non-zero when no matches; treat as success
+}
