@@ -19,7 +19,8 @@ jobs:
     services:
       postgres:
         # Use Supabase's Postgres image to better match extensions/behavior
-        image: supabase/postgres:15.1.0
+        # Pin to Postgres 15 series with a stable tag available on GH runners
+        image: supabase/postgres:15
         env:
           POSTGRES_PASSWORD: postgres
         ports:
