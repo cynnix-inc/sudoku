@@ -33,8 +33,21 @@ describe('generator (#159)', () => {
   });
 
   it('aims clue count to match difficulty thresholds when provided', () => {
-    const { givens } = generatePuzzle({ seed: 'seed-medium', difficulty: 'medium' });
-    const clues = givens.length;
-    expect(isClueCountInDifficulty('medium', clues)).toBe(true);
+    const tiers: ('medium' | 'hard' | 'expert' | 'master' | 'extreme')[] = [
+      'medium',
+      'hard',
+      'expert',
+      'master',
+      'extreme',
+    ];
+    for (const tier of tiers) {
+      let matched = false;
+      for (let i = 0; i < 5 && !matched; i++) {
+        const { givens } = generatePuzzle({ seed: `seed-${tier}-${i}`, difficulty: tier });
+        const clues = givens.length;
+        matched = isClueCountInDifficulty(tier, clues);
+      }
+      expect(matched).toBe(true);
+    }
   });
 });

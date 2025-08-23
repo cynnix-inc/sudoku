@@ -9,11 +9,14 @@ export type DifficultyThreshold = {
 // Easy: ≥34 clues
 // Medium: 28–33 clues
 // Hard: 24–27 clues
-export const DIFFICULTY_THRESHOLDS = {
+export const DIFFICULTY_THRESHOLDS: Record<Difficulty, DifficultyThreshold> = {
   easy: { minClues: 34, maxClues: 81 },
   medium: { minClues: 28, maxClues: 33 },
   hard: { minClues: 24, maxClues: 27 },
-} as const satisfies Record<Difficulty, DifficultyThreshold>;
+  expert: { minClues: 22, maxClues: 25 },
+  master: { minClues: 20, maxClues: 23 },
+  extreme: { minClues: 17, maxClues: 20 },
+};
 
 export function isClueCountInDifficulty(difficulty: Difficulty, clueCount: number): boolean {
   const t = DIFFICULTY_THRESHOLDS[difficulty];

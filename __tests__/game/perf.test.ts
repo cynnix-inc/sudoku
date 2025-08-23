@@ -25,6 +25,14 @@ maybeDescribe('performance benchmarks (#162)', () => {
     expect(elapsed).toBeLessThan(GENERATE_MS_SOFT_LIMIT);
   });
 
+  it('generates an expert puzzle under soft limit (higher cost)', () => {
+    const elapsed = measureMs(() => {
+      void generatePuzzle({ seed: 'perf-seed-expert', difficulty: 'expert' });
+    });
+    const limit = process.env['CI'] ? GENERATE_MS_SOFT_LIMIT * 3 : GENERATE_MS_SOFT_LIMIT * 2.5;
+    expect(elapsed).toBeLessThan(limit);
+  });
+
   it('runs singles strategies under soft limit on trivial near-solved board', () => {
     const { givens } = generatePuzzle({ seed: 'perf-solve', difficulty: 'easy' });
     const game = initializeGame(givens, { difficulty: 'easy', maxLives: 3 });
