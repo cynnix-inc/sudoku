@@ -30,6 +30,7 @@ Definition of Done
 - Bundle size check: `npm run bundle:check` (fail if delta > 5%).
 - Dependency verification: `npm run verify:deps`.
 - Security audit: `npm audit --audit-level=high --omit=dev` (allowlist justified exceptions only).
+- Android native checks: skip gracefully in web-only CI when `android/app/build.gradle` is absent.
 
 # Release
 
