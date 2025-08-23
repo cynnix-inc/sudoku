@@ -42,6 +42,12 @@ const repoRoot = process.cwd();
 const pkgPath = path.join(repoRoot, 'package.json');
 const gradlePath = path.join(repoRoot, 'android', 'app', 'build.gradle');
 
+// If there is no Android project, skip the check (useful for web-only CI environments)
+if (!fs.existsSync(gradlePath)) {
+  console.log(`Android project not found at ${gradlePath}. Skipping Android version check.`);
+  process.exit(0);
+}
+
 const pkg = readJson(pkgPath);
 const version = pkg.version || '0.0.0';
 const expectedCode = computeAndroidVersionCode(version);
