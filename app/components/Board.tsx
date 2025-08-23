@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import type { Board as BoardType, Digit } from '../_game/types';
+import type { Board as BoardType, Digit } from '../game/types';
 import { ThemeContext } from '../_layout';
 
 export type BoardProps = {

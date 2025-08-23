@@ -37,6 +37,17 @@ module.exports = [
 		rules: {
 			...tsPlugin.configs.recommended.rules,
 			"@typescript-eslint/no-require-imports": "off",
+			"no-restricted-imports": [
+				"error",
+				{
+					"patterns": [
+						{
+							"group": ["**/_game/**", "**/../_game/**", "**/../../_game/**"],
+							"message": "Do not import from app/_game; use app/game as the canonical module."
+						}
+					]
+				}
+			]
 		},
 	},
 	{
