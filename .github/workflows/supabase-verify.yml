@@ -18,9 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        # Use Supabase's Postgres image to better match extensions/behavior
-        # Pin to Postgres 15 series with a stable tag available on GH runners
-        image: supabase/postgres:15
+        # Use official Postgres image; pgcrypto is available via bundled contrib
+        image: postgres:15        
         env:
           POSTGRES_PASSWORD: postgres
         ports:
