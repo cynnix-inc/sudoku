@@ -84,7 +84,7 @@ A16. npm.
 
 **Q17. Node version and manager**  
 Which Node version is pinned and how?  
-A17. Node 22 LTS pinned via Volta
+A17. Node 20 LTS pinned via Volta
 
 ---
 
