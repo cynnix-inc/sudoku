@@ -1,7 +1,6 @@
 import type { Digit, Difficulty } from '../types';
 import { createRng, hashStringToSeed, shuffled } from './random';
 import { cloneGrid, countSolutions } from './solver';
-import { DIFFICULTY_THRESHOLDS } from './difficulty';
 import { pickTargetClues, generateMask, symmetryModes } from './masks';
 
 export type GenerateOptions = {
