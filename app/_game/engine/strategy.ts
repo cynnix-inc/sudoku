@@ -1,6 +1,6 @@
 import type { Board, Digit } from '../types';
 import { getCell } from '../../game/state';
-import { isValidPlacement } from '../../game/rules';
+import { isValidPlacement } from '../../_game/rules';
 
 export type Technique = 'nakedSingle' | 'hiddenSingle';
 
