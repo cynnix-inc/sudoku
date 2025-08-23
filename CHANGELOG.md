@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/cynnix-inc/sudoku/compare/v1.2.1...v1.2.2) (2025-08-23)
+
+
+### Bug Fixes
+
+* align board rendering PR with staging engine; keep UI/storage ([#211](https://github.com/cynnix-inc/sudoku/issues/211)) ([cb954ed](https://github.com/cynnix-inc/sudoku/commit/cb954edb1123ba5449928653baffa2fdbad1bb21))
+
 ## [1.2.1](https://github.com/cynnix-inc/sudoku/compare/v1.2.0...v1.2.1) (2025-08-23)
 
 ### Bug Fixes
