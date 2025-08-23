@@ -1,0 +1,54 @@
+name: release_pr
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure release labels exist
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          create_or_update_label() {
+            local name="$1"; local color="$2"; local description="$3"
+            if gh label list --search "$name" --json name --jq '.[0].name' | grep -q "^$name$"; then
+              gh api -X PATCH repos/${GITHUB_REPOSITORY}/labels/"$name" -f new_name="$name" -f color="$color" -f description="$description" >/dev/null 2>&1 || true
+            else
+              gh label create "$name" --color "$color" --description "$description" >/dev/null 2>&1 || true
+            fi
+          }
+          create_or_update_label "autorelease: pending" "0366d6" "PR opened by Release Please"
+          create_or_update_label "autorelease: tagged" "0e8a16" "Release PR tagged"
+
+      - name: Release Please (open/update release PR)
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          target-branch: staging
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          skip-github-pull-request: false
+
+      - name: Enable auto-merge on Release PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          PR_NUMBER=$(gh pr list --base staging --state open --label "autorelease: pending" --json number --jq '.[0].number' --repo "${GITHUB_REPOSITORY}")
+          if [ -z "${PR_NUMBER}" ]; then
+            echo "No open Release Please PR found to auto-merge."
+            exit 0
+          fi
+          gh pr merge "${PR_NUMBER}" --auto --merge --repo "${GITHUB_REPOSITORY}"
+
