@@ -26,6 +26,18 @@ describe('Game state engine', () => {
     expect(Object.keys(getCell(next.board, 1, 1).notes).length).toBe(0);
   });
 
+  it('undo/redo do not change livesRemaining', () => {
+    const state = initializeGame([], easyConfig);
+    let next = applyAction(state, { type: 'place', row: 0, col: 0, value: 1 as Digit });
+    // Force a mistake to decrement lives once
+    next = applyAction(next, { type: 'place', row: 0, col: 1, value: 1 as Digit });
+    const livesAfterMistake = next.livesRemaining;
+    const afterUndo = applyAction(next, { type: 'undo' });
+    expect(afterUndo.livesRemaining).toBe(livesAfterMistake);
+    const afterRedo = applyAction(afterUndo, { type: 'redo' });
+    expect(afterRedo.livesRemaining).toBe(livesAfterMistake);
+  });
+
   it('isSolved returns true for a solved board', () => {
     const solved = createEmptyBoard();
     // Populate solved board with a known correct Sudoku solution

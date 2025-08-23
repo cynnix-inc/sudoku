@@ -72,6 +72,6 @@ try {
     console.error(out);
     process.exit(3);
   }
-} catch (err) {
+} catch {
   // ripgrep exits non-zero when no matches; treat as success
 }
