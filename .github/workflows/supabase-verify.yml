@@ -53,6 +53,13 @@ jobs:
             sleep 2
           done
 
+      - name: Bootstrap stub auth schema for policy references
+        # Our migrations reference auth.uid(), which exists on Supabase but not vanilla Postgres.
+        # Create minimal stubs so policies compile in CI verification.
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/postgres" -v ON_ERROR_STOP=1 -c "create schema if not exists auth;"
+          psql "postgresql://postgres:postgres@localhost:5432/postgres" -v ON_ERROR_STOP=1 -c "create or replace function auth.uid() returns uuid language sql stable as $$ select '00000000-0000-0000-0000-000000000000'::uuid; $$;"
+
       - name: Apply migrations to temporary DB
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
