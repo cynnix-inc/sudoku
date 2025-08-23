@@ -19,7 +19,7 @@ jobs:
     services:
       postgres:
         # Use official Postgres image; pgcrypto is available via bundled contrib
-        image: postgres:15        
+        image: postgres:15
         env:
           POSTGRES_PASSWORD: postgres
         ports:
@@ -52,6 +52,17 @@ jobs:
             echo "Waiting for Postgres..."
             sleep 2
           done
+
+      - name: Bootstrap stub auth schema for policy references
+        # Our migrations reference auth.uid(), which exists on Supabase but not vanilla Postgres.
+        # Create minimal stubs so policies compile in CI verification.
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/postgres" -v ON_ERROR_STOP=1 <<'SQL'
+          create schema if not exists auth;
+          create or replace function auth.uid() returns uuid language sql stable as $$
+          select '00000000-0000-0000-0000-000000000000'::uuid;
+          $$;
+          SQL
 
       - name: Apply migrations to temporary DB
         env:
