@@ -56,28 +56,23 @@ export default function SeedFooter({ seed }: SeedFooterProps) {
 
   return (
     <View style={{ marginTop: 12, alignItems: 'center' }}>
-      <Text
-        accessibilityLabel="Seed footer"
-        style={{ fontSize: 12, opacity: 0.6, color: theme.foreground }}
-      >
-        Seed: {seed}
-      </Text>
       <Pressable
         onPress={() => copySeedToClipboard(seed)}
         accessibilityRole="button"
-        accessibilityLabel="Copy seed"
-        accessibilityHint="Copies the puzzle seed to the clipboard"
-        style={{
-          marginTop: 6,
-          paddingHorizontal: 8,
-          paddingVertical: 4,
-          borderRadius: 4,
-          borderWidth: 1,
-          borderColor: theme.isDark ? '#374151' : '#d1d5db',
-          backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
-        }}
+        accessibilityLabel="Seed footer"
+        accessibilityHint="Tap to copy the puzzle seed to the clipboard"
+        style={{ paddingHorizontal: 4, paddingVertical: 2 }}
       >
-        <Text style={{ fontSize: 12, color: theme.foreground }}>Copy</Text>
+        <Text
+          style={{
+            fontSize: 12,
+            opacity: 0.6,
+            color: theme.foreground,
+            textDecorationLine: 'underline',
+          }}
+        >
+          {seed}
+        </Text>
       </Pressable>
       {copied ? (
         <Text

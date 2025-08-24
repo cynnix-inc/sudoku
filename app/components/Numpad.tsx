@@ -74,9 +74,7 @@ export default function Numpad({
           );
         })}
       </View>
-      <Text style={{ fontSize: 12, opacity: 0.7, color: theme.foreground }}>
-        Long-press to lock a digit
-      </Text>
+      {/* Instructional text removed per ADR-0004; discoverability via icon and gesture */}
     </View>
   );
 }
