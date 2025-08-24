@@ -3,18 +3,18 @@ import { render, screen } from '@testing-library/react-native';
 import ClassicScreen from '../../app/classic';
 
 describe('ClassicScreen header/footer', () => {
-  it('renders header with mode, difficulty, and time (no textual "Timer" label)', () => {
+  it('renders header with product title, mode/difficulty, and time (icon-only timer)', () => {
     render(<ClassicScreen />);
-    expect(screen.getAllByText(/Classic/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Mode:\s*Classic[\s\S]*Difficulty:\s*easy/)).toBeTruthy();
+    expect(screen.getByText('Ultimate Sudoku')).toBeTruthy();
+    expect(screen.getByText(/Classic\s*•\s*easy/)).toBeTruthy();
     const time = screen.getByLabelText('Elapsed time');
     expect(time).toBeTruthy();
   });
 
-  it('renders numeric seed in footer', () => {
+  it('renders numeric seed in footer (tappable to copy)', () => {
     render(<ClassicScreen />);
     const seedFooter = screen.getByLabelText('Seed footer');
-    expect(seedFooter).toHaveTextContent(/Seed:? \d+/);
+    expect(seedFooter).toHaveTextContent(/^\s*\d+\s*$/);
   });
 
   it('renders hearts-only lives with an accessible label (no textual "Lives" label)', () => {
