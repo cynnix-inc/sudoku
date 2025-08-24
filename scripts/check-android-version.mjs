@@ -42,19 +42,56 @@ const repoRoot = process.cwd();
 const pkgPath = path.join(repoRoot, 'package.json');
 const gradlePath = path.join(repoRoot, 'android', 'app', 'build.gradle');
 
+function writeGradleVersion(gradleFilePath, newCode, newName) {
+  try {
+    const contents = fs.readFileSync(gradleFilePath, 'utf8');
+    let updated = contents;
+    // Replace versionCode numeric value
+    updated = updated.replace(/(\bversionCode\s+)(\d+)/, `$1${newCode}`);
+    // Replace versionName string value
+    updated = updated.replace(/(\bversionName\s+")([^"]+)(")/, `$1${newName}$3`);
+    if (updated !== contents) {
+      fs.writeFileSync(gradleFilePath, updated, 'utf8');
+    }
+  } catch (error) {
+    console.error(`Failed to write Gradle file: ${gradleFilePath}`);
+    console.error(error.message);
+    process.exit(2);
+  }
+}
+
 const pkg = readJson(pkgPath);
 const version = pkg.version || '0.0.0';
 const expectedCode = computeAndroidVersionCode(version);
 const actualCode = readGradleVersionCode(gradlePath);
 
+const args = process.argv.slice(2);
+const shouldFix = args.includes('--fix');
+
 if (expectedCode !== actualCode) {
-  console.error(
-    `Android versionCode mismatch. Expected ${expectedCode} from package.json version ${version}, but found ${actualCode} in android/app/build.gradle.\n` +
-      'Fix by syncing native files: npx expo prebuild -p android --non-interactive'
-  );
-  process.exit(1);
+  if (shouldFix) {
+    console.warn(
+      `Android versionCode mismatch. Updating android/app/build.gradle: ${actualCode} -> ${expectedCode}, versionName -> ${version}`,
+    );
+    writeGradleVersion(gradlePath, expectedCode, version);
+    const verify = readGradleVersionCode(gradlePath);
+    if (verify !== expectedCode) {
+      console.error('Failed to update versionCode in build.gradle');
+      process.exit(1);
+    }
+    console.log(
+      `Android versionCode updated: ${verify} now matches computed ${expectedCode} from package.json version ${version}`,
+    );
+    process.exit(0);
+  } else {
+    console.error(
+      `Android versionCode mismatch. Expected ${expectedCode} from package.json version ${version}, but found ${actualCode} in android/app/build.gradle.\n` +
+        'Fix by syncing native files: npx expo prebuild -p android --non-interactive or run this script with --fix',
+    );
+    process.exit(1);
+  }
 }
 
 console.log(
-  `Android versionCode OK: ${actualCode} matches computed ${expectedCode} from package.json version ${version}`
+  `Android versionCode OK: ${actualCode} matches computed ${expectedCode} from package.json version ${version}`,
 );

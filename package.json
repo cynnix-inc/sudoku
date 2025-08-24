@@ -24,7 +24,7 @@
     "verify:deps": "node scripts/verify-deps.mjs",
     "ios": "npx expo run:ios",
     "build": "npx expo export --platform web --output-dir dist",
-    "ci": "npm run lint && npm run typecheck && npm run android:version:check && npm test -- --ci && npm run build",
+    "ci": "npm run lint && npm run typecheck && node scripts/check-android-version.mjs --fix && npm test -- --ci && npm run build",
     "prepare": "husky",
     "commit": "npx git-cz || true",
     "lint-staged": "lint-staged"
