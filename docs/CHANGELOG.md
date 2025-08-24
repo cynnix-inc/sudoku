@@ -2,7 +2,7 @@
 
 ## v0.9 — 2025-08-19
 
-- Classic: Seed footer is tappable text (no button); copies with confirmation toast (Issue #63, ADR-0004).
+- Classic: Seed footer is tappable text (no button); copies with confirmation toast (Issue #63, #230, ADR-0004).
 - Classic: Auto-pause implemented for AppState (native) and visibility/blur (web). Tagged BDD with @issue-105 (Issue #105).
 - Classic: Prevent default browser shortcuts/scroll for handled keys on web; add BDD @issue-106 and tests (Issue #106).
 - Classic: Persist notes mode, paused state, and locked digit across sessions; add BDD @issue-107 and tests (Issue #107).

@@ -1,9 +1,9 @@
-import type { Digit, Difficulty } from '../types';
+import type { Difficulty } from '../types';
 import { DIFFICULTY_THRESHOLDS } from './difficulty';
 import { initializeGame } from '../state';
 import { solveWithStrategies } from './strategy';
 
-export type Given = { row: number; col: number; value: Digit };
+export type Given = { row: number; col: number; value: number };
 
 export type RatingResult = {
   difficulty: Difficulty;

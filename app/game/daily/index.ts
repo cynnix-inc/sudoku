@@ -1,48 +1,40 @@
-import type { Difficulty, Digit } from '../types';
+import type { Difficulty } from '../types';
 import { generatePuzzle } from '../engine/generator';
 
 export type DailySeed = {
-  dateUtcYYYYMMDD: string;
-  patternId: string; // e.g., A,B,C...
-  difficulty: Difficulty;
+  utcDate: string; // YYYYMMDD
+  patternId: string; // single uppercase letter A-Z
+  difficulty: Difficulty; // lowercase tier per app/game/types
 };
 
+export function createDailySeed(date: Date): DailySeed {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  const utcDate = `${y}${m}${d}`;
+  // Rotate a simple pattern weekly: A..Z cycling based on ISO week number
+  const jan4 = new Date(Date.UTC(y, 0, 4));
+  const week1Monday = new Date(jan4.getTime() - ((jan4.getUTCDay() + 6) % 7) * 86400000);
+  const weekIndex = Math.floor((date.getTime() - week1Monday.getTime()) / (7 * 86400000));
+  const patternId = String.fromCharCode('A'.charCodeAt(0) + (weekIndex % 26));
+  const difficulty = difficultyForDate(date);
+  return { utcDate, patternId, difficulty };
+}
+
 export function formatDailySeed(seed: DailySeed): string {
-  return `${seed.dateUtcYYYYMMDD}-${seed.patternId}-${seed.difficulty}`;
+  return `${seed.utcDate}-${seed.patternId}-${seed.difficulty}`;
 }
 
-// Simple weekly rotation pattern
-const WEEKLY_PATTERN: Difficulty[] = [
-  'easy',
-  'medium',
-  'hard',
-  'expert',
-  'master',
-  'extreme',
-  'medium',
-];
-
-export function difficultyForDate(dateUtc: Date): Difficulty {
-  const start = new Date(Date.UTC(2025, 0, 6)); // Monday, Jan 6, 2025 baseline
-  const days = Math.floor((dateUtc.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-  const idx = ((days % 7) + 7) % 7;
-  return WEEKLY_PATTERN[idx] ?? 'medium';
+export function difficultyForDate(date: Date): Difficulty {
+  // Cycle tiers weekly: easy, medium, hard, expert, master, extreme
+  const tiers: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'];
+  const start = Date.UTC(2025, 0, 6); // Monday baseline for rotation
+  const weekIndex = Math.floor((date.getTime() - start) / (7 * 86400000));
+  return tiers[((weekIndex % tiers.length) + tiers.length) % tiers.length]!;
 }
 
-export function createDailySeed(dateUtc: Date): DailySeed {
-  const yyyy = dateUtc.getUTCFullYear().toString();
-  const mm = String(dateUtc.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(dateUtc.getUTCDate()).padStart(2, '0');
-  const difficulty = difficultyForDate(dateUtc);
-  const patternId = String.fromCharCode('A'.charCodeAt(0) + ((dateUtc.getUTCDate() - 1) % 7));
-  return { dateUtcYYYYMMDD: `${yyyy}${mm}${dd}`, patternId, difficulty };
-}
-
-export function generateDailyPuzzle(dateUtc: Date): {
-  givens: { row: number; col: number; value: Digit }[];
-  difficulty: Difficulty;
-} {
-  const seed = createDailySeed(dateUtc);
-  const puzzle = generatePuzzle({ seed: formatDailySeed(seed), difficulty: seed.difficulty });
-  return { givens: puzzle.givens, difficulty: seed.difficulty };
+export function generateDailyPuzzle(date: Date) {
+  const seed = createDailySeed(date);
+  const seedString = formatDailySeed(seed);
+  return generatePuzzle({ seed: seedString, difficulty: seed.difficulty });
 }

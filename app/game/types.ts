@@ -1,16 +1,12 @@
 export type Digit = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export type CellValue = Digit | null;
-
-export type CellNotes = Partial<Record<Digit, true>>;
-
 export type Cell = {
-  row: number; // 0..8
-  col: number; // 0..8
-  value: CellValue;
-  notes: CellNotes;
+  row: number;
+  col: number;
+  value: Digit | null;
   isGiven: boolean;
   isError: boolean;
+  notes: Partial<Record<Digit, boolean>>;
 };
 
 export type Board = Cell[][]; // 9x9 grid
@@ -19,7 +15,12 @@ export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert' | 'master' | 'ext
 
 export type GameConfig = {
   difficulty: Difficulty;
-  maxLives: number; // for classic mistakes
+  maxLives: number;
+};
+
+export type GameHistoryEntry = {
+  board: Board;
+  livesRemaining: number;
 };
 
 export type GameState = {
@@ -27,16 +28,12 @@ export type GameState = {
   givens: { row: number; col: number; value: Digit }[];
   config: GameConfig;
   livesRemaining: number;
-  history: {
-    past: { board: Board; livesRemaining: number }[];
-    future: { board: Board; livesRemaining: number }[];
-  };
+  history: { past: GameHistoryEntry[]; future: GameHistoryEntry[] };
 };
 
-export type PlaceAction = { type: 'place'; row: number; col: number; value: Digit | null };
-export type NoteAction = { type: 'note'; row: number; col: number; value: Digit; present: boolean };
-export type EraseAction = { type: 'erase'; row: number; col: number };
-export type UndoAction = { type: 'undo' };
-export type RedoAction = { type: 'redo' };
-
-export type GameAction = PlaceAction | NoteAction | EraseAction | UndoAction | RedoAction;
+export type GameAction =
+  | { type: 'place'; row: number; col: number; value: Digit | null }
+  | { type: 'note'; row: number; col: number; value: Digit; present: boolean }
+  | { type: 'erase'; row: number; col: number }
+  | { type: 'undo' }
+  | { type: 'redo' };
