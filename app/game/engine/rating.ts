@@ -1,9 +1,9 @@
-import type { Difficulty } from '../types';
+import type { Difficulty, Digit } from '../types';
 import { DIFFICULTY_THRESHOLDS } from './difficulty';
 import { initializeGame } from '../state';
 import { solveWithStrategies } from './strategy';
 
-export type Given = { row: number; col: number; value: number };
+export type Given = { row: number; col: number; value: Digit };
 
 export type RatingResult = {
   difficulty: Difficulty;
@@ -18,7 +18,10 @@ export function ratePuzzle(givens: Given[]): RatingResult {
   // First pass: classify by thresholds (fast path)
   const difficulty = classifyByClues(clueCount);
   // Optional lightweight technique pass using singles to avoid heavy cost
-  const game = initializeGame(givens, { difficulty, maxLives: 3 });
+  const game = initializeGame(givens as Array<{ row: number; col: number; value: Digit }>, {
+    difficulty,
+    maxLives: 3,
+  });
   const { steps } = solveWithStrategies(game.board, ['nakedSingle', 'hiddenSingle'], 200);
   const techniquesUsed = Array.from(new Set(steps.map((s) => s.technique)));
   const analyzedMs = Date.now() - start;
