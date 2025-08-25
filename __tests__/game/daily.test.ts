@@ -10,7 +10,7 @@ describe('daily module (#163)', () => {
     const d = new Date(Date.UTC(2025, 8, 21));
     const seed = createDailySeed(d);
     const fmt = formatDailySeed(seed);
-    expect(fmt).toMatch(/^\d{8}-[A-Z]-[a-z]+$/);
+    expect(fmt).toMatch(/^\d{8}-[A-D]-[a-z]+$/);
   });
 
   it('rotates difficulty weekly and is deterministic per date', () => {
