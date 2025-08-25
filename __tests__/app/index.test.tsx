@@ -10,5 +10,6 @@ describe('IndexScreen', () => {
   it('renders links', () => {
     render(<IndexScreen />);
     expect(screen.getByText('Play Classic 9×9')).toBeTruthy();
+    expect(screen.getByText('Play Daily')).toBeTruthy();
   });
 });
