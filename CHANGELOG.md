@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/cynnix-inc/sudoku/compare/v1.3.0...v1.4.0) (2025-08-25)
+
+
+### Features
+
+* **epic-14:** classic mode playable slice ([#267](https://github.com/cynnix-inc/sudoku/issues/267)) ([b2b8e60](https://github.com/cynnix-inc/sudoku/commit/b2b8e6047f6b9feeffc707fe56e3280e9828071a))
+
 ## [1.3.0](https://github.com/cynnix-inc/sudoku/compare/v1.2.2...v1.3.0) (2025-08-23)
 
 
