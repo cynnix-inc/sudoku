@@ -17,3 +17,10 @@ Conventions
 - Each file starts with a title and a "When to use" section.
 - Keep rules concise; if rules overlap, higher-numbered files (e.g., 50-\*) win for their domain.
 - Examples and paths match this repo structure (`app/**`, `__tests__/`).
+
+## Key Rules Integration
+
+- **Architecture + Security**: Dependency review combines both domains
+- **Testing + DevOps**: Coverage thresholds enforced in CI
+- **Style + Architecture**: Import rules prevent cross-layer violations
+- **Project + Architecture**: Repo structure enforces layering boundaries

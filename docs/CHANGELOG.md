@@ -1,5 +1,14 @@
 # Changelog
 
+## 2025-08-23 — Epic 227: Staging Code Review – Consolidation, ADR Alignment, and Hardening
+
+- Consolidated game engine under `app/game`; removed legacy `app/_game` import path and added CI guard.
+- Added `app/daily.screen.tsx` and linked from home; daily determinism confirmed per ADR-0002.
+- Finalized ADR-0004 branding/labels across header and Seed footer; updated docs.
+- Standardized tooling and Node 20.x alignment (Volta/engines/CI) per project policy.
+- Hardened Supabase initialization for missing envs; added tests.
+- CI hygiene: refined dependency verification and source guard to ignore VCS artifacts.
+
 ## v0.9 — 2025-08-19
 
 - Classic: Seed footer is tappable text (no button); copies with confirmation toast (Issue #63, #230, ADR-0004).

@@ -2,7 +2,7 @@
 name: Epic
 about: Track a larger initiative with linked sub-issues (child issues)
 title: "[Epic] <concise scope>"
-labels: enhancement, status/ready
+labels: type/epic, enhancement, status/ready
 assignees: ""
 ---
 

@@ -64,9 +64,28 @@ if (issues.length) {
 
 // CI guard: fail if any source files import from app/_game
 try {
-  const out = execSync('rg --hidden --glob "!node_modules/**" "app/_game" -n', {
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).toString('utf8');
+  // Only scan source files under app/** for import/require usage; avoid shell quoting pitfalls
+  const globs = [
+    '--hidden',
+    '--with-filename',
+    '-n',
+    '--fixed-strings',
+    '--glob "!node_modules/**"',
+    '--glob "!.git/**"',
+    '--glob "!coverage/**"',
+    '--glob "!dist/**"',
+    '--glob "app/**/*.{js,jsx,ts,tsx}"',
+  ];
+  const patterns = [
+    "from 'app/_game",
+    'from "app/_game',
+    "require('app/_game",
+    'require("app/_game',
+  ]
+    .map((p) => `-e ${JSON.stringify(p)}`)
+    .join(' ');
+  const cmd = `rg ${globs.join(' ')} ${patterns}`;
+  const out = execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'] }).toString('utf8');
   if (out && out.trim().length > 0) {
     console.error('\nCI guard: Found references to app/_game. Please import from app/game instead.');
     console.error(out);
