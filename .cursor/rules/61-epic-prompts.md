@@ -6,69 +6,127 @@ These prompts define how to automate Epic work and finalize it into staging.
 They follow repository standards from `.cursor/rules` and guidance in `docs/README.md`.  
 Environment: PowerShell (avoid non-portable pipes like `| cat`).
 
----
+## --
 
-## 🔹 Prompt 1 — Automate Epic Work (sub-issues loop)
+## Prompt 1a — Automate Epic Work (preselected Epic)
 
----
+Epic: Epic #<number> — <title>
+Shell: PowerShell (avoid Unix‑only pipes).
+Standards: Follow .cursor/rules and docs/README.md for workflow, testing, CI, and documentation.
 
-Epic: `Epic #<number> — <title>`
+🎯 Goal
 
-### 🎯 Goal
+Process this Epic end‑to‑end by iterating sub‑issues sequentially (and nested sub‑issues first), merging each into the epic branch, and closing each sub‑issue after merge. Follow repo standards in .cursor/rules and docs/README.md.
 
-- Process Epic sub-issues sequentially with `gh sub-issue`.
-- Follow repo standards in `.cursor/rules` and `docs/README.md`.
-- Work happens in an epic integration branch. Each sub-issue merges into this branch before the next begins.
+🗂 Workflow
 
-### 🗂 Workflow
+1. Epic branch
 
-1. Epic Branch
+- Create an epic branch from staging; ensure CI passes on the clean branch.
+  (Trunk‑based & CI gates)
 
-- Create an epic branch from `staging`.
-- Ensure CI passes on the clean branch.
+2. Sub‑issue loop
 
-2. Sub-Issue Loop
+- List all open sub‑issues for this Epic (see docs/README.md for sub‑issue usage) .
+- For each sub‑issue:
+  -- Nested first: if the sub‑issue has children, complete all nested sub‑issues first, then the parent.
+  -- Existence check (efficiency): search code/docs to see if the feature already exists.
+  --- If it exists: align to current requirements, ensure tests cover ACs and are green, update docs/ADR/CHANGELOG as needed. Only write new code if gaps remain. (Architecture + repo map)
+  -- Implement: honor module boundaries (pure core, presentational UI, app glue), strict TS/style, accessibility; avoid heavy deps unless reviewed.
+  -- Update: tests per AC (respect coverage), docs, ADRs, CHANGELOGs.
+  -- Verify: run CI locally (lint, typecheck, tests, build, bundle, audit).
+  -- PR: open PR into the epic branch using Conventional Commits.
+  -- Merge gate (automated): enable auto‑merge if allowed; poll until checks are green and the PR is merged.
+  -- Close the sub‑issue: post a brief verification note with the PR link.
+  -- Rebase epic on staging to minimize conflicts, then continue to the next sub‑issue.
 
-- List open sub-issues for the Epic (see `docs/README.md` for details).
-- For each sub-issue:
-  - Create a feature branch off the epic branch.
-  - Implement changes per acceptance criteria and `.cursor/rules`.
-  - Update tests, docs, ADRs, and CHANGELOGs as required.
-  - Run CI locally (lint, typecheck, tests, build, audit).
-  - Commit with Conventional Commits.
-  - Open a PR into the epic branch.
+3. Finalize Epic
 
-  Merge Gate (non-blocking, no user input):
-  - Enable auto-merge (if repo policy allows).
-  - Poll PR status at a regular cadence (e.g., every 30–60 seconds):
-    - Wait until: all required checks are green and PR is merged into the epic branch.
-    - If checks fail: amend the branch to fix, push, and keep polling.
-    - If merge is blocked by required reviews: leave a concise comment tagging required reviewers, continue polling until merged.
-  - After the PR merges:
-    - Rebase the epic branch on latest `staging` to minimize conflicts.
-    - Proceed to the next sub-issue.
+- When all sub‑issues are merged & closed, proceed with your “Finalize Epic” prompt (epic → staging).
+  (Keep ADRs/docs consistent with the final state.)
 
-### 📝 Output Expectations (per sub-issue)
+📝 Output expectations (per sub‑issue)
 
 - Edits: list of changed files + colocated tests.
 - Quality: CI all green.
-- PRs: one PR per sub-issue into the epic branch (merged before starting the next).
-- Docs: update `docs/` and ADRs, reflected in PR body.
+- PRs: one PR per sub‑issue into epic branch (merged before the next).
+- Docs: docs/ and ADR updates referenced in the PR body.
 
-### 📦 Consistency Requirements
+📦 Consistency requirements
 
-- ADRs updated where architectural/logic decisions change.
-- QA feature files reflect updated behavior.
-- CHANGELOGs include layout, icons, seed rules, undo/lives logic.
-- Tests updated for new behaviors.
-- MVP doc updated with new issue IDs in the tracking section.
+- Security checklist honored; no secrets in code/logs; least‑privilege.
+- Coverage thresholds met; no real network/timers in unit tests.
+- CI gates enforced (bundle delta ≤5%, audit high‑sev clean).
 
-### ⚠️ Guardrails
+---
 
-- Never skip lint, typecheck, tests, or CI.
-- Keep branches small and focused.
-- If acceptance details are missing, note it in the sub-issue and continue with the next ready item.
-- PowerShell environment: avoid non-portable pipes and Unix-only idioms.
+## 🔹 Prompt 1B — Automate Next Epic Work (auto‑select Epic)
+
+Shell: PowerShell (avoid Unix‑only pipes).
+Standards: Follow .cursor/rules and docs/README.md for workflow, testing, CI, and documentation.
+
+🎯 Goal
+
+- Auto‑select the next Epic to work on (issues labeled type/epic), then process its sub‑issues sequentially (nested first).
+- Each sub‑issue must merge into the epic branch and be closed before the next begins.
+- Keep CI, security, architecture, and docs in compliance.
+
+🗂 Workflow
+
+1. Identify Candidate Epics
+
+- List all open issues labeled type/epic and read their descriptions/metadata.
+
+2. Select Next Epic (prioritization)
+   Choose using this order:
+1. MVP‑Critical / Core gameplay (needed for first playable slice).
+1. Hotfix / CI / Security (CI failing on staging/main; security/privacy risk) — handle before features.
+1. Dependency‑Unblockers (unlocks other Epics/features).
+1. In‑Progress / Near‑Done (reduce WIP and drift).
+1. Tie‑breaker: Oldest first (minimize long‑lived branch drift).
+
+Special cases:
+
+- Bug‑fix Epics → treat as #2; add failing test first, fix, keep test; require green CI.
+- Updated‑spec Epics → pause to add an ADR, update ACs/docs, and align tests, then continue.
+
+Announce: “Proceeding with Epic #X — <title>”.
+
+3. Epic Branch
+
+- Create epic branch from staging; ensure clean branch passes CI.
+
+4. Sub‑Issue Loop (for each sub‑issue)
+
+- Nested first: if the sub‑issue has children, complete those before the parent.
+- Existence check: search code/docs to confirm if feature already exists. If yes, align with current requirements, ensure tests cover ACs and are green, and update docs/ADR/CHANGELOGs. Only write new code if gaps remain.
+- Implement: honor module boundaries (pure core in packages/core, presentational UI in packages/ui, app glue in apps/\*), strict TS/style/a11y; avoid heavy deps unless reviewed.
+- Update: tests per AC (respect coverage), docs, ADRs, CHANGELOGs.
+- Verify locally: lint, typecheck, tests, build, bundle delta, audit.
+- PR: open into the epic branch with Conventional Commits.
+- Merge gate (automated; no human input):
+  -- Enable auto‑merge if allowed; poll until required checks are green and PR is merged.
+  -- If checks fail, fix and push; keep polling.
+- Close the sub‑issue: after merge, close it with a short verification note linking the PR.
+- Rebase epic on staging to minimize conflicts, then continue to the next sub‑issue.
+
+5. After all sub‑issues are done
+
+- Use your Finalize Epic prompt (epic → staging). Keep ADRs/docs consistent with final state.
+
+📝 Output Expectations (per sub‑issue)
+
+- Edits: changed files + colocated tests.
+- Quality: CI all green.
+- PRs: exactly one PR per sub‑issue into the epic branch (merged before next).
+- Docs: docs/ and ADR updates referenced in PR body.
+
+⚠️ Guardrails
+
+- Always process nested sub‑issues before parent.
+- Prior to merge, Never skip lint, typecheck, tests, build, bundle delta, or audit.
+- Security: no secrets in code/logs; least‑privilege; encrypt in transit.
+- If Epic selection or ACs are ambiguous, pause and request human guidance.
 
 ---
 

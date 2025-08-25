@@ -38,6 +38,8 @@ App.js               # Expo entry
 package.json         # npm scripts (lint, typecheck, test, build)
 ```
 
+**Note:** This project uses a monorepo structure with `app/` as the main application. If migrating to `packages/*` structure, update this map and create an ADR.
+
 ## Working agreements
 
 - Keep commits small and descriptive.

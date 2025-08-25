@@ -27,6 +27,17 @@ Definition of Done
 
 - Verify license, size, vulnerabilities, and bundle impact before adding.
 
+# Dependency Review Checklist
+
+**Before adding any new library, must complete:**
+
+1. **Size review**: Check bundle impact with `npm run bundle:check`
+2. **License review**: Verify license compatibility and restrictions
+3. **Vulnerability review**: Run `npm audit` and check for known CVEs
+4. **ADR requirement**: If impactful (>100KB bundle, new category, breaking change), create ADR
+
+**Quick check**: `npm run verify:deps` covers most of this automatically.
+
 # Always / Never
 
 - Always validate deep links and intent URLs.

@@ -21,6 +21,18 @@ Priority
 - State/Hooks/Services: `app/state/`, `app/hooks/`, `app/services/`.
 - Domain logic: pure modules in `app/game/`.
 
+# Feature Consolidation
+
+- **No shadow/duplicate features**: If similar functionality exists, consolidate to a single source of truth
+- Core logic belongs in `app/game/` (domain layer)
+- Presentational logic belongs in UI components
+- Don't fork variants - refactor to shared utilities instead
+
+# Examples
+
+- Good: Single `validateBoard()` function used across all validation needs
+- Bad: `validateBoard()`, `validatePuzzle()`, and `checkBoard()` doing similar things
+
 # Allowed imports
 
 - UI → state/hooks/services, domain (`app/game/`).

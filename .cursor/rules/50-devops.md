@@ -31,6 +31,18 @@ Definition of Done
 - Dependency verification: `npm run verify:deps`.
 - Security audit: `npm audit --audit-level=high --omit=dev` (allowlist justified exceptions only).
 
+# Shell and Automation
+
+- **Default to PowerShell** in automation scripts and CI
+- Avoid Unix-only pipes (e.g., `| cat`) that may not work cross-platform
+- Ensure commands are cross-platform compatible
+- Use `node scripts/` for complex automation to avoid shell dependency issues
+
+# Examples
+
+- Good: `node scripts/verify-deps.mjs` (cross-platform)
+- Avoid: `cat file.txt | grep pattern` (Unix-specific)
+
 # Release
 
 - Tag with semver.
