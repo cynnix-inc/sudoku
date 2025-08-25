@@ -55,7 +55,7 @@ export default function SeedFooter({ seed }: SeedFooterProps) {
   }
 
   return (
-    <View style={{ marginTop: 12, alignItems: 'center' }}>
+    <View style={{ marginTop: 12, alignItems: 'center', position: 'relative' }}>
       <Pressable
         onPress={() => copySeedToClipboard(seed)}
         accessibilityRole="button"
@@ -68,19 +68,31 @@ export default function SeedFooter({ seed }: SeedFooterProps) {
             fontSize: 12,
             opacity: 0.6,
             color: theme.foreground,
-            textDecorationLine: 'underline',
+            textDecorationLine: 'none',
           }}
         >
           {seed}
         </Text>
       </Pressable>
       {copied ? (
-        <Text
-          accessibilityLabel="Seed copied"
-          style={{ fontSize: 12, marginTop: 6, color: theme.isDark ? '#34d399' : '#065f46' }}
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: -22,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 6,
+            backgroundColor: theme.isDark ? 'rgba(34,197,94,0.15)' : 'rgba(16,185,129,0.15)',
+          }}
         >
-          Copied!
-        </Text>
+          <Text
+            accessibilityLabel="Seed copied"
+            style={{ fontSize: 12, color: theme.isDark ? '#34d399' : '#065f46' }}
+          >
+            Copied!
+          </Text>
+        </View>
       ) : null}
     </View>
   );
