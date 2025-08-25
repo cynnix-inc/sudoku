@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Board from './components/Board';
 import { initializeGame, applyAction } from './game/state';
-import type { Digit, GameAction } from './game/types';
+import type { Digit, GameAction, Difficulty } from './game/types';
 import { isSolved } from './game/rules';
 import { MaterialIcons } from '@expo/vector-icons';
 import Numpad from './components/Numpad';
@@ -18,15 +18,35 @@ import { loadProgress, saveProgress } from './services/storage';
 import { ThemeContext } from './_layout';
 import Header from './components/Header';
 import SeedFooter from './components/SeedFooter';
+import { generatePuzzle } from './game/engine/generator';
 import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
 import { recordResult } from './services/stats';
+
+type Preferences = { lastDifficulty?: Difficulty };
+const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'];
+function livesForDifficulty(d: Difficulty): number {
+  switch (d) {
+    case 'easy':
+      return 6;
+    case 'medium':
+      return 5;
+    case 'hard':
+      return 4;
+    case 'expert':
+      return 3;
+    case 'master':
+      return 2;
+    case 'extreme':
+      return 1;
+  }
+}
 
 export default function ClassicScreen() {
   const theme = useContext(ThemeContext);
   const { width: windowWidth } = useWindowDimensions();
-  const [seed] = useState<string>(FIXED_EASY_SEED);
+  const [seed, setSeed] = useState<string>(FIXED_EASY_SEED);
   const [game, setGame] = useState(() =>
-    initializeGame(seedToGivens(seed) as { row: number; col: number; value: Digit }[], {
+    initializeGame(seedToGivens(FIXED_EASY_SEED) as { row: number; col: number; value: Digit }[], {
       difficulty: 'easy',
       maxLives: 3,
     }),
@@ -36,6 +56,7 @@ export default function ClassicScreen() {
   const [notesMode, setNotesMode] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [chooseVisible, setChooseVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
 
   const selectedRef = useRef(selected);
@@ -66,14 +87,36 @@ export default function ClassicScreen() {
     return typeof value === 'number' ? (value as Digit) : null;
   })();
 
+  function startNewGame(difficulty: Difficulty) {
+    const newSeed = String(Math.floor(Date.now() / 1000));
+    const puzzle = generatePuzzle({ seed: newSeed, difficulty });
+    setSeed(newSeed);
+    const reset = initializeGame(puzzle.givens as { row: number; col: number; value: Digit }[], {
+      difficulty,
+      maxLives: livesForDifficulty(difficulty),
+    });
+    setGame(reset);
+    setSelected({ row: 0, col: 0 });
+    selectedRef.current = { row: 0, col: 0 };
+    setLockedDigit(null);
+    lockedRef.current = null;
+    setNotesMode(false);
+    notesModeRef.current = false;
+    setPaused(false);
+    setSeconds(0);
+    void saveProgress('sudoku-preferences', { lastDifficulty: difficulty } satisfies Preferences);
+  }
+
   function restartWithSameSeed() {
-    const reset = initializeGame(
-      seedToGivens(seed) as { row: number; col: number; value: Digit }[],
-      {
-        difficulty: 'easy',
-        maxLives: 3,
-      },
-    );
+    // If using fixture seed, rebuild givens from fixture; otherwise reuse current game's givens
+    const usingFixture = seed === FIXED_EASY_SEED;
+    const givens = usingFixture
+      ? (seedToGivens(seed) as { row: number; col: number; value: Digit }[])
+      : (game.givens as unknown as { row: number; col: number; value: Digit }[]);
+    const reset = initializeGame(givens, {
+      difficulty: game.config.difficulty,
+      maxLives: usingFixture ? 3 : livesForDifficulty(game.config.difficulty),
+    });
     setGame(reset);
     setSelected({ row: 0, col: 0 });
     selectedRef.current = { row: 0, col: 0 };
@@ -84,6 +127,12 @@ export default function ClassicScreen() {
     setPaused(false);
     setSeconds(0);
   }
+
+  useEffect(() => {
+    // Load last-selected difficulty and allow user to start a new game with it later
+    // Do not auto-switch existing fixture-backed board to avoid test flakiness
+    void loadProgress<Preferences>('sudoku-preferences');
+  }, []);
 
   useEffect(() => {
     // On first transition to finished, record stats once
@@ -317,6 +366,23 @@ export default function ClassicScreen() {
         onTogglePause={() => setPaused((p) => !p)}
         boardPixelWidth={boardPixelWidth}
       />
+      <View style={{ width: boardPixelWidth, marginBottom: 6, alignItems: 'flex-end' }}>
+        <Pressable
+          onPress={() => setChooseVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="New game"
+          accessibilityHint="Start a new game by selecting a difficulty"
+          style={{
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderWidth: 1,
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
+            borderRadius: 6,
+          }}
+        >
+          <Text style={{ fontSize: 12, color: theme.foreground }}>New</Text>
+        </Pressable>
+      </View>
       <Board
         board={game.board}
         selected={selected}
@@ -540,6 +606,65 @@ export default function ClassicScreen() {
             <Text style={{ fontSize: 14, fontWeight: '600', color: theme.foreground }}>
               Restart
             </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {chooseVisible ? (
+        <View
+          accessibilityLabel="Select difficulty"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: theme.isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <Text
+            style={{ fontSize: 18, fontWeight: '700', color: theme.foreground, marginBottom: 12 }}
+          >
+            Select difficulty
+          </Text>
+          <View
+            style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}
+          >
+            {DIFFICULTIES.map((d) => (
+              <Pressable
+                key={d}
+                onPress={() => {
+                  startNewGame(d);
+                  setChooseVisible(false);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Start ${d} game`}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderWidth: 1,
+                  borderColor: theme.isDark ? '#374151' : '#d1d5db',
+                  borderRadius: 6,
+                  backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '600', color: theme.foreground }}>
+                  {d}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <View style={{ height: 12 }} />
+          <Pressable
+            onPress={() => setChooseVisible(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel difficulty selection"
+            style={{ paddingHorizontal: 12, paddingVertical: 8 }}
+          >
+            <Text style={{ fontSize: 12, color: theme.foreground, opacity: 0.8 }}>Cancel</Text>
           </Pressable>
         </View>
       ) : null}
