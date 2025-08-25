@@ -1,4 +1,3 @@
-// Simple seeded RNG (mulberry32)
 export function createRng(seed: number): () => number {
   let t = seed >>> 0;
   return function () {

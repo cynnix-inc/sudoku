@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import type { Digit } from '../_game/types';
+import type { Digit } from '../game/types';
 import { ThemeContext } from '../_layout';
 
 export type NumpadProps = {
@@ -74,9 +74,7 @@ export default function Numpad({
           );
         })}
       </View>
-      <Text style={{ fontSize: 12, opacity: 0.7, color: theme.foreground }}>
-        Long-press to lock a digit
-      </Text>
+      {/* Instructional text removed per ADR-0004; discoverability via icon and gesture */}
     </View>
   );
 }

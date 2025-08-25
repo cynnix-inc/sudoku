@@ -5,8 +5,8 @@ import ClassicScreen from '../../app/classic';
 describe('ClassicScreen', () => {
   it('renders header', () => {
     render(<ClassicScreen />);
-    expect(screen.getAllByText(/Classic/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Mode:\s*Classic[\s\S]*Difficulty:\s*easy/)).toBeTruthy();
+    expect(screen.getByText('Ultimate Sudoku')).toBeTruthy();
+    expect(screen.getByText(/Classic\s*•\s*easy/)).toBeTruthy();
     expect(screen.getByLabelText('Elapsed time')).toBeTruthy();
   });
 

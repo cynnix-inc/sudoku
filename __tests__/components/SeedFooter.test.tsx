@@ -28,7 +28,7 @@ describe('SeedFooter', () => {
       </ThemeContext.Provider>,
     );
 
-    fireEvent.press(screen.getByLabelText('Copy seed'));
+    fireEvent.press(screen.getByLabelText('Seed footer'));
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(seed));
     expect(await screen.findByLabelText('Seed copied')).toBeTruthy();

@@ -40,8 +40,14 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: npm
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (with retries)
+        run: |
+          npm config set fetch-retries 5
+          npm config set fetch-retry-factor 2
+          npm config set fetch-retry-maxtimeout 600000
+          for i in 1 2 3; do
+            npm ci && break || { echo "npm ci failed on attempt $i, retrying in $((i*10))s..."; sleep $((i*10)); }
+          done
       - name: Run ESLint
         run: npm run lint
 
@@ -69,8 +75,15 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: npm
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (with retries)
+        run: |
+          npm config set fetch-retries 8
+          npm config set fetch-retry-factor 2
+          npm config set fetch-retry-maxtimeout 600000
+          npm config set maxsockets 3
+          for i in 1 2 3; do
+            npm ci --no-audit --no-fund && break || { echo "npm ci failed on attempt $i, retrying in $((i*10))s..."; sleep $((i*10)); }
+          done
       - name: Run TypeScript typecheck
         run: npm run typecheck
 
@@ -98,8 +111,15 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: npm
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (with retries)
+        run: |
+          npm config set fetch-retries 8
+          npm config set fetch-retry-factor 2
+          npm config set fetch-retry-maxtimeout 600000
+          npm config set maxsockets 3
+          for i in 1 2 3; do
+            npm ci --no-audit --no-fund && break || { echo "npm ci failed on attempt $i, retrying in $((i*10))s..."; sleep $((i*10)); }
+          done
       - name: Run tests
         env:
           CI: true
@@ -129,8 +149,15 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: npm
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (with retries)
+        run: |
+          npm config set fetch-retries 8
+          npm config set fetch-retry-factor 2
+          npm config set fetch-retry-maxtimeout 600000
+          npm config set maxsockets 3
+          for i in 1 2 3; do
+            npm ci --no-audit --no-fund && break || { echo "npm ci failed on attempt $i, retrying in $((i*10))s..."; sleep $((i*10)); }
+          done
       - name: Build
         env:
           CI: true

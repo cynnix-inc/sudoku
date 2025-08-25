@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemeContext } from '../_layout';
-import type { GameConfig } from '../_game/types';
+import type { GameConfig } from '../game/types';
 
 type HeaderProps = {
   mode?: string;
@@ -27,14 +27,14 @@ export default function Header({
   return (
     <View style={{ alignItems: 'center', marginBottom: 8 }}>
       <Text style={{ fontSize: 28, fontWeight: '700', marginBottom: 4, color: theme.foreground }}>
-        {mode}
+        Ultimate Sudoku
       </Text>
       {/* Row with centered mode/difficulty and right-aligned timer + icon-only pause */}
       <View
         style={{ width: boardPixelWidth ?? 36 * 9, position: 'relative', alignItems: 'center' }}
       >
         <Text style={{ fontSize: 12, opacity: 0.7, marginBottom: 2, color: theme.foreground }}>
-          Mode: {mode} • Difficulty: {difficulty}
+          {mode} • {difficulty}
         </Text>
         <Text
           accessibilityLabel="Elapsed time"
