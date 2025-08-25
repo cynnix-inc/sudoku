@@ -34,6 +34,21 @@ export default function IndexScreen() {
           </Link>
         );
       })()}
+
+      {(() => {
+        const dailyHref = '/daily' as unknown as Href;
+        return (
+          <Link href={dailyHref} asChild>
+            <Pressable accessibilityRole="button" accessibilityLabel="Go to Daily">
+              <Text
+                style={{ fontSize: 18, marginTop: 12, color: theme.isDark ? '#93c5fd' : '#2563eb' }}
+              >
+                Play Daily
+              </Text>
+            </Pressable>
+          </Link>
+        );
+      })()}
     </View>
   );
 }

@@ -38,3 +38,7 @@ export function generateDailyPuzzle(date: Date) {
   const seedString = formatDailySeed(seed);
   return generatePuzzle({ seed: seedString, difficulty: seed.difficulty });
 }
+
+// Screen component for Daily mode
+// Using a colocated default export at app/game/daily to allow route '/daily'
+export { default as default } from '../../daily.screen';

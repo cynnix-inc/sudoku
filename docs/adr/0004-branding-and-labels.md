@@ -36,3 +36,8 @@ References
 - ADR-0003: UI Layout and Controls – icon-only tools, timer icon, and lock toggle.
 - MVP Spec: docs/product/ultimate-sudoku-mvp-v0.9.md
 - QA: docs/qa/features/\*.feature
+
+Implementation
+
+- Header reflects this ADR: `app/components/Header.tsx` renders the product title, shows mode/difficulty without prefixes, and right-aligns the timer with an icon-only pause/resume button and accessibility labels.
+- Seed footer reflects tap-to-copy behavior: `app/components/SeedFooter.tsx` renders the seed as tappable text with subtle affordance and confirmation feedback. See tests in `__tests__/components/SeedFooter.test.tsx`.
