@@ -111,12 +111,18 @@ Next Steps Checklist:
 - Verify whether each item is defined in the MVP product doc.
 - Check if there are existing GitHub issues covering them.
 - If not already covered:
+  -- Determine whether the issue belongs under an existing Epic (type/epic label).
+  --- If yes → add it as a sub-issue.
+  --- If no Epic exists → open a new Epic and add the issue as its sub-issue.
   -- Update relevant documentation.
   -- Create new GitHub issues with clear titles, descriptions, and acceptance criteria.
+- If requirements are ambiguous, pause and request human guidance.
 
 Consistency Requirements:
 To keep everything aligned, update the following where applicable:
 
-- ADR (architecture decision record) — capture rationale for changes.
+- ADR — capture rationale for changes.
 - QA feature files — reflect updated behavior for automated testing.
-- Tests — ensure coverage reflects the new layout, icon usage, numeric seed display, and undo/lives rule.
+- Tests — ensure coverage reflects the updated acceptance criteria and requirements.
+- CHANGELOGs — document user-visible changes.
+- MVP doc tracking section — add new issue and Epic IDs for traceability.
