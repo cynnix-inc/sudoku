@@ -51,7 +51,7 @@ Feature: Gameplay and controls (MVP)
   @mvp @seed
   Scenario: Seed copy in footer
     Given the footer displays the puzzle seed
-    When I tap the seed copy control
+    When I tap the seed value
     Then the seed string is copied to the clipboard
     And a confirmation is displayed
 
