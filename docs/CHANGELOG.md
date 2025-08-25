@@ -35,6 +35,7 @@
 - Acceptance: Undo/Redo must not change lives; added Gherkin scenario and unit tests (refs #113).
 - Added ADR-0003 to document UI layout and controls decisions (refs #110, #111, #112, #115, #116, #117, #118).
 - Updated QA features for layout, a11y, highlighting, and daily seed; expanded spec tracking with new issue IDs.
+- Added tracking notes for new issues: #259 (Classic difficulty selection + generator), #260 (Daily route + not-found), #261 (Seed footer styling/toast), #262 (Responsive web layout).
 - Locked MVP spec and wireframes (ASCII) in `product/ultimate-sudoku-mvp-v0.9.md`.
 - Added ADR-0001 (L5 technique scope) and ADR-0002 (Daily determinism & no reroll).
 - Added Gherkin feature files under `qa/features/`.

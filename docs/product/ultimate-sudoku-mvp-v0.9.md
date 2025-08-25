@@ -121,8 +121,8 @@
 
 ```
  -------------------------------------------------
-| [Home]        Classic – Hard       Timer 03:42 |
-| Lives ♥♥♥                                   3  |
+| [Home]        Classic – Hard                   |
+| Lives ♥♥♥                           Timer 03:42|
  -------------------------------------------------
 |                Sudoku 9×9 Grid                 |
 |   (aligned above numbers)                      |
@@ -280,8 +280,8 @@ Tooltip examples:
 
 ### 9.2 Modes
 
-- **Start Classic**: Given main menu → When Classic→Expert → Then Expert puzzle loads.
-- **Daily Determinism (UTC)**: Given date X (UTC) → When opening Daily → Then same puzzle loads across devices.
+- **Start Classic**: Given main menu → When Classic→Expert → Then Expert puzzle loads. (Tracked: #259; seed policy #114)
+- **Daily Determinism (UTC)**: Given date X (UTC) → When opening Daily → Then same puzzle loads across devices. (Tracked: #38; route wiring and not-found: #260)
 - **Daily Calendar Access**: Given calendar → When tapping past date → Then that day’s puzzle opens; future locked.
 - **Lives (Classic/Daily)**: Given fixed lives → When wrong value placed → Then lives decrement; at 0 → loss state.
 - **Zen/Practice Lives Slider Hidden**: Given Classic/Daily → When opening Settings → Then Lives slider not editable/visible.
@@ -320,6 +320,16 @@ Tooltip examples:
 - **Keyboard Navigation**: Given keyboard → When using arrows → Then focus moves with visible ring.
 - **Color & Contrast**: Given default/dark themes → When rendering UI → Then key elements meet WCAG AA contrast.
 - **Screen Reader Labels**: Given focused cell → When read → Then row/column and value/empty (+ candidate count if applicable).
+
+---
+
+## 10) Tracking (Issues/Epics)
+
+- Classic difficulty selection + engine integration: #259 (Epic: #14)
+- Daily route 404 fix + not-found boundary: #260 (Epics: #22, #15)
+- Seed footer underline removal + non-shifting toast: #261 (Epic: #14)
+- Responsive layout polish (web): #262 (Epic: #21)
+- Related: Seed policy and valid puzzles: #114; Daily UTC seed/patterns: #38
 
 ### 9.8 Navigation & Help
 

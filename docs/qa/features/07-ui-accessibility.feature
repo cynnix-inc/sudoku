@@ -19,6 +19,14 @@ Feature: UI/UX and accessibility (MVP)
     When I press arrow keys
     Then focus moves with a visible focus ring
 
+  @mvp @seed @toast
+  Scenario: Seed footer copies without underline and without layout shift (#261)
+    Given the seed is shown in the footer
+    When I tap the seed value
+    Then the seed is copied to the clipboard
+    And the seed text is not underlined
+    And a non-shifting confirmation appears
+
   @mvp @a11y @contrast
   Scenario: Contrast meets WCAG AA
     When rendering key UI
