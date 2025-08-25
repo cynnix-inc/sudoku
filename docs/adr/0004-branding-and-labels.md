@@ -40,4 +40,5 @@ References
 Implementation
 
 - Header reflects this ADR: `app/components/Header.tsx` renders the product title, shows mode/difficulty without prefixes, and right-aligns the timer with an icon-only pause/resume button and accessibility labels.
+
 - Seed footer reflects tap-to-copy behavior: `app/components/SeedFooter.tsx` renders the seed as tappable text with subtle affordance and confirmation feedback. See tests in `__tests__/components/SeedFooter.test.tsx`.
