@@ -32,4 +32,20 @@ describe('ClassicScreen tools as icon-only below numpad', () => {
     const query = screen.queryByText(/long-press to lock a digit/i);
     expect(query).toBeNull();
   });
+
+  it('toggles lock on current digit and then disables it', () => {
+    render(<ClassicScreen />);
+    const cell = screen.getByLabelText('Cell 1,2');
+    fireEvent.press(cell);
+    fireEvent.press(screen.getByLabelText('Digit 3'));
+    // Enable lock on selected digit
+    const enableLock = screen.getByLabelText('Enable lock on digit 3');
+    fireEvent.press(enableLock);
+    // Now the control should indicate disabling lock
+    const disableLock = screen.getByLabelText('Disable lock');
+    expect(disableLock).toBeTruthy();
+    fireEvent.press(disableLock);
+    // Lock cleared; control returns to enable state for current digit
+    expect(screen.getByLabelText('Enable lock on digit 3')).toBeTruthy();
+  });
 });
