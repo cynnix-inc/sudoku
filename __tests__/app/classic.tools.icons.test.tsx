@@ -25,4 +25,11 @@ describe('ClassicScreen tools as icon-only below numpad', () => {
     fireEvent.press(eraseBtn);
     expect(screen.getByLabelText('Cell 1,2')).toHaveTextContent('');
   });
+
+  it('does not render inline long-press instructional text (ADR-0004)', () => {
+    render(<ClassicScreen />);
+    // Ensure instructional hint is not present in default surfaces
+    const query = screen.queryByText(/long-press to lock a digit/i);
+    expect(query).toBeNull();
+  });
 });
