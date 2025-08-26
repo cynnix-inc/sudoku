@@ -43,6 +43,12 @@ export const storageKeys = {
   daily(utcDate: string): string {
     return `${STORAGE_PREFIX}daily-${utcDate}`;
   },
+  classicProgress(): string {
+    return `${STORAGE_PREFIX}progress`;
+  },
+  dailyProgress(utcDate: string): string {
+    return `${STORAGE_PREFIX}progress-daily-${utcDate}`;
+  },
 };
 
 function keyMatchesNamespace(key: string, namespace?: string): boolean {
