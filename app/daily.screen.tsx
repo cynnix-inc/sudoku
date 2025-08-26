@@ -1,12 +1,10 @@
-import React, { useMemo } from 'react';
-import { View } from 'react-native';
-import Header from './components/Header';
-import Board from './components/Board';
-import SeedFooter from './components/SeedFooter';
-import { initializeGame } from './game/state';
-import type { Digit, Difficulty } from './game/types';
+import React, { useCallback, useMemo } from 'react';
 import { createDailySeed, formatDailySeed } from './game/daily';
-import { loadDailyPuzzle } from './services/daily';
+import type { Digit, Difficulty } from './game/types';
+import GameScreenBase, { type BasePuzzle } from './components/GameScreenBase';
+import { storageKeys } from './services/storage';
+import { recordResult } from './services/stats';
+import { loadDailyPuzzle, dailyCacheKey } from './services/daily';
 
 function livesForDifficulty(d: Difficulty): number {
   switch (d) {
@@ -28,48 +26,42 @@ function livesForDifficulty(d: Difficulty): number {
 export default function DailyScreen() {
   const today = useMemo(() => new Date(), []);
   const seedObj = useMemo(() => createDailySeed(today), [today]);
-  const daily = useMemo(() => {
-    // Note: loadDailyPuzzle is async; call synchronously here only for initial render
-    // In this simple implementation, we assume fast load from storage; for web tests it's fine.
-    // If not present, we generate immediately and persist; service ensures TTL handling.
-
-    // This synchronous usage is acceptable for test/web; native could switch to effect.
-    // We still return a generated puzzle immediately to avoid undefined UI.
-    loadDailyPuzzle(today);
-    const { generateDailyPuzzle } = require('./game/daily');
-    return generateDailyPuzzle(today);
-  }, [today]);
   const seed = useMemo(() => formatDailySeed(seedObj), [seedObj]);
 
-  const game = useMemo(
-    () =>
-      initializeGame(daily.givens as { row: number; col: number; value: Digit }[], {
-        difficulty: seedObj.difficulty,
-        maxLives: livesForDifficulty(seedObj.difficulty),
-      }),
-    [daily.givens, seedObj.difficulty],
+  const getPuzzle = useCallback((): BasePuzzle => {
+    // Warm cache; ignore promise
+    void loadDailyPuzzle(today);
+    const { generateDailyPuzzle } = require('./game/daily');
+    const p = generateDailyPuzzle(today);
+    return {
+      givens: p.givens as { row: number; col: number; value: Digit }[],
+      difficulty: seedObj.difficulty,
+      seed,
+      maxLives: livesForDifficulty(seedObj.difficulty),
+    };
+  }, [today, seedObj.difficulty, seed]);
+
+  const onRecord = useCallback(
+    (difficulty: Difficulty, result: 'win' | 'loss', secondsElapsed: number) => {
+      void recordResult(difficulty, result, secondsElapsed);
+    },
+    [],
   );
 
-  const boardPixelWidth = 9 * 44 + 12; // basic width similar to Classic defaults
+  const persistenceKey = useMemo(() => {
+    const utc = seedObj.utcDate;
+    // Avoid colliding with the daily cache key; use a dedicated progress key
+    void dailyCacheKey(utc);
+    return storageKeys.dailyProgress(utc);
+  }, [seedObj.utcDate]);
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 12 }}>
-      <Header
-        difficulty={game.config.difficulty}
-        livesRemaining={game.livesRemaining}
-        seconds={0}
-        paused={false}
-        onTogglePause={() => {}}
-        boardPixelWidth={boardPixelWidth}
-      />
-      <Board
-        board={game.board}
-        selected={null}
-        highlightDigit={null}
-        cellSize={44}
-        onSelect={() => {}}
-      />
-      <SeedFooter seed={seed} />
-    </View>
+    <GameScreenBase
+      modeLabel="Daily"
+      getPuzzle={getPuzzle}
+      persistenceKey={persistenceKey}
+      onRecord={onRecord}
+      enableNewGame={false}
+    />
   );
 }
