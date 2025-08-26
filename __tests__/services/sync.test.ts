@@ -63,7 +63,6 @@ describe('sync service (#53)', () => {
   it('pushes and lists saved puzzles for the signed-in user', async () => {
     process.env['EXPO_PUBLIC_SUPABASE_URL'] = 'https://example.supabase.co';
     process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'] = 'anon';
-    process.env['NODE_ENV'] = 'test';
     jest.resetModules();
     const { pushSavedPuzzle, listSavedPuzzles } = require('../../app/services/sync');
 
