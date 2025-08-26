@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/cynnix-inc/sudoku/compare/v1.7.0...v1.8.0) (2025-08-26)
+
+
+### Features
+
+* **epic-302:** Gameplay screen unification → staging ([#311](https://github.com/cynnix-inc/sudoku/issues/311)) ([b598fd4](https://github.com/cynnix-inc/sudoku/commit/b598fd4241336331b9600df9c65e5605840a7df3))
+
 ## [1.7.0](https://github.com/cynnix-inc/sudoku/compare/v1.6.0...v1.7.0) (2025-08-26)
 
 
