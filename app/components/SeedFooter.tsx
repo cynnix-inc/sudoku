@@ -12,6 +12,8 @@ type MinimalNavigator = { clipboard?: MinimalClipboard };
 export default function SeedFooter({ seed }: SeedFooterProps) {
   const theme = useContext(ThemeContext);
   const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   async function copySeedToClipboard(text: string) {
     try {
@@ -59,16 +61,29 @@ export default function SeedFooter({ seed }: SeedFooterProps) {
       <Pressable
         onPress={() => copySeedToClipboard(seed)}
         accessibilityRole="button"
-        accessibilityLabel="Seed footer"
+        accessibilityLabel="Copy seed"
         accessibilityHint="Tap to copy the puzzle seed to the clipboard"
-        style={{ paddingHorizontal: 4, paddingVertical: 2 }}
+        onHoverIn={() => setHovered(true)}
+        onHoverOut={() => setHovered(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          paddingHorizontal: 4,
+          paddingVertical: 2,
+          // Web affordances
+          cursor: Platform.OS === 'web' ? 'pointer' : undefined,
+          outlineStyle: 'solid',
+          outlineWidth: focused ? 2 : 0,
+          outlineColor: focused ? (theme.isDark ? '#60a5fa' : '#2563eb') : 'transparent',
+          borderRadius: 4,
+        }}
       >
         <Text
           style={{
             fontSize: 12,
-            opacity: 0.6,
+            opacity: hovered || focused ? 0.8 : 0.6,
             color: theme.foreground,
-            textDecorationLine: 'none',
+            textDecorationLine: hovered || focused ? 'underline' : 'none',
           }}
         >
           {seed}

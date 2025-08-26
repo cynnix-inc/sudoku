@@ -13,7 +13,7 @@ describe('ClassicScreen header/footer', () => {
 
   it('renders numeric seed in footer (tappable to copy)', () => {
     render(<ClassicScreen />);
-    const seedFooter = screen.getByLabelText('Seed footer');
+    const seedFooter = screen.getByLabelText('Copy seed');
     expect(seedFooter).toHaveTextContent(/^\s*\d+\s*$/);
   });
 
