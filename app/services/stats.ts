@@ -129,3 +129,79 @@ export async function recordDailyResult(
     dateUTC,
   });
 }
+
+export type Streaks = { current: number; best: number };
+
+function parseUTCDateToDayIndex(yyyyMMdd: string): number | null {
+  if (!/^\d{8}$/.test(yyyyMMdd)) return null;
+  const y = Number(yyyyMMdd.slice(0, 4));
+  const m = Number(yyyyMMdd.slice(4, 6)) - 1;
+  const d = Number(yyyyMMdd.slice(6, 8));
+  const ms = Date.UTC(y, m, d);
+  return Math.floor(ms / 86400000);
+}
+
+/**
+ * Compute current and best daily win streaks (by UTC date) from a list of results.
+ * - Multiple entries per day are collapsed: a day counts as a win if any result is a win.
+ * - Current streak counts consecutive winning days starting from the most recent winning day
+ *   and stops at the first gap.
+ */
+export function computeStreaks(results: DailyResult[]): Streaks {
+  if (!Array.isArray(results) || results.length === 0) return { current: 0, best: 0 };
+
+  // Collapse to per-day win flags
+  const dayToWin = new Map<number, boolean>();
+  for (const r of results) {
+    const day = parseUTCDateToDayIndex(r.date);
+    if (day == null) continue;
+    if (r.result === 'win') {
+      dayToWin.set(day, true);
+    } else if (!dayToWin.has(day)) {
+      dayToWin.set(day, false);
+    }
+  }
+
+  // Keep only winning days; gaps implicitly break streaks
+  const winDays = Array.from(dayToWin.entries())
+    .filter(([, isWin]) => isWin)
+    .map(([day]) => day)
+    .sort((a, b) => b - a); // newest first
+
+  if (winDays.length === 0) return { current: 0, best: 0 };
+
+  let best = 0;
+  let current = 0;
+  let temp = 0;
+  let prev: number | null = null;
+  let atHead = true;
+
+  for (const day of winDays) {
+    if (prev == null) {
+      temp = 1;
+      current = 1; // first winning day always sets current streak to at least 1
+    } else if (day === prev - 1) {
+      temp += 1;
+      if (atHead) current = temp;
+    } else {
+      // gap encountered; end of current streak window
+      atHead = false;
+      temp = 1;
+    }
+    if (temp > best) best = temp;
+    prev = day;
+  }
+
+  return { current, best };
+}
+
+export async function getStreaks(): Promise<Streaks> {
+  const stats = (await loadStats()) ?? {
+    schemaVersion: 2 as const,
+    totals: { played: 0, wins: 0, losses: 0 },
+    bestTimeByDifficulty: {},
+    recentDailyResults: [],
+    lastCalculated: 0,
+  };
+  return computeStreaks(stats.recentDailyResults);
+}
