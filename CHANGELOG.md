@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/cynnix-inc/sudoku/compare/v1.6.0...v1.7.0) (2025-08-26)
+
+
+### Features
+
+* **epic-20:** Storage & Sync – finalize into staging ([#300](https://github.com/cynnix-inc/sudoku/issues/300)) ([1c044d8](https://github.com/cynnix-inc/sudoku/commit/1c044d8f25d20f92d1002981d177968c06b65799))
+
 ## [1.6.0](https://github.com/cynnix-inc/sudoku/compare/v1.5.0...v1.6.0) (2025-08-26)
 
 
