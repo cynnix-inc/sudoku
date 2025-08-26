@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/cynnix-inc/sudoku/compare/v1.5.0...v1.6.0) (2025-08-26)
+
+
+### Features
+
+* **ui:** V1 cleanup, branding, SPA nav & tests — Epic [#201](https://github.com/cynnix-inc/sudoku/issues/201) ([#289](https://github.com/cynnix-inc/sudoku/issues/289)) ([fc20d28](https://github.com/cynnix-inc/sudoku/commit/fc20d28a26a1f93ce8f1d7613f820850b324bd7e))
+
 ## [1.5.0](https://github.com/cynnix-inc/sudoku/compare/v1.4.0...v1.5.0) (2025-08-26)
 
 
