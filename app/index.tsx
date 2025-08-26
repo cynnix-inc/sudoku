@@ -2,11 +2,12 @@ import React, { useContext, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { ThemeContext } from './_layout';
 import ClassicScreen from './classic';
+import SettingsScreen from './settings.screen';
 import DailyScreen from './daily.screen';
 
 export default function IndexScreen() {
   const theme = useContext(ThemeContext);
-  const [screen, setScreen] = useState<'home' | 'classic' | 'daily'>('home');
+  const [screen, setScreen] = useState<'home' | 'classic' | 'daily' | 'settings'>('home');
 
   if (screen === 'classic') {
     return (
@@ -46,6 +47,25 @@ export default function IndexScreen() {
     );
   }
 
+  if (screen === 'settings') {
+    return (
+      <View style={{ flex: 1 }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 12, alignItems: 'flex-start' }}>
+          <Pressable
+            onPress={() => setScreen('home')}
+            accessibilityRole="button"
+            accessibilityLabel="Return Home"
+            hitSlop={10}
+            style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+          >
+            <Text style={{ color: theme.foreground, fontSize: 16 }}>{'← Home'}</Text>
+          </Pressable>
+        </View>
+        <SettingsScreen />
+      </View>
+    );
+  }
+
   return (
     <View
       style={{
@@ -78,6 +98,16 @@ export default function IndexScreen() {
       >
         <Text style={{ fontSize: 18, marginTop: 12, color: theme.isDark ? '#93c5fd' : '#2563eb' }}>
           Play Daily
+        </Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => setScreen('settings')}
+        accessibilityRole="button"
+        accessibilityLabel="Go to Settings"
+      >
+        <Text style={{ fontSize: 18, marginTop: 12, color: theme.isDark ? '#93c5fd' : '#2563eb' }}>
+          Settings
         </Text>
       </Pressable>
     </View>
