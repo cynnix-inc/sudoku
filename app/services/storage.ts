@@ -30,6 +30,56 @@ export async function loadProgress<T>(key: string): Promise<T | null> {
   return null;
 }
 
+// Unified storage key helpers for the Sudoku app namespace
+const STORAGE_PREFIX = 'sudoku-';
+
+export const storageKeys = {
+  settings(): string {
+    return `${STORAGE_PREFIX}settings`;
+  },
+  stats(): string {
+    return `${STORAGE_PREFIX}stats`;
+  },
+  daily(utcDate: string): string {
+    return `${STORAGE_PREFIX}daily-${utcDate}`;
+  },
+};
+
+function keyMatchesNamespace(key: string, namespace?: string): boolean {
+  if (!key.startsWith(STORAGE_PREFIX)) return false;
+  if (!namespace) return true; // entire sudoku-* namespace
+  return key.startsWith(`${STORAGE_PREFIX}${namespace}`);
+}
+
+// Clear keys in the sudoku namespace. If namespace omitted, clears all sudoku-* keys.
+export function clearNamespace(namespace?: 'settings' | 'stats' | 'daily' | string): void {
+  // memory store
+  for (const key of Array.from(memoryStore.keys())) {
+    if (keyMatchesNamespace(key, namespace)) {
+      memoryStore.delete(key);
+    }
+  }
+  // localStorage
+  if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage) {
+    try {
+      // Iterate backwards because removing items mutates length
+      for (let i = window.localStorage.length - 1; i >= 0; i--) {
+        const k = window.localStorage.key(i);
+        if (k && keyMatchesNamespace(k, namespace)) {
+          window.localStorage.removeItem(k);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+// Clear all sudoku-* keys across stores
+export function clearAllSudoku(): void {
+  clearNamespace(undefined);
+}
+
 // Test-only helpers to avoid cross-test leakage when using storage fallbacks or jsdom localStorage
 export function __TEST_ONLY__clearMemoryStore(): void {
   memoryStore.clear();
