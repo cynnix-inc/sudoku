@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/cynnix-inc/sudoku/compare/v1.4.0...v1.5.0) (2025-08-26)
+
+
+### Features
+
+* **ui:** V1 cleanup, branding, seed affordances — Epic [#201](https://github.com/cynnix-inc/sudoku/issues/201) ([#275](https://github.com/cynnix-inc/sudoku/issues/275)) ([3b8353a](https://github.com/cynnix-inc/sudoku/commit/3b8353a015a830ec5c3e9c58a610f8cf89bcbbbc))
+
 ## [1.4.0](https://github.com/cynnix-inc/sudoku/compare/v1.3.0...v1.4.0) (2025-08-25)
 
 
