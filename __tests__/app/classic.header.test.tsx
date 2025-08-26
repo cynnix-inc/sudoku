@@ -13,7 +13,7 @@ describe('ClassicScreen header/footer', () => {
 
   it('renders numeric seed in footer (tappable to copy)', () => {
     render(<ClassicScreen />);
-    const seedFooter = screen.getByLabelText('Seed footer');
+    const seedFooter = screen.getByLabelText('Copy seed');
     expect(seedFooter).toHaveTextContent(/^\s*\d+\s*$/);
   });
 
@@ -36,5 +36,11 @@ describe('ClassicScreen header/footer', () => {
     expect(time.props.style.position).toBe('absolute');
     // Now offset by 24 to make room for the pause icon
     expect(time.props.style.right).toBe(24);
+  });
+
+  it('does not render textual prefixes for Mode/Difficulty (ADR-0004)', () => {
+    render(<ClassicScreen />);
+    expect(screen.queryByText(/\bMode:/i)).toBeNull();
+    expect(screen.queryByText(/\bDifficulty:/i)).toBeNull();
   });
 });
