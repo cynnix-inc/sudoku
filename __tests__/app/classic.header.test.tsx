@@ -37,4 +37,10 @@ describe('ClassicScreen header/footer', () => {
     // Now offset by 24 to make room for the pause icon
     expect(time.props.style.right).toBe(24);
   });
+
+  it('does not render textual prefixes for Mode/Difficulty (ADR-0004)', () => {
+    render(<ClassicScreen />);
+    expect(screen.queryByText(/\bMode:/i)).toBeNull();
+    expect(screen.queryByText(/\bDifficulty:/i)).toBeNull();
+  });
 });
