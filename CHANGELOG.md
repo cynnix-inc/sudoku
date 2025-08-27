@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.0](https://github.com/cynnix-inc/sudoku/compare/v1.10.0...v1.11.0) (2025-08-27)
+
+
+### Features
+
+* **epic:** work on issue [#164](https://github.com/cynnix-inc/sudoku/issues/164) - [Hints] Hint system integration and UI controls ([dba4dc3](https://github.com/cynnix-inc/sudoku/commit/dba4dc3bcb95d3956a372e5987e0dc517cacd689))
+* **epic:** work on issue [#165](https://github.com/cynnix-inc/sudoku/issues/165) - [Hints] Hint state persistence and game integration ([7039f39](https://github.com/cynnix-inc/sudoku/commit/7039f391af9f59240d28d80daba44dad113c8e6f))
+* **epic:** work on issue [#41](https://github.com/cynnix-inc/sudoku/issues/41) - [Hints] Direct hint (+30s) ([76616fd](https://github.com/cynnix-inc/sudoku/commit/76616fd00845397e304864794f1746f3de279e64))
+* **epic:** work on issue [#42](https://github.com/cynnix-inc/sudoku/issues/42) - [Hints] Logic guidance hint (+30s) ([d271a44](https://github.com/cynnix-inc/sudoku/commit/d271a4424160fb5bac73e6754012d0ab5aec0aa6))
+* **epic:** work on issue [#43](https://github.com/cynnix-inc/sudoku/issues/43) - [Hints] Per-difficulty limits and UI disabling ([f10e514](https://github.com/cynnix-inc/sudoku/commit/f10e51405d8b9477910b85c27b068573438c885c))
+* **epic:** work on issue [#44](https://github.com/cynnix-inc/sudoku/issues/44) - [Hints] Best-time restriction when any hint used ([3e12575](https://github.com/cynnix-inc/sudoku/commit/3e12575219f352f4acbe7ec04a0e4e3abc7613e7))
+
 ## [1.10.0](https://github.com/cynnix-inc/sudoku/compare/v1.9.0...v1.10.0) (2025-08-27)
 
 
