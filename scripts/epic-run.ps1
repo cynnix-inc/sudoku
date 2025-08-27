@@ -26,12 +26,24 @@ function Test-GhAuth {
 }
 
 function Get-DefaultBranch {
+  if ($env:EPIC_BASE_BRANCH) { return $env:EPIC_BASE_BRANCH }
+  # Prefer 'staging' if it exists
   if (Test-GhAuth) {
+    try {
+      $staging = gh api repos/:owner/:repo/branches/staging --jq '.name' 2>$null
+      if ($staging) { return 'staging' }
+    } catch {}
     try {
       $branch = gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name'
       if ($branch) { return $branch }
     } catch {}
   }
+  try {
+    if (Test-CommandPresent 'git') {
+      $null = git ls-remote --heads origin staging 2>$null
+      if ($LASTEXITCODE -eq 0) { return 'staging' }
+    }
+  } catch {}
   return 'staging'
 }
 
@@ -69,6 +81,8 @@ function Ensure-GitIntegrationBranch {
   } else {
     git switch -c $EpicBranch "origin/$BaseBranch" | Out-Null
   }
+  # Ensure remote branch exists for PR base
+  try { git push -u origin $EpicBranch | Out-Null } catch { Write-Warning "Could not push $EpicBranch to origin (may already exist)." }
 }
 
 function Get-SubIssuesForEpic {
