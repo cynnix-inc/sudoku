@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/cynnix-inc/sudoku/compare/v1.8.0...v1.9.0) (2025-08-27)
+
+
+### Features
+
+* **daily:** finalize Epic [#15](https://github.com/cynnix-inc/sudoku/issues/15) to staging ([#316](https://github.com/cynnix-inc/sudoku/issues/316)) ([bce9263](https://github.com/cynnix-inc/sudoku/commit/bce9263981976b1b8c2981793592d467dcdb4406))
+
 ## [1.8.0](https://github.com/cynnix-inc/sudoku/compare/v1.7.0...v1.8.0) (2025-08-26)
 
 
