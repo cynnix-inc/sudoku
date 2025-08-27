@@ -139,9 +139,9 @@ if ($ghAuth) {
 
 # Secrets
 if ($ghAuth) {
-  $hasApp = Test-SecretPresent 'EPIC_AUTOMATION_TOKEN'
-  if ($hasApp) { $rows.Add((ResultRow 'secrets present' 'PASS' 'EPIC_AUTOMATION_TOKEN configured')) | Out-Null }
-  else { $rows.Add((ResultRow 'secrets present' 'WARN' 'If default GITHUB_TOKEN is insufficient, add EPIC_AUTOMATION_TOKEN with repo,workflow scopes')) | Out-Null }
+  $hasApp = Test-SecretPresent 'RELEASE_PLEASE_TOKEN'
+  if ($hasApp) { $rows.Add((ResultRow 'secrets present' 'PASS' 'RELEASE_PLEASE_TOKEN configured')) | Out-Null }
+  else { $rows.Add((ResultRow 'secrets present' 'WARN' 'Add RELEASE_PLEASE_TOKEN with repo,workflow scopes if elevated access needed')) | Out-Null }
 } else { $rows.Add((ResultRow 'secrets present' 'WARN' 'Authenticate gh to verify')) | Out-Null }
 
 Print-Table $rows

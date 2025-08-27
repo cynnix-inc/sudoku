@@ -19,6 +19,8 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
     if: >-
       ${{ github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule' ||
