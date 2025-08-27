@@ -1,9 +1,9 @@
 {
   "completedIssues": [],
   "startTime": "2025-08-27 05:48:55",
-  "lastUpdate": "2025-08-27 05:51:07",
+  "lastUpdate": "2025-08-27 05:51:51",
   "epicNumber": 18,
   "epicBranch": "epic/18",
-  "currentIssue": "Processing #164 - [Hints] Hint system integration and UI controls",
-  "failedIssues": [42, 43, 44, 41]
+  "currentIssue": "Processing #165 - [Hints] Hint state persistence and game integration",
+  "failedIssues": [42, 43, 44, 41, 164]
 }
