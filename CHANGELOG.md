@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/cynnix-inc/sudoku/compare/v1.9.0...v1.10.0) (2025-08-27)
+
+
+### Features
+
+* add comprehensive deployment documentation for Android and iOS ([#319](https://github.com/cynnix-inc/sudoku/issues/319)) ([f9b3394](https://github.com/cynnix-inc/sudoku/commit/f9b33943be2f379518b963afb38b04e2910fb7bf))
+
 ## [1.9.0](https://github.com/cynnix-inc/sudoku/compare/v1.8.0...v1.9.0) (2025-08-27)
 
 
