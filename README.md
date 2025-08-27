@@ -15,8 +15,11 @@
 - ADRs: `docs/adr/` (see `docs/adr/README.md`)
 - Acceptance (Gherkin): `docs/qa/features/`
 - Database & migrations (Supabase): `docs/db.md`
+- **Deployment**: [deployment-overview.md](docs/deployment-overview.md)
 - Android setup: `docs/android-setup.md`
+- Android deployment: `docs/android-deployment.md`
 - iOS setup: `docs/ios-setup.md`
+- iOS deployment: `docs/ios-deployment.md`
 
 ## Contributing
 
