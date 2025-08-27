@@ -1,9 +1,9 @@
 {
   "epicNumber": 18,
   "epicBranch": "epic/18",
-  "lastUpdate": "2025-08-27 06:10:41",
-  "currentIssue": "Processing #41 - [Hints] Direct hint (+30s)",
+  "lastUpdate": "2025-08-27 06:11:05",
+  "currentIssue": "Processing #164 - [Hints] Hint system integration and UI controls",
   "completedIssues": [],
   "startTime": "2025-08-27 06:09:25",
-  "failedIssues": [42, 43, 44]
+  "failedIssues": [42, 43, 44, 41]
 }
