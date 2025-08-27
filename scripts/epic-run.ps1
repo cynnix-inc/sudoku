@@ -98,8 +98,7 @@ function Update-EpicChecklistComment {
   $marker = "[epic-runner-checklist]"
   $body = "${marker}`n" + ($Lines -join "`n")
   # Try to update last comment with marker; else create
-  $existingId = gh issue view $EpicNumber --json comments --jq 
-    '.comments | map(select(.body|contains("[epic-runner-checklist]"))) | last?.id'
+  $existingId = gh issue view $EpicNumber --json comments --jq '.comments | map(select(.body|contains("[epic-runner-checklist]"))) | last?.id'
   if ($existingId) {
     gh api repos/:owner/:repo/issues/comments/$existingId -X PATCH -f body="$body" | Out-Null
   } else {
