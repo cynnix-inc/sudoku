@@ -449,7 +449,9 @@ foreach ($issue in $subIssues) {
         Write-Host "        🌿 Creating new branch from epic branch..."
         try {
           # First, ensure we're on the epic branch
+          Write-Host "        🔍 Current branch before epic switch: $(git branch --show-current)"
           git switch $epicBranch | Out-Null
+          Write-Host "        🔍 Switched to epic branch: $(git branch --show-current)"
           
           # Check if the issue branch already exists
           if (git show-ref --verify --quiet "refs/heads/$branch") {
@@ -460,17 +462,22 @@ foreach ($issue in $subIssues) {
             Write-Host "        ✅ Switched to existing branch and rebased"
           } else {
             # Create the issue branch from the current epic branch
-            git switch -c $branch | Out-Null
-            Write-Host "        ✅ New branch created"
+            Write-Host "        🔍 Creating new branch '$branch' from epic branch..."
+            Write-Host "        📝 Executing: git switch -c $branch"
+            $result = git switch -c $branch 2>&1
+            Write-Host "        📄 Git switch result: $result"
+            Write-Host "        ✅ New branch created: $(git branch --show-current)"
           }
           
           # Ensure we're on the issue branch for commits
           $currentBranch = git branch --show-current
+          Write-Host "        🔍 Current branch after creation: $currentBranch"
           if ($currentBranch -ne $branch) {
-            Write-Host "        🔄 Switching to issue branch $branch..."
+            Write-Host "        ⚠️  Branch mismatch! Expected: $branch, Got: $currentBranch"
+            Write-Host "        🔄 Forcing switch to issue branch $branch..."
             git switch $branch | Out-Null
+            Write-Host "        🔍 Confirmed on branch: $(git branch --show-current)"
           }
-          Write-Host "        🔍 Confirmed on branch: $(git branch --show-current)"
         } catch {
           Write-Warning "        ⚠️  Branch creation failed, trying alternative approach..."
           try {
