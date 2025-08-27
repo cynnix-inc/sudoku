@@ -1,0 +1,46 @@
+name: epic-automation
+
+on:
+  workflow_dispatch:
+    inputs:
+      epic_number:
+        description: Epic issue number (optional)
+        required: false
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '20 3 * * *'
+
+jobs:
+  run:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/run-epic')) ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node via Volta if present
+        uses: volta-cli/action@v4
+        continue-on-error: true
+      - name: Determine epic number
+        id: epic
+        shell: bash
+        run: |
+          EPIC="${{ github.event.inputs.epic_number }}"
+          if [ -z "$EPIC" ] && [ "${{ github.event_name }}" = "issue_comment" ]; then
+            BODY="${{ github.event.comment.body }}"
+            if [[ "$BODY" =~ ^/run-epic[[:space:]]*([0-9]+)$ ]]; then
+              EPIC="${BASH_REMATCH[1]}"
+            fi
+          fi
+          echo "epic_number=$EPIC" >> $GITHUB_OUTPUT
+      - name: Run epic automation
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.EPIC_AUTOMATION_TOKEN }}
+        run: |
+          $Epic = '${{ steps.epic.outputs.epic_number }}'
+          $Args = ''
+          if ($Epic -ne '') { $Args = "-EpicNumber $Epic" }
+          ./scripts/epic-run.ps1 $Args

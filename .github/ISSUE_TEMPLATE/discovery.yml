@@ -1,0 +1,47 @@
+name: Discovery / Triage
+description: Plan a spike or triage task to reduce uncertainty
+title: "Discovery: <short title>"
+labels:
+  - type/chore
+  - status/ready
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to plan a short, timeboxed discovery.
+  - type: input
+    id: parent
+    attributes:
+      label: Parent Epic Number
+      description: Link this to the parent epic using the issue number.
+      placeholder: 14
+  - type: textarea
+    id: questions
+    attributes:
+      label: Questions to Answer
+      description: Key unknowns to investigate
+      placeholder: List questions here
+  - type: input
+    id: timebox
+    attributes:
+      label: Timebox
+      description: Duration for this discovery
+      placeholder: 1 day
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Evaluation Criteria
+      description: How will we decide?
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Deliverables
+      description: Expected outputs (doc, ADR, prototype)
+  - type: checkboxes
+    id: done
+    attributes:
+      label: Definition of Done
+      options:
+        - label: Decision recorded
+        - label: Next steps identified
+        - label: Linked to Parent epic
