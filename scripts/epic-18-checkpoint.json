@@ -1,9 +1,9 @@
 {
-  "epicNumber": 18,
-  "epicBranch": "epic/18",
-  "lastUpdate": "2025-08-27 06:11:31",
-  "currentIssue": "Processing #165 - [Hints] Hint state persistence and game integration",
   "completedIssues": [],
-  "startTime": "2025-08-27 06:09:25",
-  "failedIssues": [42, 43, 44, 41, 164]
+  "failedIssues": [],
+  "startTime": "2025-08-27 05:31:13",
+  "lastUpdate": "2025-08-27 05:31:13",
+  "currentIssue": "Processing #42 - [Hints] Logic guidance hint (+30s)",
+  "epicBranch": "epic/18",
+  "epicNumber": 18
 }
