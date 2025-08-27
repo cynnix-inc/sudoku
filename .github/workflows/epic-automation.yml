@@ -38,7 +38,7 @@ jobs:
       - name: Run epic automation
         shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.EPIC_AUTOMATION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: |
           $Epic = '${{ steps.epic.outputs.epic_number }}'
           $Args = ''
