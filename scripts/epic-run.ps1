@@ -511,6 +511,11 @@ This is a placeholder commit for issue #$n under epic #$EpicNumber.
       git commit -m "feat(epic): initial commit for issue #$n - $title" | Out-Null
       Write-Host "        ✅ Placeholder commit created"
     }
+    
+    # Debug: Show current branch and commit status
+    Write-Host "        🔍 Current branch: $(git branch --show-current)"
+    Write-Host "        🔍 Latest commit: $(git log --oneline -1)"
+    Write-Host "        🔍 Branch difference from epic: $(git log --oneline $epicBranch..HEAD | wc -l) commits ahead"
 
     $ci = Get-CIScript
     if ($ci) {
@@ -518,9 +523,22 @@ This is a placeholder commit for issue #$n under epic #$EpicNumber.
       iex $ci
     }
 
+    Write-Host "        🔍 Checking for existing PR on branch $branch..."
     $prUrl = gh pr view --head $branch --json number,url --jq '.url' 2>$null
     if (-not $prUrl) {
+      Write-Host "        📝 Creating new PR from $branch to $epicBranch..."
+      Write-Host "        🔍 Branch $branch has $(git log --oneline $epicBranch..HEAD | wc -l) commits ahead of $epicBranch"
+      
+      # Try to create PR with explicit base and head
       $prUrl = gh pr create --base $epicBranch --head $branch --title "issue #$n -> epic #$EpicNumber" --body "Automated PR for #$n into $epicBranch" --draft=false --fill | Select-String -Pattern 'https?://\S+' | ForEach-Object { $_.Matches[0].Value } | Select-Object -First 1
+      
+      if ($prUrl) {
+        Write-Host "        ✅ PR created successfully: $prUrl"
+      } else {
+        Write-Host "        ❌ PR creation failed"
+      }
+    } else {
+      Write-Host "        ✅ Found existing PR: $prUrl"
     }
     if ($prUrl) {
       $prNum = gh pr view $prUrl --json number --jq '.number'
