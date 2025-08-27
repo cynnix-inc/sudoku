@@ -1,9 +1,9 @@
 {
   "completedIssues": [],
-  "failedIssues": [],
+  "failedIssues": [42],
   "startTime": "2025-08-27 05:31:13",
-  "lastUpdate": "2025-08-27 05:31:13",
-  "currentIssue": "Processing #42 - [Hints] Logic guidance hint (+30s)",
+  "lastUpdate": "2025-08-27 05:31:39",
+  "currentIssue": "Processing #43 - [Hints] Per-difficulty limits and UI disabling",
   "epicBranch": "epic/18",
   "epicNumber": 18
 }
