@@ -1,0 +1,68 @@
+name: epic-automation
+
+on:
+  workflow_dispatch:
+    inputs:
+      epic_number:
+        description: "Epic number (optional)"
+        required: false
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule' ||
+          (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/run-epic')) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node (20.x)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Extract Epic number from comment
+        id: extract
+        if: ${{ github.event_name == 'issue_comment' }}
+        shell: pwsh
+        run: |
+          $body = @"
+          ${{ github.event.comment.body }}
+          "@
+          $m = [regex]::Match($body, '/run-epic\s*(\d+)?')
+          if ($m.Success -and $m.Groups[1].Value) {
+            "epic_number=$($m.Groups[1].Value)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
+      - name: Run Epic (dispatch)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: pwsh
+        run: pwsh -File scripts/epic-run.ps1 -EpicNumber ${{ inputs.epic_number }}
+
+      - name: Run Epic (comment)
+        if: ${{ github.event_name == 'issue_comment' }}
+        shell: pwsh
+        run: |
+          $num = '${{ steps.extract.outputs.epic_number }}'
+          if ($num) { pwsh -File scripts/epic-run.ps1 -EpicNumber $num } else { pwsh -File scripts/epic-run.ps1 }
+
+      - name: Run Epic (scheduled)
+        if: ${{ github.event_name == 'schedule' }}
+        shell: pwsh
+        run: pwsh -File scripts/epic-run.ps1
+

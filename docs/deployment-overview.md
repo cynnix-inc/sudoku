@@ -177,6 +177,14 @@ npm run build
 - **Web**: Netlify documentation
 - **General**: [CONTRIBUTING.md](../CONTRIBUTING.md)
 
+## Tracking
+
+### Android Deployment Epic
+
+- **Epic #324**: [Android App Deployment & Publishing](https://github.com/cynnix-inc/sudoku/issues/324)
+- **Key Issues**:
+  - #323: Missing deobfuscation file for R8/proguard obfuscation
+
 ---
 
 **Last Updated**: $(date)

@@ -1,0 +1,39 @@
+name: Discovery / Triage
+description: Analyze, scope, and prepare an item before implementation.
+title: "discovery: <short-title>"
+labels:
+  - needs-human
+  - type/chore
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to clarify scope and next steps. Link a parent Epic if applicable.
+  - type: input
+    id: parent
+    attributes:
+      label: Parent Epic (optional)
+      description: "Format: #<epic-number>"
+      placeholder: "#123"
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Background, goals, and constraints
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope & Non-Goals
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / Unknowns
+  - type: checkboxes
+    id: ready
+    attributes:
+      label: Ready for Implementation?
+      options:
+        - label: Acceptance criteria defined
+        - label: Test strategy clear
+        - label: Dependencies understood
+
