@@ -539,13 +539,14 @@ This is a placeholder commit for issue #$n under epic #$EpicNumber.
     }
 
     Write-Host "        🔍 Checking for existing PR on branch $branch..."
-    $prUrl = gh pr view --head $branch --json number,url --jq '.url' 2>$null
+    # gh pr view no longer supports --head; list and pick first open PR URL
+    $prUrl = gh pr list --head $branch --state open --json url --jq '.[0].url' 2>$null
     if (-not $prUrl) {
       Write-Host "        📝 Creating new PR from $branch to $epicBranch..."
       Write-Host "        🔍 Branch $branch has $(git log --oneline $epicBranch..HEAD | wc -l) commits ahead of $epicBranch"
       
-      # Try to create PR with explicit base and head
-      $prUrl = gh pr create --base $epicBranch --head $branch --title "issue #$n -> epic #$EpicNumber" --body "Automated PR for #$n into $epicBranch" --draft=false --fill | Select-String -Pattern 'https?://\S+' | ForEach-Object { $_.Matches[0].Value } | Select-Object -First 1
+      # Create PR with explicit base/head; avoid --fill to prevent default inference errors
+      $prUrl = gh pr create --base $epicBranch --head $branch --title "issue #$n -> epic #$EpicNumber" --body "Automated PR for #$n into $epicBranch" --draft=false | Select-String -Pattern 'https?://\S+' | ForEach-Object { $_.Matches[0].Value } | Select-Object -First 1
       
       if ($prUrl) {
         Write-Host "        ✅ PR created successfully: $prUrl"
