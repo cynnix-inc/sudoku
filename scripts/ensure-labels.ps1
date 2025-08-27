@@ -41,6 +41,12 @@ Ensure-Label 'priority/p1' 'd93f0b' 'High priority'
 Ensure-Label 'priority/p2' 'fbca04' 'Medium priority'
 Ensure-Label 'priority/p3' 'c5def5' 'Low priority'
 
+# Meta signals used for auto-select (Prompt 4)
+Ensure-Label 'mvp-critical' 'b60205' 'Blocks MVP progress'
+Ensure-Label 'hotfix' 'd73a4a' 'Hotfix scope'
+Ensure-Label 'security' 'b60205' 'Security-related work'
+Ensure-Label 'dep/unblocker' '1d76db' 'Unblocks dependencies or other epics'
+
 # Area
 Ensure-Label 'area/core' '1d76db' 'Core systems'
 Ensure-Label 'area/ui' '5319e7' 'User interface'

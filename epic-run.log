@@ -1,0 +1,177 @@
+**********************
+PowerShell transcript start
+Start time: 20250827155155
+Username: AzureAD\NeilGroulx
+RunAs User: AzureAD\NeilGroulx
+Configuration Name: 
+Machine: YT-1300 (Microsoft Windows NT 10.0.22631.0)
+Host Application: C:\Program Files\PowerShell\7\pwsh.dll -noexit -command try { . "c:\Users\NeilGroulx\AppData\Local\Programs\cursor\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 272116
+PSVersion: 7.5.2
+PSEdition: Core
+GitCommitId: 7.5.2
+OS: Microsoft Windows 10.0.22631
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+Transcript started, output file is epic-run.log
+== Epic Runner ==
+Dry-Run: False
+gh auth: True
+Default base branch: staging
+Epic number: 18
+  🔄 Setting up Git integration branch 'epic/18' from 'staging'...
+    📥 Fetching all branches and pruning...
+    🌿 Creating local branch 'staging' from origin...
+    🔀 Switching to base branch 'staging'...
+    ⬇️  Pulling latest changes from 'staging'...
+    🌿 Creating new epic branch 'epic/18' from 'staging'...
+    📤 Pushing epic branch to origin...
+      ✅ Epic branch pushed successfully
+  ✅ Git integration branch setup complete
+  🔍 Fetching sub-issues for epic #18...
+    🔍 Verifying epic #18 exists...
+    ✅ Epic found: #18 - [Epic] Hints ΓÇô Direct & Logic (+30s, limits) [OPEN]
+      🔍 Trying method: gh-sub-issue...
+        📝 Executing: gh sub-issue list 18 -R cynnix-inc/sudoku --json number,title,state
+        📄 Raw output length: 34 characters
+        📄 Raw output: '{   "subIssues": [     {       "number": 42,       "state": "open",       "title": "[Hints] Logic guidance hint (+30s)"     },     {       "number": 43,       "state": "open",       "title": "[Hints] Per-difficulty limits and UI disabling"     },     {       "number": 44,       "state": "open",       "title": "[Hints] Best-time restriction when any hint used"     },     {       "number": 41,       "state": "open",       "title": "[Hints] Direct hint (+30s)"     },     {       "number": 164,       "state": "open",       "title": "[Hints] Hint system integration and UI controls"     },     {       "number": 165,       "state": "open",       "title": "[Hints] Hint state persistence and game integration"     }   ] }'
+        📋 Detected gh-sub-issue format with 6 items
+      ✅ Found 6 valid sub-issues via gh-sub-issue
+    📋 Found 6 sub-issues
+    🔍 Sub-issue details:
+      - #42: [Hints] Logic guidance hint (+30s) [open]
+      - #43: [Hints] Per-difficulty limits and UI disabling [open]
+      - #44: [Hints] Best-time restriction when any hint used [open]
+      - #41: [Hints] Direct hint (+30s) [open]
+      - #164: [Hints] Hint system integration and UI controls [open]
+      - #165: [Hints] Hint state persistence and game integration [open]
+  🚀 Processing 6 sub-issues...
+    [1/6] Processing issue #42 - [Hints] Logic guidance hint (+30s)
+      🌿 Working on branch: issue-42-epic-18
+        📥 Fetching latest from epic branch...
+        🌿 Creating new branch from epic branch...
+        🔍 Current branch before epic switch: staging
+        🔍 Switched to epic branch: epic/18
+        🔍 Creating new branch 'issue-42-epic-18' from epic branch...
+        📝 Executing: git switch -c issue-42-epic-18
+        📄 Git switch result: fatal: a branch named 'issue-42-epic-18' already exists
+        ✅ New branch created: epic/18
+        🔍 Current branch after creation: epic/18
+        ⚠️  Branch mismatch! Expected: issue-42-epic-18, Got: epic/18
+        🔄 Forcing switch to issue branch issue-42-epic-18...
+        🔍 Confirmed on branch: issue-42-epic-18
+        🔍 Checking for changes to commit...
+        📝 Found changes, committing them...
+        ✅ Changes committed
+        🔍 Current branch: issue-42-epic-18
+        🔍 Latest commit: 7399e2d chore(epic): complete rebase; remove checkpoint artifacts
+
+
+        ⛔ Issue #42 failed with error and checkpoint saved
+    [2/6] Processing issue #43 - [Hints] Per-difficulty limits and UI disabling
+      🌿 Working on branch: issue-43-epic-18
+        📥 Fetching latest from epic branch...
+        🌿 Creating new branch from epic branch...
+        🔍 Current branch before epic switch: issue-42-epic-18
+        🔍 Switched to epic branch: epic/18
+        🔍 Creating new branch 'issue-43-epic-18' from epic branch...
+        📝 Executing: git switch -c issue-43-epic-18
+        📄 Git switch result: fatal: a branch named 'issue-43-epic-18' already exists
+        ✅ New branch created: epic/18
+        🔍 Current branch after creation: epic/18
+        ⚠️  Branch mismatch! Expected: issue-43-epic-18, Got: epic/18
+        🔄 Forcing switch to issue branch issue-43-epic-18...
+        🔍 Confirmed on branch: issue-43-epic-18
+        🔍 Checking for changes to commit...
+        📝 Found changes, committing them...
+        ✅ Changes committed
+        🔍 Current branch: issue-43-epic-18
+        🔍 Latest commit: 6b33d9a fix(epic-runner): robust PR lookup and creation flags
+
+
+        ⛔ Issue #43 failed with error and checkpoint saved
+    [3/6] Processing issue #44 - [Hints] Best-time restriction when any hint used
+      🌿 Working on branch: issue-44-epic-18
+        📥 Fetching latest from epic branch...
+        🌿 Creating new branch from epic branch...
+        🔍 Current branch before epic switch: issue-43-epic-18
+        🔍 Switched to epic branch: epic/18
+        🔍 Creating new branch 'issue-44-epic-18' from epic branch...
+        📝 Executing: git switch -c issue-44-epic-18
+        📄 Git switch result: fatal: a branch named 'issue-44-epic-18' already exists
+        ✅ New branch created: epic/18
+        🔍 Current branch after creation: epic/18
+        ⚠️  Branch mismatch! Expected: issue-44-epic-18, Got: epic/18
+        🔄 Forcing switch to issue branch issue-44-epic-18...
+        🔍 Confirmed on branch: issue-44-epic-18
+        🔍 Checking for changes to commit...
+        📝 Found changes, committing them...
+        ✅ Changes committed
+        🔍 Current branch: issue-44-epic-18
+        🔍 Latest commit: 03a751d chore(epic-automation): add runner, workflow, templates, rules; rebase #322 onto staging (#322)
+
+
+        ⛔ Issue #44 failed with error and checkpoint saved
+    [4/6] Processing issue #41 - [Hints] Direct hint (+30s)
+      🌿 Working on branch: issue-41-epic-18
+        📥 Fetching latest from epic branch...
+        🌿 Creating new branch from epic branch...
+        🔍 Current branch before epic switch: issue-44-epic-18
+        🔍 Switched to epic branch: epic/18
+        🔍 Creating new branch 'issue-41-epic-18' from epic branch...
+        📝 Executing: git switch -c issue-41-epic-18
+        📄 Git switch result: fatal: a branch named 'issue-41-epic-18' already exists
+        ✅ New branch created: epic/18
+        🔍 Current branch after creation: epic/18
+        ⚠️  Branch mismatch! Expected: issue-41-epic-18, Got: epic/18
+        🔄 Forcing switch to issue branch issue-41-epic-18...
+        🔍 Confirmed on branch: issue-41-epic-18
+        🔍 Checking for changes to commit...
+        📝 Found changes, committing them...
+        ✅ Changes committed
+        🔍 Current branch: issue-41-epic-18
+        🔍 Latest commit: 03a751d chore(epic-automation): add runner, workflow, templates, rules; rebase #322 onto staging (#322)
+
+
+        ⛔ Issue #41 failed with error and checkpoint saved
+    [5/6] Processing issue #164 - [Hints] Hint system integration and UI controls
+      🌿 Working on branch: issue-164-epic-18
+        📥 Fetching latest from epic branch...
+        🌿 Creating new branch from epic branch...
+        🔍 Current branch before epic switch: issue-41-epic-18
+        🔍 Switched to epic branch: epic/18
+        🔍 Creating new branch 'issue-164-epic-18' from epic branch...
+        📝 Executing: git switch -c issue-164-epic-18
+        📄 Git switch result: fatal: a branch named 'issue-164-epic-18' already exists
+        ✅ New branch created: epic/18
+        🔍 Current branch after creation: epic/18
+        ⚠️  Branch mismatch! Expected: issue-164-epic-18, Got: epic/18
+        🔄 Forcing switch to issue branch issue-164-epic-18...
+        🔍 Confirmed on branch: issue-164-epic-18
+        🔍 Checking for changes to commit...
+        📝 Found changes, committing them...
+        ✅ Changes committed
+        🔍 Current branch: issue-164-epic-18
+        🔍 Latest commit: 03a751d chore(epic-automation): add runner, workflow, templates, rules; rebase #322 onto staging (#322)
+
+
+        ⛔ Issue #164 failed with error and checkpoint saved
+    [6/6] Processing issue #165 - [Hints] Hint state persistence and game integration
+      🌿 Working on branch: issue-165-epic-18
+        📥 Fetching latest from epic branch...
+        🌿 Creating new branch from epic branch...
+        🔍 Current branch before epic switch: issue-164-epic-18
+        🔍 Switched to epic branch: epic/18
+        🔍 Creating new branch 'issue-165-epic-18' from epic branch...
+        📝 Executing: git switch -c issue-165-epic-18
+        📄 Git switch result: fatal: a branch named 'issue-165-epic-18' already exists
+        ✅ New branch created: epic/18
+        🔍 Current branch after creation: epic/18
+        ⚠️  Branch mismatch! Expected: issue-165-epic-18, Got: epic/18
+        🔄 Forcing switch to issue branch issue-165-epic-18...
+        🔍 Confirmed on branch: issue-165-epic-18
+        🔍 Checking for changes to commit...

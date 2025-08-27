@@ -1,0 +1,15 @@
+{
+  "startTime": "2025-08-27 15:52:25",
+  "completedIssues": [],
+  "lastUpdate": "2025-08-27 15:53:08",
+  "failedIssues": [
+    42,
+    43,
+    44,
+    41,
+    164
+  ],
+  "currentIssue": "Processing #165 - [Hints] Hint state persistence and game integration",
+  "epicNumber": 18,
+  "epicBranch": "epic/18"
+}
