@@ -463,6 +463,14 @@ foreach ($issue in $subIssues) {
             git switch -c $branch | Out-Null
             Write-Host "        ✅ New branch created"
           }
+          
+          # Ensure we're on the issue branch for commits
+          $currentBranch = git branch --show-current
+          if ($currentBranch -ne $branch) {
+            Write-Host "        🔄 Switching to issue branch $branch..."
+            git switch $branch | Out-Null
+          }
+          Write-Host "        🔍 Confirmed on branch: $(git branch --show-current)"
         } catch {
           Write-Warning "        ⚠️  Branch creation failed, trying alternative approach..."
           try {
