@@ -163,6 +163,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
   },
+  loadingText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 50,
+  },
   section: {
     marginBottom: 24,
   },

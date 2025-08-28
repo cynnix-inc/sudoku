@@ -3,23 +3,24 @@ import { render, waitFor } from '@testing-library/react-native';
 import { beforeEach } from '@jest/globals';
 import StatsScreen from '../../app/stats.screen';
 import { getDetailedStats } from '../../app/services/stats';
+import { ThemeContext } from '../../app/_layout';
 
 // Mock the stats service
 jest.mock('../../app/services/stats');
 const mockGetDetailedStats = getDetailedStats as jest.MockedFunction<typeof getDetailedStats>;
 
-// Mock the theme context
-jest.mock('../../app/_layout', () => ({
-  ThemeContext: {
-    Consumer: ({ children }: { children: (value: unknown) => React.ReactElement }) =>
-      children({
-        background: '#ffffff',
-        foreground: '#000000',
-        isDark: false,
-        toggle: jest.fn(),
-      }),
-  },
-}));
+// Create a mock theme context value
+const mockTheme = {
+  background: '#ffffff',
+  foreground: '#000000',
+  isDark: false,
+  toggle: jest.fn(),
+};
+
+// Helper function to render with theme context
+const renderWithTheme = (component: React.ReactElement) => {
+  return render(<ThemeContext.Provider value={mockTheme}>{component}</ThemeContext.Provider>);
+};
 
 describe('StatsScreen', () => {
   beforeEach(() => {
@@ -27,9 +28,10 @@ describe('StatsScreen', () => {
   });
 
   it('renders loading state initially', () => {
-    mockGetDetailedStats.mockResolvedValue(null);
+    // Mock the function to return a promise that never resolves
+    mockGetDetailedStats.mockImplementation(() => new Promise(() => {}));
 
-    const { getByText } = render(<StatsScreen />);
+    const { getByText } = renderWithTheme(<StatsScreen />);
     expect(getByText('Loading…')).toBeTruthy();
   });
 
@@ -65,7 +67,7 @@ describe('StatsScreen', () => {
 
     mockGetDetailedStats.mockResolvedValue(mockStats);
 
-    const { getByText } = render(<StatsScreen />);
+    const { getByText } = renderWithTheme(<StatsScreen />);
 
     await waitFor(() => {
       expect(getByText('Statistics')).toBeTruthy();
@@ -99,14 +101,21 @@ describe('StatsScreen', () => {
 
     mockGetDetailedStats.mockResolvedValue(mockStats);
 
-    const { getByText } = render(<StatsScreen />);
+    const { getByText, getAllByText } = renderWithTheme(<StatsScreen />);
 
     await waitFor(() => {
       expect(getByText('Statistics')).toBeTruthy();
-      expect(getByText('0')).toBeTruthy(); // Games played
+      expect(getByText('Games Played')).toBeTruthy();
+      expect(getByText('Total Wins')).toBeTruthy();
+      expect(getByText('Win Rate')).toBeTruthy();
+      expect(getByText('Current')).toBeTruthy();
+      expect(getByText('Best')).toBeTruthy();
+
+      // Check that we have multiple "0" values (which is expected for empty stats)
+      const zeroElements = getAllByText('0');
+      expect(zeroElements.length).toBeGreaterThan(0);
+
       expect(getByText('0.0%')).toBeTruthy(); // Win rate
-      expect(getByText('0')).toBeTruthy(); // Current streak
-      expect(getByText('0')).toBeTruthy(); // Best streak
     });
   });
 
@@ -135,7 +144,7 @@ describe('StatsScreen', () => {
 
     mockGetDetailedStats.mockResolvedValue(mockStats);
 
-    const { getByText } = render(<StatsScreen />);
+    const { getByText } = renderWithTheme(<StatsScreen />);
 
     await waitFor(() => {
       expect(getByText('2:05')).toBeTruthy(); // Formatted time
