@@ -353,20 +353,28 @@ export type DetailedStats = {
  */
 function calculatePercentile(values: number[], percentile: number): number | null {
   if (values.length === 0) return null;
-  if (values.length === 1) return values[0];
+  if (values.length === 1) return values[0] ?? null;
 
   const sorted = [...values].sort((a, b) => a - b);
   const index = (percentile / 100) * (sorted.length - 1);
 
   if (Number.isInteger(index)) {
-    return sorted[index];
+    const result = sorted[index];
+    return result !== undefined ? result : null;
   }
 
   const lower = Math.floor(index);
   const upper = Math.ceil(index);
   const weight = index - lower;
 
-  return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+  const lowerValue = sorted[lower];
+  const upperValue = sorted[upper];
+
+  if (lowerValue === undefined || upperValue === undefined) {
+    return null;
+  }
+
+  return lowerValue * (1 - weight) + upperValue * weight;
 }
 
 /**
