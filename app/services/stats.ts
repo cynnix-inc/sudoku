@@ -346,6 +346,7 @@ export type DetailedStats = {
     recentAverageTime: number | null; // average time for last 10 wins
     improvementTrend: 'improving' | 'declining' | 'stable';
   };
+  gameHistory: GameHistoryEntry[];
 };
 
 /**
@@ -499,6 +500,7 @@ export async function getDetailedStats(): Promise<DetailedStats> {
         recentAverageTime: null,
         improvementTrend: 'stable',
       },
+      gameHistory: [],
     };
   }
 
@@ -546,6 +548,7 @@ export async function getDetailedStats(): Promise<DetailedStats> {
     byDifficulty,
     streaks,
     trends,
+    gameHistory: stats.gameHistory,
   };
 }
 

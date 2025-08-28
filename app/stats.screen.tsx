@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { ThemeContext } from './_layout';
 import { getDetailedStats, type DetailedStats } from './services/stats';
 import type { GameConfig } from './game/types';
+import TimeHistogram from './components/TimeHistogram';
 
 export default function StatsScreen() {
   const theme = useContext(ThemeContext);
@@ -240,9 +241,7 @@ export default function StatsScreen() {
       {/* Time Distribution */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: theme.foreground }]}>Time Distribution</Text>
-        <Text style={[styles.placeholderText, { color: theme.foreground, opacity: 0.7 }]}>
-          Histogram visualization coming soon...
-        </Text>
+        <TimeHistogram stats={stats} theme={theme} />
       </View>
     </ScrollView>
   );
