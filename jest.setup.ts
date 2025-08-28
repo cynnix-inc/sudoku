@@ -5,7 +5,6 @@ import { jest } from '@jest/globals';
 jest.mock('expo-system-ui', () => ({
   setBackgroundColorAsync: jest.fn(() => Promise.resolve()),
 }));
-
 // Minimal mock for expo-status-bar
 jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
@@ -20,7 +19,6 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
   },
 }));
-
 // Mock expo-haptics to avoid native calls in tests
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(async () => undefined),
