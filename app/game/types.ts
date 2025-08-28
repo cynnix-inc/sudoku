@@ -21,6 +21,14 @@ export type GameConfig = {
 export type GameHistoryEntry = {
   board: Board;
   livesRemaining: number;
+  hintsUsed: number;
+};
+
+export type HintState = {
+  hintsUsed: number;
+  hintsRemaining: number;
+  lastHintType?: 'direct' | 'logic';
+  lastHintTime?: number;
 };
 
 export type GameState = {
@@ -29,6 +37,7 @@ export type GameState = {
   config: GameConfig;
   livesRemaining: number;
   history: { past: GameHistoryEntry[]; future: GameHistoryEntry[] };
+  hintState: HintState;
 };
 
 export type GameAction =
@@ -36,4 +45,5 @@ export type GameAction =
   | { type: 'note'; row: number; col: number; value: Digit; present: boolean }
   | { type: 'erase'; row: number; col: number }
   | { type: 'undo' }
-  | { type: 'redo' };
+  | { type: 'redo' }
+  | { type: 'hint'; hintType: 'direct' | 'logic' };
