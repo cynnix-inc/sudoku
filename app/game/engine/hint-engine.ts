@@ -106,13 +106,16 @@ export function findLogicHint(board: Board): HintResult | null {
 
       const possibleValues = getPossibleValues(board, row, col);
       if (possibleValues.length === 1) {
-        return {
-          row,
-          col,
-          value: possibleValues[0],
-          technique: 'Naked Single',
-          explanation: `Cell (${row + 1}, ${col + 1}) can only contain ${possibleValues[0]}`,
-        };
+        const value = possibleValues[0];
+        if (value !== undefined) {
+          return {
+            row,
+            col,
+            value,
+            technique: 'Naked Single',
+            explanation: `Cell (${row + 1}, ${col + 1}) can only contain ${value}`,
+          };
+        }
       }
     }
   }
@@ -122,14 +125,17 @@ export function findLogicHint(board: Board): HintResult | null {
     for (let digit = 1; digit <= 9; digit++) {
       const possibleCells = getCellsForDigitInRow(board, row);
       if (possibleCells.length === 1) {
-        const { col } = possibleCells[0];
-        return {
-          row,
-          col,
-          value: digit as Digit,
-          technique: 'Hidden Single (Row)',
-          explanation: `${digit} can only go in cell (${row + 1}, ${col + 1}) in row ${row + 1}`,
-        };
+        const cell = possibleCells[0];
+        if (cell) {
+          const { col } = cell;
+          return {
+            row,
+            col,
+            value: digit as Digit,
+            technique: 'Hidden Single (Row)',
+            explanation: `${digit} can only go in cell (${row + 1}, ${col + 1}) in row ${row + 1}`,
+          };
+        }
       }
     }
   }
@@ -139,14 +145,17 @@ export function findLogicHint(board: Board): HintResult | null {
     for (let digit = 1; digit <= 9; digit++) {
       const possibleCells = getCellsForDigitInCol(board, col);
       if (possibleCells.length === 1) {
-        const { row } = possibleCells[0];
-        return {
-          row,
-          col,
-          value: digit as Digit,
-          technique: 'Hidden Single (Column)',
-          explanation: `${digit} can only go in cell (${row + 1}, ${col + 1}) in column ${col + 1}`,
-        };
+        const cell = possibleCells[0];
+        if (cell) {
+          const { row } = cell;
+          return {
+            row,
+            col,
+            value: digit as Digit,
+            technique: 'Hidden Single (Column)',
+            explanation: `${digit} can only go in cell (${row + 1}, ${col + 1}) in column ${col + 1}`,
+          };
+        }
       }
     }
   }
@@ -157,14 +166,17 @@ export function findLogicHint(board: Board): HintResult | null {
       for (let digit = 1; digit <= 9; digit++) {
         const possibleCells = getCellsForDigitInBox(board, boxRow, boxCol);
         if (possibleCells.length === 1) {
-          const { row, col } = possibleCells[0];
-          return {
-            row,
-            col,
-            value: digit as Digit,
-            technique: 'Hidden Single (Box)',
-            explanation: `${digit} can only go in cell (${row + 1}, ${col + 1}) in box (${Math.floor(boxRow / 3) + 1}, ${Math.floor(boxCol / 3) + 1})`,
-          };
+          const cell = possibleCells[0];
+          if (cell) {
+            const { row, col } = cell;
+            return {
+              row,
+              col,
+              value: digit as Digit,
+              technique: 'Hidden Single (Box)',
+              explanation: `${digit} can only go in cell (${row + 1}, ${col + 1}) in box (${Math.floor(boxRow / 3) + 1}, ${Math.floor(boxCol / 3) + 1})`,
+            };
+          }
         }
       }
     }
