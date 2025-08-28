@@ -1,6 +1,8 @@
 Param(
   [Parameter(Mandatory=$false)]
-  [int]$EpicNumber
+  [int]$EpicNumber,
+  [Parameter(Mandatory=$false)]
+  [switch]$DryRun
 )
 
 $ErrorActionPreference = 'Stop'
@@ -48,8 +50,15 @@ function Get-DefaultBranch {
 }
 
 function Get-IsDryRun {
+  if ($DryRun) { return $true }
   $v = "$env:DRY_RUN".ToLower()
   return @('1','true','yes','y').Contains($v)
+}
+
+function Get-PollTimeoutMinutes {
+  $parsed = 0
+  if ([int]::TryParse($env:EPIC_PR_TIMEOUT_MIN, [ref]$parsed)) { return $parsed }
+  return 20
 }
 
 function Select-NextEpicByPriority {
@@ -88,7 +97,7 @@ function Ensure-GitIntegrationBranch {
 function Get-SubIssuesForEpic {
   param([int]$EpicNumber)
   # Prefer gh-sub-issue if present
-  if ((Test-CommandPresent 'gh') -and (gh extension list | Select-String -Quiet 'gh-sub-issue')) {
+  if ((Test-CommandPresent 'gh') -and (gh extension list 2>$null | Select-String -Quiet 'gh-sub-issue')) {
     try { return gh sub-issue list --parent $EpicNumber --json number,title,state,labels | ConvertFrom-Json } catch {}
   }
   # Fallback: search linked issues or those containing Parent: #<epic>
@@ -96,14 +105,6 @@ function Get-SubIssuesForEpic {
     $q = "repo:" + (gh repo view --json nameWithOwner --jq '.nameWithOwner') + " is:issue state:open in:body \"Parent: #$EpicNumber\""
     return gh search issues --json number,title,state,labels --limit 100 --query $q | ConvertFrom-Json
   } catch { return @() }
-}
-
-function Get-CIScript {
-  if (-not (Test-Path -LiteralPath 'package.json')) { return $null }
-  $pkg = Get-Content -LiteralPath 'package.json' -Raw | ConvertFrom-Json
-  if ($pkg.scripts.ci) { return 'npm run ci' }
-  if ($pkg.scripts.test) { return 'npm test' }
-  return $null
 }
 
 function Update-EpicChecklistComment {
@@ -181,16 +182,11 @@ foreach ($issue in $subIssues) {
       git fetch origin $epicBranch | Out-Null
       if (git show-ref --verify --quiet "refs/heads/$branch") {
         git switch $branch | Out-Null
-        git rebase "origin/$epicBranch" | Out-Null
+        try { git merge --ff-only "origin/$epicBranch" | Out-Null } catch {}
       } else {
         git switch -c $branch "origin/$epicBranch" | Out-Null
       }
-    }
-
-    $ci = Get-CIScript
-    if ($ci) {
-      Write-Host "Running CI: $ci"
-      iex $ci
+      try { git push -u origin $branch | Out-Null } catch {}
     }
 
     $prUrl = gh pr view --head $branch --json number,url --jq '.url' 2>$null
@@ -201,7 +197,7 @@ foreach ($issue in $subIssues) {
       $prNum = gh pr view $prUrl --json number --jq '.number'
       Enable-AutoMergeForPR -PrNumber $prNum
       # Poll until merged or timeout
-      $deadline = (Get-Date).AddMinutes(30)
+      $deadline = (Get-Date).AddMinutes((Get-PollTimeoutMinutes))
       do {
         Start-Sleep -Seconds 10
         $state = gh pr view $prNum --json state,mergeStateStatus,isDraft --jq '{state:.state,merge:.mergeStateStatus}' | ConvertFrom-Json

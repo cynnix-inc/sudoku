@@ -17,6 +17,12 @@ Copy/Paste Prompts
 
 4) Acceptance Criteria
 - Prompt: “Provide testable acceptance criteria for the Epic and what constitutes ‘done’ (including documentation or rollout).”
+- 4b) Sub-issue readiness checklist (keep this consistent with Sub-Issues prompts)
+  1. For each sub-issue, ensure the body includes: Title, Summary (1–3 sentences), and “Parent: #<epic-number>”.
+  2. Add labels: `type/<kind>`, `status/ready`, `priority/p<0-3>`, and `area/<area>`.
+  3. Add acceptance criteria to each sub-issue using a bullet list that is directly testable.
+  4. Link the sub-issue to the Epic using the sub-issue extension (see Prompt 7) or link manually (see Prompt 6).
+  5. Confirm each sub-issue uses one of the templates under `CONTRIBUTING.md` → “Sub-Issue Templates”.
 
 5) Sequencing
 - Prompt: “Propose the execution order for sub-issues to maximize throughput and reduce risk. Note any parallelizable items.”
