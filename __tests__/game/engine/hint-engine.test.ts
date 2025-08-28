@@ -22,8 +22,8 @@ describe('Hint Engine', () => {
       // Initialize with proper row/col values
       for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
-          if (board[row] && board[row][col]) {
-            board[row][col] = {
+          if (board[row] && board[row]![col]) {
+            board[row]![col]! = {
               row,
               col,
               value: null,
@@ -43,8 +43,8 @@ describe('Hint Engine', () => {
 
       // Fill most of the board to create a scenario where hints can be found
       for (let col = 0; col < 9; col++) {
-        if (col !== 0 && board[0] && board[0][col]) {
-          board[0][col] = {
+        if (col !== 0 && board[0] && board[0]![col]) {
+          board[0]![col]! = {
             row: 0,
             col,
             value: col as Digit,
@@ -57,8 +57,8 @@ describe('Hint Engine', () => {
 
       // Fill the first column except the first cell
       for (let row = 1; row < 9; row++) {
-        if (board[row] && board[row][0]) {
-          board[row][0] = {
+        if (board[row] && board[row]![0]) {
+          board[row]![0]! = {
             row,
             col: 0,
             value: (row + 8) as Digit,
@@ -72,9 +72,9 @@ describe('Hint Engine', () => {
       // Fill the first box except the first cell
       for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
-          if ((row !== 0 || col !== 0) && board[row] && board[row][col]) {
+          if ((row !== 0 || col !== 0) && board[row] && board[row]![col]) {
             const value = (row * 3 + col + 9) as Digit;
-            board[row][col] = {
+            board[row]![col]! = {
               row,
               col,
               value,
@@ -101,8 +101,8 @@ describe('Hint Engine', () => {
       // Fill the board completely
       for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
-          if (board[row] && board[row][col]) {
-            board[row][col] = {
+          if (board[row] && board[row]![col]) {
+            board[row]![col]! = {
               row,
               col,
               value: (((row * 3 + Math.floor(row / 3) + col) % 9) + 1) as Digit,
