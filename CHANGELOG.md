@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.12.0](https://github.com/cynnix-inc/sudoku/compare/v1.11.0...v1.12.0) (2025-08-28)
+
+
+### Features
+
+* Implement Epic [#22](https://github.com/cynnix-inc/sudoku/issues/22) - Navigation, Settings, Help/About ([#333](https://github.com/cynnix-inc/sudoku/issues/333)) ([8a6e6f1](https://github.com/cynnix-inc/sudoku/commit/8a6e6f10710491d4cddbb59ec0a19bfd84dd11e2))
+
+
+### Bug Fixes
+
+* lower coverage threshold to fix CI test failures ([#332](https://github.com/cynnix-inc/sudoku/issues/332)) ([6aaace1](https://github.com/cynnix-inc/sudoku/commit/6aaace199bd6cc7525d988626e30c9093757a7af))
+
 ## [1.11.0](https://github.com/cynnix-inc/sudoku/compare/v1.10.0...v1.11.0) (2025-08-27)
 
 
