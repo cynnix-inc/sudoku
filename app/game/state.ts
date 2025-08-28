@@ -1,5 +1,6 @@
 import type { Board, Cell, Digit, GameAction, GameConfig, GameState } from './types';
 import { isValidPlacement } from './rules';
+import { getHintLimit } from './engine/hint-limits';
 
 export function createEmptyBoard(): Board {
   const board: Board = [];
@@ -36,12 +37,18 @@ export function initializeGame(
     cell.notes = {};
     cell.isError = false;
   }
+
+  const hintLimit = getHintLimit(config.difficulty);
   return {
     board,
     givens: [...givens],
     config,
     livesRemaining: config.maxLives,
     history: { past: [], future: [] },
+    hintState: {
+      hintsUsed: 0,
+      hintsRemaining: hintLimit,
+    },
   };
 }
 
@@ -49,14 +56,20 @@ export function applyAction(state: GameState, action: GameAction): GameState {
   const next: GameState = {
     ...state,
     board: state.board.map((row) => row.map((cell) => ({ ...cell, notes: { ...cell.notes } }))),
+    hintState: { ...state.hintState },
   };
+
   // Undo/Redo without coordinates
   if (action.type === 'undo') {
     const prev = state.history.past[state.history.past.length - 1];
     if (!prev) return state;
     const newPast = state.history.past.slice(0, -1);
     const newFuture = [
-      { board: state.board, livesRemaining: state.livesRemaining },
+      {
+        board: state.board,
+        livesRemaining: state.livesRemaining,
+        hintsUsed: state.hintState.hintsUsed,
+      },
       ...state.history.future,
     ];
     return {
@@ -64,6 +77,8 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       board: prev.board,
       // Lives must be unaffected by history actions per MVP
       livesRemaining: state.livesRemaining,
+      // Hint state is unaffected by history actions per MVP
+      hintState: state.hintState,
       history: { past: newPast, future: newFuture },
     };
   }
@@ -73,21 +88,35 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     const newFuture = state.history.future.slice(1);
     const newPast = [
       ...state.history.past,
-      { board: state.board, livesRemaining: state.livesRemaining },
+      {
+        board: state.board,
+        livesRemaining: state.livesRemaining,
+        hintsUsed: state.hintState.hintsUsed,
+      },
     ];
     return {
       ...state,
       board: fut.board,
       // Lives must be unaffected by history actions per MVP
       livesRemaining: state.livesRemaining,
+      // Hint state is unaffected by history actions per MVP
+      hintState: state.hintState,
       history: { past: newPast, future: newFuture },
     };
   }
+
   // Coord-based actions with proper narrowing
   switch (action.type) {
     case 'place': {
       next.history = {
-        past: [...state.history.past, { board: state.board, livesRemaining: state.livesRemaining }],
+        past: [
+          ...state.history.past,
+          {
+            board: state.board,
+            livesRemaining: state.livesRemaining,
+            hintsUsed: state.hintState.hintsUsed,
+          },
+        ],
         future: [],
       };
       const cell = getCell(next.board, action.row, action.col);
@@ -109,7 +138,14 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     }
     case 'note': {
       next.history = {
-        past: [...state.history.past, { board: state.board, livesRemaining: state.livesRemaining }],
+        past: [
+          ...state.history.past,
+          {
+            board: state.board,
+            livesRemaining: state.livesRemaining,
+            hintsUsed: state.hintState.hintsUsed,
+          },
+        ],
         future: [],
       };
       const cell = getCell(next.board, action.row, action.col);
@@ -124,7 +160,14 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     }
     case 'erase': {
       next.history = {
-        past: [...state.history.past, { board: state.board, livesRemaining: state.livesRemaining }],
+        past: [
+          ...state.history.past,
+          {
+            board: state.board,
+            livesRemaining: state.livesRemaining,
+            hintsUsed: state.hintState.hintsUsed,
+          },
+        ],
         future: [],
       };
       const cell = getCell(next.board, action.row, action.col);
@@ -132,6 +175,17 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       cell.value = null;
       cell.notes = {};
       cell.isError = false;
+      return next;
+    }
+    case 'hint': {
+      // Hint actions don't create history entries as they don't change the board state
+      // They only affect the hint state
+      if (action.hintType === 'direct' || action.hintType === 'logic') {
+        next.hintState.hintsUsed += 1;
+        next.hintState.hintsRemaining = Math.max(0, next.hintState.hintsRemaining - 1);
+        next.hintState.lastHintType = action.hintType;
+        next.hintState.lastHintTime = Date.now();
+      }
       return next;
     }
     default:
