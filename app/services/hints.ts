@@ -21,31 +21,83 @@ export type HintResponse =
       reason: 'no-hints-available' | 'no-logic-hint-found' | 'invalid-difficulty';
     };
 
+// Helper function to safely access board cells
+function getCell(board: Board, row: number, col: number) {
+  if (row < 0 || row >= 9 || col < 0 || col >= 9) return null;
+  return board[row]?.[col] || null;
+}
+
+// Helper function to check if a placement is valid
+function isValidPlacement(board: Board, row: number, col: number, digit: Digit): boolean {
+  // Check row
+  for (let c = 0; c < 9; c++) {
+    const cell = getCell(board, row, c);
+    if (cell && cell.value === digit) return false;
+  }
+
+  // Check column
+  for (let r = 0; r < 9; r++) {
+    const cell = getCell(board, r, col);
+    if (cell && cell.value === digit) return false;
+  }
+
+  // Check box
+  const boxRow = Math.floor(row / 3) * 3;
+  const boxCol = Math.floor(col / 3) * 3;
+  for (let r = boxRow; r < boxRow + 3; r++) {
+    for (let c = boxCol; c < boxCol + 3; c++) {
+      const cell = getCell(board, r, c);
+      if (cell && cell.value === digit) return false;
+    }
+  }
+
+  return true;
+}
+
+// Helper function to check if a solution is valid
+function checkIfValidSolution(board: Board, row: number, col: number, digit: Digit): boolean {
+  // Create a temporary board with the digit placed
+  const tempBoard = board.map((row) => row.map((cell) => ({ ...cell })));
+  const cell = getCell(tempBoard, row, col);
+  if (cell) {
+    cell.value = digit;
+  }
+
+  // Check if this creates any conflicts
+  return isValidPlacement(tempBoard, row, col, digit);
+}
+
 /**
- * Get a direct hint by finding a cell that can be solved.
- * This places the correct value directly in the cell.
+ * Get a direct hint by finding a cell that can be filled with a specific digit.
+ * This implements the "Direct Number Placement" hint from the MVP requirements.
  */
-export function getDirectHint(board: Board): HintResponse | null {
-  // Find an empty cell that can be solved
+export function getDirectHint(board: Board, config: GameConfig, hintsUsed: number): HintResponse {
+  if (!areHintsAvailable(config.difficulty, hintsUsed)) {
+    return {
+      success: false,
+      reason: 'no-hints-available',
+    };
+  }
+
+  // Find an empty cell and a valid digit for it
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
-      const cell = board[row][col];
-      if (cell.value !== null || cell.isGiven) continue;
+      const cell = getCell(board, row, col);
+      if (!cell || cell.value !== null || cell.isGiven) continue;
 
       // Try each digit to see if it's valid
       for (let digit = 1; digit <= 9; digit++) {
-        if (isValidPlacement(board, row, col, digit)) {
-          // Check if this is the only valid placement (solve the cell)
-          const isValidSolution = checkIfValidSolution(board, row, col, digit);
+        if (isValidPlacement(board, row, col, digit as Digit)) {
+          const isValidSolution = checkIfValidSolution(board, row, col, digit as Digit);
           if (isValidSolution) {
             return {
               success: true,
               hintType: 'direct',
               row,
               col,
-              value: digit,
-              hintsRemaining: 0, // Will be updated by caller
-              hintsUsed: 0, // Will be updated by caller
+              value: digit as Digit,
+              hintsRemaining: Math.max(0, config.maxLives - hintsUsed - 1),
+              hintsUsed: hintsUsed + 1,
             };
           }
         }
@@ -53,17 +105,30 @@ export function getDirectHint(board: Board): HintResponse | null {
     }
   }
 
-  return null;
+  return {
+    success: false,
+    reason: 'no-logic-hint-found',
+  };
 }
 
 /**
- * Get a logic hint that explains how to solve a cell.
- * This provides guidance without directly placing the value.
+ * Get a logic-based hint using the hint engine.
+ * This implements the "Logic guidance hint" from the MVP requirements.
  */
-export function getLogicHint(board: Board): HintResponse | null {
+export function getLogicHint(board: Board, config: GameConfig, hintsUsed: number): HintResponse {
+  if (!areHintsAvailable(config.difficulty, hintsUsed)) {
+    return {
+      success: false,
+      reason: 'no-hints-available',
+    };
+  }
+
   const hint = findLogicHint(board);
-  if (!hint || hint.type !== 'logic') {
-    return null;
+  if (!hint) {
+    return {
+      success: false,
+      reason: 'no-logic-hint-found',
+    };
   }
 
   return {
@@ -74,63 +139,9 @@ export function getLogicHint(board: Board): HintResponse | null {
     value: hint.value,
     technique: hint.technique,
     explanation: hint.explanation,
-    hintsRemaining: 0, // Will be updated by caller
-    hintsUsed: 0, // Will be updated by caller
+    hintsRemaining: Math.max(0, config.maxLives - hintsUsed - 1),
+    hintsUsed: hintsUsed + 1,
   };
-}
-
-/**
- * Check if a digit placement is a valid solution for a cell.
- * This is a simplified check - in a real implementation, you'd want to verify
- * that the puzzle has a unique solution.
- */
-function checkIfValidSolution(board: Board, row: number, col: number, digit: Digit): boolean {
-  // For MVP, we'll use a simple heuristic: if this is the only valid digit for this cell
-  // and placing it doesn't create obvious conflicts, consider it a solution
-
-  // Check if this is the only valid digit for this cell
-  let validDigits = 0;
-  for (let d = 1; d <= 9; d++) {
-    if (isValidPlacement(board, row, col, d)) {
-      validDigits++;
-      if (validDigits > 1) break;
-    }
-  }
-
-  // Also verify that the specific digit we're checking is valid
-  return validDigits === 1 && isValidPlacement(board, row, col, digit);
-}
-
-/**
- * Check if a digit can be placed in a cell without violating sudoku rules.
- */
-function isValidPlacement(board: Board, row: number, col: number, digit: Digit): boolean {
-  // Check row
-  for (let c = 0; c < 9; c++) {
-    if (c !== col && board[row][c].value === digit) {
-      return false;
-    }
-  }
-
-  // Check column
-  for (let r = 0; r < 9; r++) {
-    if (r !== row && board[r][col].value === digit) {
-      return false;
-    }
-  }
-
-  // Check 3x3 box
-  const boxRow = Math.floor(row / 3) * 3;
-  const boxCol = Math.floor(col / 3) * 3;
-  for (let r = boxRow; r < boxRow + 3; r++) {
-    for (let c = boxCol; c < boxCol + 3; c++) {
-      if ((r !== row || c !== col) && board[r][c].value === digit) {
-        return false;
-      }
-    }
-  }
-
-  return true;
 }
 
 /**
