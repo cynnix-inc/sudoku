@@ -84,6 +84,92 @@ export default function StatsScreen() {
               Avg Time
             </Text>
           </View>
+          {stats.overall.medianTime && (
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.foreground }]}>
+                {formatTime(stats.overall.medianTime)}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.foreground, opacity: 0.7 }]}>
+                Median Time
+              </Text>
+            </View>
+          )}
+          {stats.overall.fastestTime && (
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.foreground }]}>
+                {formatTime(stats.overall.fastestTime)}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.foreground, opacity: 0.7 }]}>
+                Fastest
+              </Text>
+            </View>
+          )}
+          {stats.overall.slowestTime && (
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.foreground }]}>
+                {formatTime(stats.overall.slowestTime)}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.foreground, opacity: 0.7 }]}>
+                Slowest
+              </Text>
+            </View>
+          )}
+          {stats.overall.averageMovesPerGame && (
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.foreground }]}>
+                {stats.overall.averageMovesPerGame}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.foreground, opacity: 0.7 }]}>
+                Avg Moves
+              </Text>
+            </View>
+          )}
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: theme.foreground }]}>
+              {stats.overall.hintsUsageRate.toFixed(1)}%
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.foreground, opacity: 0.7 }]}>
+              Hints Used
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Trends */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.foreground }]}>Recent Trends</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: theme.foreground }]}>
+              {stats.trends.recentWinRate.toFixed(1)}%
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.foreground, opacity: 0.7 }]}>
+              Recent Win Rate
+            </Text>
+          </View>
+          {stats.trends.recentAverageTime && (
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.foreground }]}>
+                {formatTime(stats.trends.recentAverageTime)}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.foreground, opacity: 0.7 }]}>
+                Recent Avg Time
+              </Text>
+            </View>
+          )}
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: theme.foreground }]}>
+              {stats.trends.improvementTrend === 'improving'
+                ? '↗️'
+                : stats.trends.improvementTrend === 'declining'
+                  ? '↘️'
+                  : '→'}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.foreground, opacity: 0.7 }]}>
+              {stats.trends.improvementTrend.charAt(0).toUpperCase() +
+                stats.trends.improvementTrend.slice(1)}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -135,6 +221,16 @@ export default function StatsScreen() {
                 <Text style={[styles.difficultyStat, { color: theme.foreground, opacity: 0.7 }]}>
                   {diffStats.bestTime ? formatTime(diffStats.bestTime) : '--'}
                 </Text>
+                {diffStats.averageTime && (
+                  <Text style={[styles.difficultyStat, { color: theme.foreground, opacity: 0.7 }]}>
+                    Avg: {formatTime(diffStats.averageTime)}
+                  </Text>
+                )}
+                {diffStats.hintsUsageRate > 0 && (
+                  <Text style={[styles.difficultyStat, { color: theme.foreground, opacity: 0.7 }]}>
+                    Hints: {diffStats.hintsUsageRate.toFixed(1)}%
+                  </Text>
+                )}
               </View>
             </View>
           );

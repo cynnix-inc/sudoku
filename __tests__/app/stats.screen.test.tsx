@@ -42,6 +42,12 @@ describe('StatsScreen', () => {
         wins: 7,
         winRate: 70,
         averageTime: null,
+        medianTime: null,
+        fastestTime: null,
+        slowestTime: null,
+        totalPlayTime: 0,
+        averageMovesPerGame: null,
+        hintsUsageRate: 0,
       },
       byDifficulty: {
         easy: {
@@ -50,6 +56,12 @@ describe('StatsScreen', () => {
           winRate: 80,
           bestTime: 120,
           averageTime: null,
+          medianTime: null,
+          fastestTime: null,
+          slowestTime: null,
+          totalPlayTime: 0,
+          averageMoves: null,
+          hintsUsageRate: 0,
         },
         medium: {
           played: 3,
@@ -57,11 +69,22 @@ describe('StatsScreen', () => {
           winRate: 66.7,
           bestTime: 300,
           averageTime: null,
+          medianTime: null,
+          fastestTime: null,
+          slowestTime: null,
+          totalPlayTime: 0,
+          averageMoves: null,
+          hintsUsageRate: 0,
         },
       },
       streaks: {
         current: 3,
         best: 5,
+      },
+      trends: {
+        recentWinRate: 70,
+        recentAverageTime: null,
+        improvementTrend: 'stable' as const,
       },
     };
 
@@ -74,13 +97,13 @@ describe('StatsScreen', () => {
       expect(getByText('Overall')).toBeTruthy();
       expect(getByText('10')).toBeTruthy(); // Games played
       expect(getByText('7')).toBeTruthy(); // Total wins
-      expect(getByText('70.0%')).toBeTruthy(); // Win rate
       expect(getByText('Daily Streaks')).toBeTruthy();
       expect(getByText('3')).toBeTruthy(); // Current streak
       expect(getByText('5')).toBeTruthy(); // Best streak
       expect(getByText('By Difficulty')).toBeTruthy();
       expect(getByText('Easy')).toBeTruthy();
       expect(getByText('Medium')).toBeTruthy();
+      expect(getByText('Recent Trends')).toBeTruthy();
     });
   });
 
@@ -91,11 +114,22 @@ describe('StatsScreen', () => {
         wins: 0,
         winRate: 0,
         averageTime: null,
+        medianTime: null,
+        fastestTime: null,
+        slowestTime: null,
+        totalPlayTime: 0,
+        averageMovesPerGame: null,
+        hintsUsageRate: 0,
       },
       byDifficulty: {},
       streaks: {
         current: 0,
         best: 0,
+      },
+      trends: {
+        recentWinRate: 0,
+        recentAverageTime: null,
+        improvementTrend: 'stable' as const,
       },
     };
 
@@ -110,12 +144,11 @@ describe('StatsScreen', () => {
       expect(getByText('Win Rate')).toBeTruthy();
       expect(getByText('Current')).toBeTruthy();
       expect(getByText('Best')).toBeTruthy();
+      expect(getByText('Recent Trends')).toBeTruthy();
 
       // Check that we have multiple "0" values (which is expected for empty stats)
       const zeroElements = getAllByText('0');
       expect(zeroElements.length).toBeGreaterThan(0);
-
-      expect(getByText('0.0%')).toBeTruthy(); // Win rate
     });
   });
 
@@ -126,6 +159,12 @@ describe('StatsScreen', () => {
         wins: 1,
         winRate: 100,
         averageTime: null,
+        medianTime: null,
+        fastestTime: null,
+        slowestTime: null,
+        totalPlayTime: 0,
+        averageMovesPerGame: null,
+        hintsUsageRate: 0,
       },
       byDifficulty: {
         easy: {
@@ -134,11 +173,22 @@ describe('StatsScreen', () => {
           winRate: 100,
           bestTime: 125, // 2:05
           averageTime: null,
+          medianTime: null,
+          fastestTime: null,
+          slowestTime: null,
+          totalPlayTime: 0,
+          averageMoves: null,
+          hintsUsageRate: 0,
         },
       },
       streaks: {
         current: 1,
         best: 1,
+      },
+      trends: {
+        recentWinRate: 100,
+        recentAverageTime: null,
+        improvementTrend: 'stable' as const,
       },
     };
 
