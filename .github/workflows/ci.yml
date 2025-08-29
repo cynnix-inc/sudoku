@@ -132,14 +132,9 @@ jobs:
         env:
           CI: true
           DISABLE_PERF_TESTS: 1
-<<<<<<< HEAD
           EPIC_PR: 1
         run: npm test -- --ci --coverage=false
       - name: Run tests
-=======
-        run: npm test -- --ci --coverage=false
-      - name: Run tests (with coverage)
->>>>>>> 7def762 (test(mocks): restore expo-router/status-bar mocks and fix daily wrapper)
         if: ${{ !startsWith(github.base_ref, 'epic/') }}
         env:
           CI: true

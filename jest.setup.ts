@@ -6,10 +6,10 @@ jest.mock('expo-system-ui', () => ({
   setBackgroundColorAsync: jest.fn(() => Promise.resolve()),
 }));
 // Minimal mock for expo-status-bar
+// Minimal mock for expo-status-bar
 jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
 }));
-
 // Minimal mock for expo-router to avoid loading native stacks
 jest.mock('expo-router', () => ({
   Slot: ({ children }: { children?: React.ReactNode }) => children ?? null,
@@ -19,10 +19,6 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
   },
 }));
-<<<<<<< HEAD
-=======
-
->>>>>>> 7def762 (test(mocks): restore expo-router/status-bar mocks and fix daily wrapper)
 // Mock expo-haptics to avoid native calls in tests
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(async () => undefined),
