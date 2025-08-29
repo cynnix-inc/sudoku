@@ -4,7 +4,12 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(jest-)?react-native|@react-native|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base)',
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/__tests__/utils/', '/__tests__/bdd/'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/__tests__/utils/',
+    '/__tests__/bdd/',
+    '/__tests__/fixtures/',
+  ],
   collectCoverage: true,
   coverageThreshold: {
     global: {
