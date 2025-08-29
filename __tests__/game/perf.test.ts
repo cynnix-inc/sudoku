@@ -14,8 +14,11 @@ function measureMs(fn: () => void): number {
   return Date.now() - start;
 }
 
+// Allow opting out if env explicitly disables perf tests (e.g., local slow machines)
+const PERF_DISABLED = process.env['DISABLE_PERF_TESTS'] === '1';
+
 // On CI, still run but with relaxed thresholds above
-const maybeDescribe = describe;
+const maybeDescribe = PERF_DISABLED ? describe.skip : describe;
 
 maybeDescribe('performance benchmarks (#162)', () => {
   it('generates a medium puzzle under soft limit', () => {
