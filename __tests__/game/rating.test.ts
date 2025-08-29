@@ -1,22 +1,6 @@
 import { ratePuzzle, classifyByClues } from '../../app/game/engine/rating';
 import { DIFFICULTY_THRESHOLDS } from '../../app/game/engine/difficulty';
-import type { Digit } from '../../app/game/types';
-
-function makeGivens(count: number) {
-  const res: { row: number; col: number; value: Digit }[] = [];
-  let r = 0;
-  let c = 0;
-  for (let i = 0; i < count; i++) {
-    res.push({ row: r, col: c, value: 1 as Digit });
-    c++;
-    if (c >= 9) {
-      c = 0;
-      r++;
-      if (r >= 9) r = 0;
-    }
-  }
-  return res;
-}
+import { makeLinearGivens } from '../utils/fixtures';
 
 describe('rating engine (#159/#160)', () => {
   it('classifies by clue thresholds', () => {
@@ -28,7 +12,7 @@ describe('rating engine (#159/#160)', () => {
   });
 
   it('rates under 800ms on small samples', () => {
-    const givens = makeGivens(30);
+    const givens = makeLinearGivens(30);
     const { analyzedMs } = ratePuzzle(givens);
     expect(analyzedMs).toBeLessThan(800);
   });
