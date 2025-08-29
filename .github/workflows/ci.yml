@@ -88,7 +88,7 @@ jobs:
         run: npm run typecheck
 
   test:
-    name: test
+    name: test (unit/integration)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -120,10 +120,62 @@ jobs:
           for i in 1 2 3; do
             npm ci --no-audit --no-fund && break || { echo "npm ci failed on attempt $i, retrying in $((i*10))s..."; sleep $((i*10)); }
           done
+      - name: Cache Jest cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/jest
+          key: ${{ runner.os }}-jest-${{ hashFiles('package-lock.json') }}-v1
+          restore-keys: |
+            ${{ runner.os }}-jest-
       - name: Run tests
         env:
           CI: true
         run: npm test -- --ci --coverage
+
+  test_bdd:
+    name: test (BDD)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Detect Node version from package.json engines (fallback 20.x)
+        id: node
+        run: |
+          if command -v jq >/dev/null 2>&1; then
+            NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
+          else
+            NODE_VERSION=""
+          fi
+          if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" = "null" ]; then
+            echo "version=20.x" >> $GITHUB_OUTPUT
+          else
+            echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
+          fi
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: npm
+      - name: Install dependencies (with retries)
+        run: |
+          npm config set fetch-retries 8
+          npm config set fetch-retry-factor 2
+          npm config set fetch-retry-maxtimeout 600000
+          npm config set maxsockets 3
+          for i in 1 2 3; do
+            npm ci --no-audit --no-fund && break || { echo "npm ci failed on attempt $i, retrying in $((i*10))s..."; sleep $((i*10)); }
+          done
+      - name: Cache Jest cache (BDD)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/jest
+          key: ${{ runner.os }}-jest-bdd-${{ hashFiles('package-lock.json') }}-v1
+          restore-keys: |
+            ${{ runner.os }}-jest-bdd-
+      - name: Run BDD tests
+        env:
+          CI: true
+        run: npm run test:bdd -- --ci
 
   build:
     name: build
