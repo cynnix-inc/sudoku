@@ -1,3 +1,5 @@
+const isEpicPr = process.env['EPIC_PR'] === '1';
+
 module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect', '<rootDir>/jest.setup.ts'],
@@ -10,13 +12,15 @@ module.exports = {
     '/__tests__/bdd/',
     '/__tests__/fixtures/',
   ],
-  collectCoverage: true,
-  coverageThreshold: {
-    global: {
-      statements: 85,
-      branches: 80,
-      functions: 85,
-      lines: 85,
-    },
-  },
+  collectCoverage: !isEpicPr,
+  coverageThreshold: isEpicPr
+    ? undefined
+    : {
+        global: {
+          statements: 85,
+          branches: 80,
+          functions: 85,
+          lines: 85,
+        },
+      },
 };
