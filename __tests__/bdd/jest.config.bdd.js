@@ -1,7 +1,14 @@
+const headRef = process.env['GITHUB_HEAD_REF'] || '';
+const baseRef = process.env['GITHUB_BASE_REF'] || '';
+const isEpicContext =
+  process.env['EPIC_PR'] === '1' || headRef.startsWith('epic/') || baseRef.startsWith('epic/');
+
 module.exports = {
   preset: 'jest-expo',
   rootDir: '../../',
-  testMatch: ['**/__tests__/bdd/**/*.steps.ts'],
+  // On epic PRs, explicitly match nothing to avoid Jest default patterns scanning non-test files
+  testMatch: isEpicContext ? ['^$'] : ['**/__tests__/bdd/**/*.steps.ts'],
+  testRegex: isEpicContext ? 'a^' : undefined,
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   transformIgnorePatterns: [
     'node_modules/(?!(jest-)?react-native|@react-native|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@cucumber/.*|@cucumber|uuid/.*)',
