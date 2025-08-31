@@ -66,7 +66,3 @@ jobs:
       - run: npm run --workspaces bundle:check
       - run: npm audit --workspaces --audit-level=high --omit=dev
 ```
-
-Reference
-
-- See `.cursor/rules/epic-prompts.md` and `CONTRIBUTING.md` for Epic automation rules and sub-issue conventions (Parent: #<epic-number>, use sub-issue linking).

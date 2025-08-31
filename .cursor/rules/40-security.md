@@ -1,50 +1,39 @@
-Security and data handling
-
-When to use: handling data, adding auth, or integrating storage/network.
-
-Avoid
-
-- Logging secrets, weakening policies, or adding unnecessary permissions.
-
-Definition of Done
+Rule: Security and Privacy
+Applies to: apps/**, packages/**
+Use when: handling data, adding auth, integrating storage or network
+Avoid: logging secrets, weakening policies, unnecessary permissions
+Definition of Done:
 
 - No secrets in code or logs
 - Data is minimized and encrypted in transit
 - Permissions reviewed and least-privilege applied
 - Security checklist passed
 
-# Secrets and config
+# Secrets and Config
 
-- Use platform secret stores and env files excluded from VCS.
+- Use platform secret stores and environment files excluded from VCS.
 - Rotate keys regularly. Never echo tokens in logs or errors.
 
-# Data practices
+# Data Practices
 
 - Minimize PII. Keep Sudoku data anonymous and local where possible.
-- Encrypt in transit (HTTPS). Validate inputs at boundaries.
+- Encrypt in transit (HTTPS). Validate all inputs at boundaries.
 
-# Dependencies
+# Dependency Review
 
-- Verify license, size, vulnerabilities, and bundle impact before adding.
-
-# Dependency Review Checklist
-
-**Before adding any new library, must complete:**
-
-1. **Size review**: Check bundle impact with `npm run bundle:check`
-2. **License review**: Verify license compatibility and restrictions
-3. **Vulnerability review**: Run `npm audit` and check for known CVEs
-4. **ADR requirement**: If impactful (>100KB bundle, new category, breaking change), create ADR
-
-**Quick check**: `npm run verify:deps` covers most of this automatically.
+- Before adding a dependency, verify:
+  - License compatibility
+  - Package size and tree-shakeability
+  - Known vulnerabilities (check advisories)
+  - Bundle impact in CI
 
 # Always / Never
 
 - Always validate deep links and intent URLs.
 - Always clear sensitive data from memory when not needed.
 - Never commit API keys, credentials, or tokens.
-- Never weaken security rules without an ADR (`docs/adr/`).
+- Never weaken security rules without an ADR.
 
 ## Example
 
-- Adding analytics: ensure no PII is sent, provide user opt-out, and document data flow.
+- Adding analytics: ensure no PII is sent, provide user opt-out, document data flow.
