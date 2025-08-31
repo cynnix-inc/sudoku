@@ -37,6 +37,8 @@ export default function Numpad({
                 onLongPress={() => onToggleLock(d)}
                 accessibilityRole="button"
                 accessibilityLabel={`Digit ${d}${isLocked ? ' locked' : isHighlighted ? ' highlighted' : ''}`}
+                accessibilityState={{ selected: isLocked }}
+                accessibilityHint={isLocked ? 'Long press to unlock' : 'Long press to lock'}
                 style={{
                   width: size,
                   height: size,
