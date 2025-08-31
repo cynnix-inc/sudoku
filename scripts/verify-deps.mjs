@@ -38,7 +38,7 @@ try {
       console.error('Failed to run `npm ls`:', stdout || e.message);
       process.exit(1);
     }
-  } catch (_) {
+  } catch {
     console.error('Failed to run `npm ls`:', stdout || e.message);
     process.exit(1);
   }
