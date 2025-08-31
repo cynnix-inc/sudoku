@@ -30,7 +30,7 @@ export default function Board({
             const borderColor = cell.isError
               ? '#ef4444'
               : isSelected
-                ? '#60a5fa'
+                ? '#2563eb'
                 : isHighlighted
                   ? '#93c5fd'
                   : theme.isDark
@@ -54,6 +54,7 @@ export default function Board({
               <Pressable
                 key={c}
                 onPress={() => onSelect(r, c)}
+                onFocus={() => onSelect(r, c)}
                 accessibilityRole="button"
                 accessibilityLabel={`Cell ${r + 1},${c + 1}`}
                 accessibilityState={{ selected: !!isSelected, disabled: false }}
