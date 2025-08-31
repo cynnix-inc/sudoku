@@ -67,6 +67,8 @@ module.exports = [
 		files: [
 			"*.config.js",
 			"**/*.config.js",
+			"*.config.cjs",
+			"**/*.config.cjs",
 			"babel.config.js",
 			"jest.config.js",
 			"**/jest.config.*.js",
