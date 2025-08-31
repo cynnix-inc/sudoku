@@ -6,6 +6,50 @@ jest.mock('expo-system-ui', () => ({
   setBackgroundColorAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// Minimal mock for expo-status-bar
+jest.mock('expo-status-bar', () => ({
+  StatusBar: () => null,
+}));
+
+// Minimal mock for expo-router to avoid loading native stacks
+jest.mock('expo-router', () => ({
+  Slot: ({ children }: { children?: React.ReactNode }) => children ?? null,
+  router: {
+    replace: jest.fn(),
+    push: jest.fn(),
+    back: jest.fn(),
+  },
+}));
+
+// Mock expo-haptics to avoid native calls in tests
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(async () => undefined),
+  notificationAsync: jest.fn(async () => undefined),
+  selectionAsync: jest.fn(async () => undefined),
+  ImpactFeedbackStyle: { Light: 0, Medium: 1, Heavy: 2 },
+  NotificationFeedbackType: { Success: 0, Warning: 1, Error: 2 },
+}));
+
+// Mock expo-clipboard API used in some components/screens
+jest.mock('expo-clipboard', () => ({
+  setStringAsync: jest.fn(async () => undefined),
+  getStringAsync: jest.fn(async () => ''),
+}));
+
+// Minimal mock for react-native-gesture-handler
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    PanGestureHandler: View,
+    TapGestureHandler: View,
+    LongPressGestureHandler: View,
+    State: {},
+    GestureHandlerRootView: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(View, null, children),
+  };
+});
+
 // Mock react-native-safe-area-context SafeAreaView as a plain View
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');

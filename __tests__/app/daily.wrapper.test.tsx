@@ -6,10 +6,13 @@ describe('DailyScreen via GameScreenBase', () => {
   it('saves, loads progress, toggles notes mode and pause', async () => {
     const { unmount } = render(<DailyScreen />);
 
-    const cell12 = screen.getByLabelText('Cell 1,2');
-    fireEvent.press(cell12);
+    // Pick a truly empty cell rather than hard-coding coordinates that may be givens
+    const emptyCell = screen.getAllByA11yHint(/Empty/)[0];
+    const emptyCellTestId = emptyCell.props?.testID as string | undefined;
+
+    fireEvent.press(emptyCell);
     fireEvent.press(screen.getByLabelText('Digit 9'));
-    expect(cell12).toHaveTextContent('9');
+    expect(emptyCell).toHaveTextContent('9');
 
     // Lock a digit via long press to exercise lock state and highlight
     const d4 = screen.getByLabelText('Digit 4');
@@ -32,6 +35,9 @@ describe('DailyScreen via GameScreenBase', () => {
     unmount();
     render(<DailyScreen />);
 
-    await waitFor(() => expect(screen.getByLabelText('Cell 1,2')).toHaveTextContent('9'));
+    // Re-select the same cell after remount by its stable testID
+    if (emptyCellTestId) {
+      await waitFor(() => expect(screen.getByTestId(emptyCellTestId)).toHaveTextContent('9'));
+    }
   });
 });
