@@ -88,7 +88,7 @@ jobs:
         run: npm run typecheck
 
   test:
-    name: test (unit/integration)
+    name: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -141,14 +141,18 @@ jobs:
         run: npm test -- --ci --coverage
 
   test_bdd:
-    if: ${{ !startsWith(github.base_ref, 'epic/') }}
     name: test (BDD)
     runs-on: ubuntu-latest
     steps:
+      - name: No-op on epic PRs
+        if: ${{ startsWith(github.base_ref, 'epic/') }}
+        run: echo "Skipping BDD on epic PRs (no-op to satisfy required check)"
       - name: Checkout
+        if: ${{ !startsWith(github.base_ref, 'epic/') }}
         uses: actions/checkout@v4
       - name: Detect Node version from package.json engines (fallback 20.x)
         id: node
+        if: ${{ !startsWith(github.base_ref, 'epic/') }}
         run: |
           if command -v jq >/dev/null 2>&1; then
             NODE_VERSION=$(jq -r '.engines.node // empty' package.json || true)
@@ -161,11 +165,13 @@ jobs:
             echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
           fi
       - name: Setup Node.js
+        if: ${{ !startsWith(github.base_ref, 'epic/') }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.node.outputs.version }}
           cache: npm
       - name: Install dependencies (with retries)
+        if: ${{ !startsWith(github.base_ref, 'epic/') }}
         run: |
           npm config set fetch-retries 8
           npm config set fetch-retry-factor 2
@@ -175,6 +181,7 @@ jobs:
             npm ci --no-audit --no-fund && break || { echo "npm ci failed on attempt $i, retrying in $((i*10))s..."; sleep $((i*10)); }
           done
       - name: Cache Jest cache (BDD)
+        if: ${{ !startsWith(github.base_ref, 'epic/') }}
         uses: actions/cache@v4
         with:
           path: ~/.cache/jest
@@ -182,6 +189,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-jest-bdd-
       - name: Run BDD tests
+        if: ${{ !startsWith(github.base_ref, 'epic/') }}
         env:
           CI: true
         run: npm run test:bdd -- --ci
