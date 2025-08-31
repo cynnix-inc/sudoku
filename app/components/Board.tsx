@@ -50,17 +50,30 @@ export default function Board({
             const noteDigits = Object.keys(cell.notes)
               .map((k) => Number(k))
               .sort((a, b) => a - b);
+            const candidateCount = noteDigits.length;
+            const hintParts: string[] = [];
+            hintParts.push(cell.value != null ? `Value ${cell.value}` : 'Empty');
+            if (cell.isGiven) hintParts.push('given');
+            if (cell.isError) hintParts.push('error');
+            if (isHighlighted) hintParts.push('highlighted');
+            if (candidateCount > 0 && cell.value == null)
+              hintParts.push(`${candidateCount} candidates`);
             return (
               <Pressable
                 key={c}
                 onPress={() => onSelect(r, c)}
                 accessibilityRole="button"
                 accessibilityLabel={`Cell ${r + 1},${c + 1}`}
-                accessibilityHint={`${
-                  cell.value != null ? `Value ${cell.value}` : 'Empty'
-                }${cell.isGiven ? ', given' : ''}${cell.isError ? ', error' : ''}${
-                  isHighlighted ? ', highlighted' : ''
-                }`}
+                accessibilityState={{ selected: !!isSelected }}
+                accessibilityHint={hintParts.join(', ')}
+                accessibilityValue={{
+                  text:
+                    cell.value != null
+                      ? `Value ${cell.value}${cell.isGiven ? ', given' : ''}`
+                      : candidateCount > 0
+                        ? `${candidateCount} candidate${candidateCount === 1 ? '' : 's'}`
+                        : 'Empty',
+                }}
                 testID={`cell-${r + 1}-${c + 1}${isHighlighted ? '-highlight' : ''}`}
                 style={{
                   width: cellSize,
