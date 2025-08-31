@@ -19,6 +19,10 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
   },
 }));
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7def762 (test(mocks): restore expo-router/status-bar mocks and fix daily wrapper)
 // Mock expo-haptics to avoid native calls in tests
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(async () => undefined),
@@ -47,7 +51,6 @@ jest.mock('react-native-gesture-handler', () => {
       React.createElement(View, null, children),
   };
 });
-
 // Mock react-native-safe-area-context SafeAreaView as a plain View
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');

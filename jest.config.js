@@ -2,7 +2,6 @@ const isEpicPr = process.env['EPIC_PR'] === '1';
 const headRef = process.env['GITHUB_HEAD_REF'] || '';
 const baseRef = process.env['GITHUB_BASE_REF'] || '';
 const isEpicContext = isEpicPr || headRef.startsWith('epic/') || baseRef.startsWith('epic/');
-
 module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect', '<rootDir>/jest.setup.ts'],
