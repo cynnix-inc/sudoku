@@ -12,11 +12,36 @@ function run(cmd) {
 
 let json;
 try {
+  // Attempt to get a workspaces tree first (monorepo friendly)
   const out = run('npm ls --workspaces --all --json');
-  json = JSON.parse(out);
+  const parsed = JSON.parse(out);
+  if (parsed?.error?.summary && /No workspaces found/i.test(parsed.error.summary)) {
+    // Fallback for single-package repos where npm reports no workspaces
+    const singleOut = run('npm ls --all --json');
+    json = JSON.parse(singleOut);
+  } else if (parsed?.error) {
+    // Surface other npm ls errors
+    console.error('Failed to run `npm ls`:', JSON.stringify(parsed, null, 2));
+    process.exit(1);
+  } else {
+    json = parsed;
+  }
 } catch (e) {
-  console.error('Failed to run `npm ls`:', e?.stdout?.toString?.() || e.message);
-  process.exit(1);
+  // When npm exits non-zero, try to parse stdout to detect the no-workspaces case
+  const stdout = e?.stdout?.toString?.() || '';
+  try {
+    const parsed = JSON.parse(stdout);
+    if (parsed?.error?.summary && /No workspaces found/i.test(parsed.error.summary)) {
+      const singleOut = run('npm ls --all --json');
+      json = JSON.parse(singleOut);
+    } else {
+      console.error('Failed to run `npm ls`:', stdout || e.message);
+      process.exit(1);
+    }
+  } catch (_) {
+    console.error('Failed to run `npm ls`:', stdout || e.message);
+    process.exit(1);
+  }
 }
 
 let issues = [];
