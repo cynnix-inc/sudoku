@@ -30,7 +30,7 @@ export default function Board({
             const borderColor = cell.isError
               ? '#ef4444'
               : isSelected
-                ? '#60a5fa'
+                ? '#2563eb'
                 : isHighlighted
                   ? '#93c5fd'
                   : theme.isDark
@@ -54,13 +54,23 @@ export default function Board({
               <Pressable
                 key={c}
                 onPress={() => onSelect(r, c)}
+                onFocus={() => onSelect(r, c)}
                 accessibilityRole="button"
                 accessibilityLabel={`Cell ${r + 1},${c + 1}`}
+                accessibilityState={{ selected: !!isSelected, disabled: false }}
                 accessibilityHint={`${
                   cell.value != null ? `Value ${cell.value}` : 'Empty'
                 }${cell.isGiven ? ', given' : ''}${cell.isError ? ', error' : ''}${
                   isHighlighted ? ', highlighted' : ''
                 }`}
+                accessibilityValue={{
+                  text:
+                    cell.value != null
+                      ? `Value ${cell.value}${cell.isGiven ? ', given' : ''}`
+                      : noteDigits.length > 0
+                        ? `Notes ${noteDigits.join('')}`
+                        : 'Empty',
+                }}
                 testID={`cell-${r + 1}-${c + 1}${isHighlighted ? '-highlight' : ''}`}
                 style={{
                   width: cellSize,
