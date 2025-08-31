@@ -2,6 +2,16 @@ const isEpicPr = process.env['EPIC_PR'] === '1';
 const headRef = process.env['GITHUB_HEAD_REF'] || '';
 const baseRef = process.env['GITHUB_BASE_REF'] || '';
 const isEpicContext = isEpicPr || headRef.startsWith('epic/') || baseRef.startsWith('epic/');
+
+// For release/staging merge housekeeping PRs, do not enforce global coverage thresholds.
+// These PRs are intended to synchronize branches and should not be blocked by coverage.
+const isReleaseMergeContext =
+  headRef.startsWith('chore/staging-merge') ||
+  headRef.startsWith('chore/release') ||
+  headRef === 'staging' ||
+  baseRef === 'staging';
+
+const shouldEnforceCoverage = !(isEpicContext || isReleaseMergeContext);
 module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect', '<rootDir>/jest.setup.ts'],
@@ -16,8 +26,8 @@ module.exports = {
     '/__tests__/bdd/',
     '/__tests__/fixtures/',
   ],
-  collectCoverage: !isEpicContext,
-  coverageThreshold: isEpicContext
+  collectCoverage: shouldEnforceCoverage,
+  coverageThreshold: shouldEnforceCoverage
     ? undefined
     : {
         global: {

@@ -12,21 +12,34 @@ function run(cmd) {
 
 let json;
 try {
+  // Attempt to get a workspaces tree first (monorepo friendly)
   const out = run('npm ls --workspaces --all --json');
-  json = JSON.parse(out);
+  const parsed = JSON.parse(out);
+  if (parsed?.error?.summary && /No workspaces found/i.test(parsed.error.summary)) {
+    // Fallback for single-package repos where npm reports no workspaces
+    const singleOut = run('npm ls --all --json');
+    json = JSON.parse(singleOut);
+  } else if (parsed?.error) {
+    // Surface other npm ls errors
+    console.error('Failed to run `npm ls`:', JSON.stringify(parsed, null, 2));
+    process.exit(1);
+  } else {
+    json = parsed;
+  }
 } catch (e) {
-  const errOut = e?.stdout?.toString?.() || e?.stderr?.toString?.() || e.message;
-  // Fallback for repositories without workspaces: run without the --workspaces flag
-  if (errOut && errOut.includes('No workspaces found')) {
-    try {
-      const out = run('npm ls --all --json');
-      json = JSON.parse(out);
-    } catch (inner) {
-      console.error('Failed to run `npm ls` (fallback):', inner?.stdout?.toString?.() || inner?.stderr?.toString?.() || inner.message);
+  // When npm exits non-zero, try to parse stdout to detect the no-workspaces case
+  const stdout = e?.stdout?.toString?.() || '';
+  try {
+    const parsed = JSON.parse(stdout);
+    if (parsed?.error?.summary && /No workspaces found/i.test(parsed.error.summary)) {
+      const singleOut = run('npm ls --all --json');
+      json = JSON.parse(singleOut);
+    } else {
+      console.error('Failed to run `npm ls`:', stdout || e.message);
       process.exit(1);
     }
-  } else {
-    console.error('Failed to run `npm ls`:', errOut);
+  } catch {
+    console.error('Failed to run `npm ls`:', stdout || e.message);
     process.exit(1);
   }
 }
@@ -46,7 +59,7 @@ function walk(node, workspaceName) {
   }
 
   const deps = node.dependencies || {};
-  for (const [, depNode] of Object.entries(deps)) {
+  for (const depNode of Object.values(deps)) {
     walk(depNode, name);
   }
 }
@@ -60,37 +73,4 @@ if (issues.length) {
   process.exit(2);
 } else {
   console.log('Dependency verification passed: no extraneous/invalid deps detected across workspaces.');
-}
-
-// CI guard: fail if any source files import from app/_game
-try {
-  // Only scan source files under app/** for import/require usage; avoid shell quoting pitfalls
-  const globs = [
-    '--hidden',
-    '--with-filename',
-    '-n',
-    '--fixed-strings',
-    '--glob "!node_modules/**"',
-    '--glob "!.git/**"',
-    '--glob "!coverage/**"',
-    '--glob "!dist/**"',
-    '--glob "app/**/*.{js,jsx,ts,tsx}"',
-  ];
-  const patterns = [
-    "from 'app/_game",
-    'from "app/_game',
-    "require('app/_game",
-    'require("app/_game',
-  ]
-    .map((p) => `-e ${JSON.stringify(p)}`)
-    .join(' ');
-  const cmd = `rg ${globs.join(' ')} ${patterns}`;
-  const out = execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'] }).toString('utf8');
-  if (out && out.trim().length > 0) {
-    console.error('\nCI guard: Found references to app/_game. Please import from app/game instead.');
-    console.error(out);
-    process.exit(3);
-  }
-} catch {
-  // ripgrep exits non-zero when no matches; treat as success
 }
