@@ -28,6 +28,24 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 0, Warning: 1, Error: 2 },
 }));
 
+// Mock @expo/vector-icons to avoid internal setState warnings during tests
+// Render icons as simple null components to stay inert
+jest.mock('@expo/vector-icons', () => {
+  const Null = () => null;
+  return new Proxy(
+    {},
+    {
+      get: (_target, prop) => {
+        // Common icon sets like MaterialIcons, Ionicons, etc.
+        if (typeof prop === 'string') {
+          return Null;
+        }
+        return Null;
+      },
+    },
+  );
+});
+
 // Mock expo-clipboard API used in some components/screens
 jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn(async () => undefined),

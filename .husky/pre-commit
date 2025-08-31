@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
 # Lint staged files and run tests quickly
 npx --yes lint-staged || exit 1
-npm test --silent || exit 1
+# Disable coverage gating locally to keep commits fast; CI enforces gates
+EPIC_PR=1 npm test --silent -- --coverage=false || exit 1
