@@ -5,12 +5,11 @@ import { jest } from '@jest/globals';
 jest.mock('expo-system-ui', () => ({
   setBackgroundColorAsync: jest.fn(() => Promise.resolve()),
 }));
-
+// Minimal mock for expo-status-bar
 // Minimal mock for expo-status-bar
 jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
 }));
-
 // Minimal mock for expo-router to avoid loading native stacks
 jest.mock('expo-router', () => ({
   Slot: ({ children }: { children?: React.ReactNode }) => children ?? null,
@@ -20,7 +19,6 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
   },
 }));
-
 // Mock expo-haptics to avoid native calls in tests
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(async () => undefined),
@@ -49,7 +47,6 @@ jest.mock('react-native-gesture-handler', () => {
       React.createElement(View, null, children),
   };
 });
-
 // Mock react-native-safe-area-context SafeAreaView as a plain View
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
