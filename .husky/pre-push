@@ -4,7 +4,15 @@
 echo "husky pre-push: running lint, typecheck, and tests..."
 npm run lint || exit 1
 npm run typecheck || exit 1
-npm test -- --ci || exit 1
+
+# Detect epic branch context to relax coverage gates locally (CI handles gating per branch)
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if printf "%s" "$BRANCH" | grep -E '^epic/' >/dev/null 2>&1; then
+  echo "husky pre-push: epic/* branch detected — skipping coverage enforcement"
+  EPIC_PR=1 npm test -- --ci --coverage=false || exit 1
+else
+  npm test -- --ci || exit 1
+fi
 echo "husky pre-push: all checks passed"
 
 
