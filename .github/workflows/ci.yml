@@ -146,7 +146,6 @@ jobs:
         run: npm test -- --ci --coverage
 
   test_bdd:
-    if: ${{ !startsWith(github.base_ref, 'epic/') }}
     name: test (BDD)
     runs-on: ubuntu-latest
     steps:
