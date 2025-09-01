@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/cynnix-inc/sudoku/compare/v1.12.0...v1.13.0) (2025-09-01)
+
+
+### Features
+
+* **devtools:** add seeded loader screen (seed + difficulty) for issue [#58](https://github.com/cynnix-inc/sudoku/issues/58) ([#397](https://github.com/cynnix-inc/sudoku/issues/397)) ([#398](https://github.com/cynnix-inc/sudoku/issues/398)) ([3af43f6](https://github.com/cynnix-inc/sudoku/commit/3af43f6ffb8fe387e9687fab998a7a50e7543240))
+
 ## [1.12.0](https://github.com/cynnix-inc/sudoku/compare/v1.11.0...v1.12.0) (2025-08-28)
 
 
