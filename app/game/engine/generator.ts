@@ -1,4 +1,6 @@
 import type { Digit, Difficulty } from '../types';
+import type { UltimateLevel } from './levels';
+import { pickTargetCluesForLevel } from './levels';
 import { createRng, hashStringToSeed, shuffled } from './random';
 import { cloneGrid, countSolutions } from './solver';
 import { pickTargetClues, generateMask, symmetryModes } from './masks';
@@ -7,6 +9,7 @@ export type GenerateOptions = {
   seed: string;
   difficulty?: Difficulty; // if provided, aim to meet clue thresholds fast
   minClues?: number; // legacy/override when uniqueness mode used
+  level?: UltimateLevel; // new Ultimate levels API
 };
 
 export type GeneratedPuzzle = {
@@ -53,10 +56,34 @@ function generateSolvedGrid(seed: string): (Digit | null)[][] {
 }
 
 export function generatePuzzle(options: GenerateOptions): GeneratedPuzzle {
-  const { seed, difficulty, minClues } = options;
+  const { seed, difficulty, minClues, level } = options;
 
   // Always compute a solved grid quickly
   const solution = cloneGrid(generateSolvedGrid(seed));
+
+  if (level) {
+    // Ultimate levels path: target per-level clue window and symmetric masks
+    const target = pickTargetCluesForLevel(seed, level);
+    const modes = symmetryModes(seed);
+    let attempts = 0;
+    let mask: boolean[][] | null = null;
+    while (attempts < 4) {
+      const mode = modes.next().value;
+      mask = generateMask(seed, target, mode);
+      if (mask) break;
+      attempts++;
+    }
+
+    const givens: { row: number; col: number; value: Digit }[] = [];
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (mask![r]![c]) {
+          givens.push({ row: r, col: c, value: solution[r]![c]! });
+        }
+      }
+    }
+    return { givens, solution };
+  }
 
   if (difficulty) {
     // Fast path: honor clue thresholds without expensive uniqueness checks
