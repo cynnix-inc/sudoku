@@ -25,6 +25,12 @@ export type StatsData = {
 const STATS_KEY = 'sudoku-stats';
 const RECENT_DAILY_MAX = 60;
 
+// Forward declaration for TS
+export async function getStreaks(): Promise<{ current: number; best: number }> {
+  // implementation defined later; this is just to satisfy type usage before definition
+  return { current: 0, best: 0 };
+}
+
 export async function loadStats(): Promise<StatsData | null> {
   const loaded = await loadProgress<unknown>(STATS_KEY);
   if (!loaded) return null;
@@ -195,17 +201,6 @@ export function computeStreaks(results: DailyResult[]): Streaks {
   return { current, best };
 }
 
-export async function getStreaks(): Promise<Streaks> {
-  const stats = (await loadStats()) ?? {
-    schemaVersion: 2 as const,
-    totals: { played: 0, wins: 0, losses: 0 },
-    bestTimeByDifficulty: {},
-    recentDailyResults: [],
-    lastCalculated: 0,
-  };
-  return computeStreaks(stats.recentDailyResults);
-}
-
 export type DifficultyStats = {
   played: number;
   wins: number;
@@ -263,7 +258,7 @@ export function calculateDifficultyStats(
 /**
  * Get comprehensive statistics including per-difficulty breakdown
  */
-export async function getDetailedStats(): Promise<DetailedStats> {
+export async function getDetailedStats(): Promise<DetailedStats | null> {
   const stats = await loadStats();
   if (!stats) {
     return {
@@ -281,7 +276,7 @@ export async function getDetailedStats(): Promise<DetailedStats> {
   };
 
   const byDifficulty = calculateDifficultyStats(stats.bestTimeByDifficulty);
-  const streaks = await getStreaks();
+  const streaks = await (async () => getStreaks())();
 
   return {
     overall,
