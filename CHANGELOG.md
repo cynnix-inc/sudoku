@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/cynnix-inc/sudoku/compare/v1.13.0...v1.13.1) (2025-09-02)
+
+
+### Bug Fixes
+
+* **app:** resolve merge markers, stabilize Stats screen tests ([#475](https://github.com/cynnix-inc/sudoku/issues/475)) ([610d9c3](https://github.com/cynnix-inc/sudoku/commit/610d9c3f833c2561a6a83a1dc0d4247a42a214c0))
+
 ## [1.13.0](https://github.com/cynnix-inc/sudoku/compare/v1.12.0...v1.13.0) (2025-09-01)
 
 
