@@ -23,6 +23,7 @@ import { generatePuzzle } from './game/engine/generator';
 import type { UltimateLevel } from './game/engine/levels';
 import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
 import { recordResult } from './services/stats';
+import { hapticError, hapticSuccess } from './services/haptics';
 
 type Preferences = { lastDifficulty?: Difficulty };
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'];
@@ -421,8 +422,8 @@ export default function ClassicScreen() {
             // ignore
           }
           if (lockedDigit != null) {
-            setGame((prev) =>
-              notesMode
+            setGame((prev) => {
+              const next = notesMode
                 ? applyAction(prev, {
                     type: 'note',
                     row: r,
@@ -430,8 +431,21 @@ export default function ClassicScreen() {
                     value: lockedDigit,
                     present: true,
                   })
-                : applyAction(prev, { type: 'place', row: r, col: c, value: lockedDigit }),
-            );
+                : applyAction(prev, { type: 'place', row: r, col: c, value: lockedDigit });
+              try {
+                if (!notesMode) {
+                  const beforeLives = prev.livesRemaining;
+                  const afterLives = next.livesRemaining;
+                  if (afterLives < beforeLives) void hapticError();
+                  else void hapticSuccess();
+                } else {
+                  void hapticSuccess();
+                }
+              } catch {
+                void 0;
+              }
+              return next;
+            });
           }
         }}
       />
@@ -442,8 +456,8 @@ export default function ClassicScreen() {
         onDigit={(d) => {
           if (!selected) return;
           const value = lockedDigit ?? d;
-          setGame((prev) =>
-            notesMode
+          setGame((prev) => {
+            const next = notesMode
               ? applyAction(prev, {
                   type: 'note',
                   row: selected.row,
@@ -451,8 +465,21 @@ export default function ClassicScreen() {
                   value,
                   present: true,
                 })
-              : applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value }),
-          );
+              : applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value });
+            try {
+              if (!notesMode) {
+                const beforeLives = prev.livesRemaining;
+                const afterLives = next.livesRemaining;
+                if (afterLives < beforeLives) void hapticError();
+                else void hapticSuccess();
+              } else {
+                void hapticSuccess();
+              }
+            } catch {
+              void 0;
+            }
+            return next;
+          });
         }}
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
