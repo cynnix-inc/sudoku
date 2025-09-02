@@ -18,6 +18,8 @@ describe('settings conflict detection (#52)', () => {
         autoCandidates: 'default' as const,
         autoAdvance: false,
         haptics: true,
+        teachingPrompts: true,
+        hintPathMode: 'off' as const,
         theme: 'system' as const,
         accentColor: '#22c55e',
         gridSize: 1,
