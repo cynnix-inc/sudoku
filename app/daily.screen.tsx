@@ -5,6 +5,7 @@ import GameScreenBase, { type BasePuzzle } from './components/GameScreenBase';
 import { storageKeys } from './services/storage';
 import { recordResult } from './services/stats';
 import { loadDailyPuzzle, dailyCacheKey } from './services/daily';
+import SeedFooter from './components/SeedFooter';
 
 function livesForDifficulty(d: Difficulty): number {
   switch (d) {
@@ -56,12 +57,15 @@ export default function DailyScreen() {
   }, [seedObj.utcDate]);
 
   return (
-    <GameScreenBase
-      modeLabel="Daily"
-      getPuzzle={getPuzzle}
-      persistenceKey={persistenceKey}
-      onRecord={onRecord}
-      enableNewGame={false}
-    />
+    <>
+      <GameScreenBase
+        modeLabel="Daily"
+        getPuzzle={getPuzzle}
+        persistenceKey={persistenceKey}
+        onRecord={onRecord}
+        enableNewGame={false}
+      />
+      <SeedFooter seed={seed} />
+    </>
   );
 }

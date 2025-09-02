@@ -16,6 +16,7 @@ import { applyAction, initializeGame } from '../game/state';
 import type { Digit, Difficulty, GameAction } from '../game/types';
 import { isSolved } from '../game/rules';
 import { saveProgress, loadProgress } from '../services/storage';
+import { loadSettings } from '../services/settings';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export type BasePuzzle = {
@@ -58,6 +59,7 @@ export default function GameScreenBase({
   const [paused, setPaused] = useState(false);
   const [chooseVisible, setChooseVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
+  const [showErrorHighlighting, setShowErrorHighlighting] = useState(true);
 
   const selectedRef = useRef(selected);
   const lockedRef = useRef(lockedDigit);
@@ -76,6 +78,17 @@ export default function GameScreenBase({
   const solved = isSolved(game.board);
   const finished = gameOver || solved;
   const hasRecordedRef = useRef(false);
+  useEffect(() => {
+    // Load UI settings (error highlighting)
+    (async () => {
+      try {
+        const s = await loadSettings();
+        setShowErrorHighlighting(!!s.values.errorHighlighting);
+      } catch {
+        setShowErrorHighlighting(true);
+      }
+    })();
+  }, []);
 
   const selectedDigit: Digit | null = (() => {
     if (!selected) return null;
@@ -335,6 +348,7 @@ export default function GameScreenBase({
         mode={modeLabel}
         difficulty={game.config.difficulty}
         livesRemaining={game.livesRemaining}
+        maxLives={game.config.maxLives}
         seconds={seconds}
         paused={paused}
         onTogglePause={() => setPaused((p) => !p)}
@@ -365,6 +379,7 @@ export default function GameScreenBase({
         board={game.board}
         selected={selected}
         highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
+        showErrorHighlighting={showErrorHighlighting}
         cellSize={cellSize}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
@@ -491,9 +506,29 @@ export default function GameScreenBase({
         <Pressable
           onPress={() => {
             if (!selected) return;
-            setGame((prev) =>
-              applyAction(prev, { type: 'erase', row: selected.row, col: selected.col }),
-            );
+            const sel = { row: selected.row, col: selected.col };
+            const activeDigit = (lockedDigit as Digit | null) ?? (selectedDigit as Digit | null);
+            const cell = game.board[sel.row]?.[sel.col];
+            if (!cell) return;
+            if (cell.value != null) {
+              setGame((prev) => applyAction(prev, { type: 'erase', row: sel.row, col: sel.col }));
+              return;
+            }
+            const hasNotes = Object.keys(cell.notes ?? {}).length > 0;
+            if (hasNotes && activeDigit != null) {
+              const present = !!cell.notes[activeDigit];
+              setGame((prev) =>
+                applyAction(prev, {
+                  type: 'note',
+                  row: sel.row,
+                  col: sel.col,
+                  value: activeDigit,
+                  present: !present,
+                }),
+              );
+            } else {
+              setGame((prev) => applyAction(prev, { type: 'erase', row: sel.row, col: sel.col }));
+            }
           }}
           accessibilityRole="button"
           accessibilityLabel="Erase cell"

@@ -8,6 +8,7 @@ export type BoardProps = {
   selected: { row: number; col: number } | null;
   onSelect: (row: number, col: number) => void;
   highlightDigit?: Digit | null;
+  showErrorHighlighting?: boolean;
   cellSize?: number;
 };
 
@@ -16,6 +17,7 @@ export default function Board({
   selected,
   onSelect,
   highlightDigit = null,
+  showErrorHighlighting = true,
   cellSize = 36,
 }: BoardProps) {
   const theme = useContext(ThemeContext);
@@ -27,7 +29,8 @@ export default function Board({
           {row.map((cell, c) => {
             const isSelected = selected && selected.row === r && selected.col === c;
             const isHighlighted = highlightDigit != null && cell.value === highlightDigit;
-            const borderColor = cell.isError
+            const showError = cell.isError && showErrorHighlighting;
+            const borderColor = showError
               ? '#ef4444'
               : isSelected
                 ? '#2563eb'
@@ -40,7 +43,7 @@ export default function Board({
               ? theme.isDark
                 ? '#111827'
                 : '#f4f4f5'
-              : cell.isError
+              : showError
                 ? theme.isDark
                   ? '#7f1d1d'
                   : '#fee2e2'

@@ -8,6 +8,7 @@ type HeaderProps = {
   mode?: string;
   difficulty: GameConfig['difficulty'];
   livesRemaining: number;
+  maxLives?: number;
   seconds: number;
   paused?: boolean;
   onTogglePause?: () => void;
@@ -18,6 +19,7 @@ export default function Header({
   mode = 'Classic',
   difficulty,
   livesRemaining,
+  maxLives = 3,
   seconds,
   paused = false,
   onTogglePause,
@@ -76,7 +78,7 @@ export default function Header({
         accessibilityLabel={`${livesRemaining} lives remaining`}
         style={{ flexDirection: 'row', gap: 4, marginTop: 2 }}
       >
-        {[0, 1, 2].map((i) => (
+        {Array.from({ length: Math.max(0, maxLives) }).map((_, i) => (
           <MaterialIcons
             key={i}
             name={i < livesRemaining ? 'favorite' : 'favorite-border'}

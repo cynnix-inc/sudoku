@@ -14,9 +14,10 @@ import type { Digit, GameAction, Difficulty } from './game/types';
 import { isSolved } from './game/rules';
 import { MaterialIcons } from '@expo/vector-icons';
 import Numpad from './components/Numpad';
-import { loadProgress, saveProgress } from './services/storage';
+import { loadProgress, saveProgress, storageKeys } from './services/storage';
 import { ThemeContext } from './_layout';
 import Header from './components/Header';
+import { loadSettings } from './services/settings';
 import SeedFooter from './components/SeedFooter';
 import { generatePuzzle } from './game/engine/generator';
 import type { UltimateLevel } from './game/engine/levels';
@@ -60,6 +61,17 @@ export default function ClassicScreen() {
   const [paused, setPaused] = useState(false);
   const [chooseVisible, setChooseVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
+  const [showErrorHighlighting, setShowErrorHighlighting] = useState(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await loadSettings();
+        setShowErrorHighlighting(!!s.values.errorHighlighting);
+      } catch {
+        setShowErrorHighlighting(true);
+      }
+    })();
+  }, []);
 
   const selectedRef = useRef(selected);
   const lockedRef = useRef(lockedDigit);
@@ -159,7 +171,7 @@ export default function ClassicScreen() {
       paused?: boolean;
       lockedDigit?: Digit | null;
     };
-    loadProgress<SavedShape>('sudoku-progress').then((saved) => {
+    loadProgress<SavedShape>(storageKeys.classicProgress()).then((saved) => {
       if (!saved) return;
       if (saved.board) {
         setGame((prev) => ({ ...prev, board: saved.board! }));
@@ -179,7 +191,7 @@ export default function ClassicScreen() {
   }, []);
 
   useEffect(() => {
-    saveProgress('sudoku-progress', {
+    saveProgress(storageKeys.classicProgress(), {
       board: game.board,
       notesMode: notesModeRef.current,
       paused,
@@ -365,6 +377,7 @@ export default function ClassicScreen() {
       <Header
         difficulty={game.config.difficulty}
         livesRemaining={game.livesRemaining}
+        maxLives={game.config.maxLives}
         seconds={seconds}
         paused={paused}
         onTogglePause={() => setPaused((p) => !p)}
@@ -391,6 +404,7 @@ export default function ClassicScreen() {
         board={game.board}
         selected={selected}
         highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
+        showErrorHighlighting={showErrorHighlighting}
         cellSize={cellSize}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
@@ -515,9 +529,29 @@ export default function ClassicScreen() {
         <Pressable
           onPress={() => {
             if (!selected) return;
-            setGame((prev) =>
-              applyAction(prev, { type: 'erase', row: selected.row, col: selected.col }),
-            );
+            const sel = { row: selected.row, col: selected.col };
+            const activeDigit = (lockedDigit as Digit | null) ?? (selectedDigit as Digit | null);
+            const cell = game.board[sel.row]?.[sel.col];
+            if (!cell) return;
+            if (cell.value != null) {
+              setGame((prev) => applyAction(prev, { type: 'erase', row: sel.row, col: sel.col }));
+              return;
+            }
+            const hasNotes = Object.keys(cell.notes ?? {}).length > 0;
+            if (hasNotes && activeDigit != null) {
+              const present = !!cell.notes[activeDigit];
+              setGame((prev) =>
+                applyAction(prev, {
+                  type: 'note',
+                  row: sel.row,
+                  col: sel.col,
+                  value: activeDigit,
+                  present: !present,
+                }),
+              );
+            } else {
+              setGame((prev) => applyAction(prev, { type: 'erase', row: sel.row, col: sel.col }));
+            }
           }}
           accessibilityRole="button"
           accessibilityLabel="Erase cell"
