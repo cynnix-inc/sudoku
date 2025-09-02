@@ -17,6 +17,7 @@ import type { Digit, Difficulty, GameAction } from '../game/types';
 import { isSolved } from '../game/rules';
 import { saveProgress, loadProgress } from '../services/storage';
 import { loadSettings } from '../services/settings';
+import { hapticError, hapticSuccess } from '../services/haptics';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export type BasePuzzle = {
@@ -396,8 +397,8 @@ export default function GameScreenBase({
             // ignore out-of-bounds or unexpected access
           }
           if (lockedDigit != null) {
-            setGame((prev) =>
-              notesMode
+            setGame((prev) => {
+              const next = notesMode
                 ? applyAction(prev, {
                     type: 'note',
                     row: r,
@@ -405,8 +406,22 @@ export default function GameScreenBase({
                     value: lockedDigit,
                     present: true,
                   })
-                : applyAction(prev, { type: 'place', row: r, col: c, value: lockedDigit }),
-            );
+                : applyAction(prev, { type: 'place', row: r, col: c, value: lockedDigit });
+              try {
+                // Fire light success haptic on valid place; error when lives decreased
+                if (!notesMode) {
+                  const beforeLives = prev.livesRemaining;
+                  const afterLives = next.livesRemaining;
+                  if (afterLives < beforeLives) void hapticError();
+                  else void hapticSuccess();
+                } else {
+                  void hapticSuccess();
+                }
+              } catch {
+                // ignore
+              }
+              return next;
+            });
           }
         }}
       />
@@ -418,8 +433,8 @@ export default function GameScreenBase({
         onDigit={(d) => {
           if (!selected) return;
           const value = lockedDigit ?? d;
-          setGame((prev) =>
-            notesMode
+          setGame((prev) => {
+            const next = notesMode
               ? applyAction(prev, {
                   type: 'note',
                   row: selected.row,
@@ -427,8 +442,21 @@ export default function GameScreenBase({
                   value,
                   present: true,
                 })
-              : applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value }),
-          );
+              : applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value });
+            try {
+              if (!notesMode) {
+                const beforeLives = prev.livesRemaining;
+                const afterLives = next.livesRemaining;
+                if (afterLives < beforeLives) void hapticError();
+                else void hapticSuccess();
+              } else {
+                void hapticSuccess();
+              }
+            } catch {
+              // ignore
+            }
+            return next;
+          });
         }}
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
