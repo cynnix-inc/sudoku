@@ -25,6 +25,7 @@ export default function DailyCalendarScreen() {
                 accessibilityLabel={`${day.utcDate}${day.completed ? ' completed' : ''}${day.isFuture ? ' locked' : ''}`}
                 accessibilityHint={day.isFuture ? 'Future dates are locked' : undefined}
                 disabled={day.isFuture}
+                // Navigation to Daily with a selected date is handled elsewhere
                 style={{
                   width: 40,
                   height: 40,

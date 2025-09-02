@@ -97,12 +97,12 @@ export default function StatsScreen() {
         </View>
       </View>
 
-      {/* Best Times */}
+      {/* Best Times by Difficulty */}
       <View style={{ marginBottom: 24 }}>
         <Text
           style={{ fontSize: 18, fontWeight: '600', marginBottom: 12, color: theme.foreground }}
         >
-          Best Times
+          Best Times (Unassisted)
         </Text>
         <View
           style={{

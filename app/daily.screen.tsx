@@ -3,9 +3,10 @@ import { createDailySeed, formatDailySeed } from './game/daily';
 import type { Digit, Difficulty } from './game/types';
 import GameScreenBase, { type BasePuzzle } from './components/GameScreenBase';
 import { storageKeys } from './services/storage';
-import { recordResult } from './services/stats';
+import { recordDailyResult } from './services/stats';
 import { loadDailyPuzzle, dailyCacheKey } from './services/daily';
 import SeedFooter from './components/SeedFooter';
+// Router params not available in tests; default to today
 
 function livesForDifficulty(d: Difficulty): number {
   switch (d) {
@@ -25,28 +26,29 @@ function livesForDifficulty(d: Difficulty): number {
 }
 
 export default function DailyScreen() {
-  const today = useMemo(() => new Date(), []);
-  const seedObj = useMemo(() => createDailySeed(today), [today]);
+  const selectedDate = useMemo(() => new Date(), []);
+  const seedObj = useMemo(() => createDailySeed(selectedDate), [selectedDate]);
   const seed = useMemo(() => formatDailySeed(seedObj), [seedObj]);
 
   const getPuzzle = useCallback((): BasePuzzle => {
     // Warm cache; ignore promise
-    void loadDailyPuzzle(today);
+    void loadDailyPuzzle(selectedDate);
     const { generateDailyPuzzle } = require('./game/daily');
-    const p = generateDailyPuzzle(today);
+    const p = generateDailyPuzzle(selectedDate);
     return {
       givens: p.givens as { row: number; col: number; value: Digit }[],
       difficulty: seedObj.difficulty,
       seed,
       maxLives: livesForDifficulty(seedObj.difficulty),
     };
-  }, [today, seedObj.difficulty, seed]);
+  }, [selectedDate, seedObj.difficulty, seed]);
 
   const onRecord = useCallback(
     (difficulty: Difficulty, result: 'win' | 'loss', secondsElapsed: number) => {
-      void recordResult(difficulty, result, secondsElapsed);
+      // Hints not yet implemented; record usedHints=false for now
+      void recordDailyResult(seedObj.utcDate, difficulty, result, secondsElapsed, false);
     },
-    [],
+    [seedObj.utcDate],
   );
 
   const persistenceKey = useMemo(() => {

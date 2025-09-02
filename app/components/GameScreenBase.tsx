@@ -19,6 +19,7 @@ import { saveProgress, loadProgress } from '../services/storage';
 import { loadSettings } from '../services/settings';
 import { hapticError, hapticSuccess } from '../services/haptics';
 import { MaterialIcons } from '@expo/vector-icons';
+import Confetti from './Confetti';
 
 export type BasePuzzle = {
   givens: { row: number; col: number; value: Digit }[];
@@ -78,6 +79,7 @@ export default function GameScreenBase({
   const gameOver = game.livesRemaining === 0;
   const solved = isSolved(game.board);
   const finished = gameOver || solved;
+  const [usedHints] = useState(false);
   const hasRecordedRef = useRef(false);
   useEffect(() => {
     // Load UI settings (error highlighting)
@@ -641,6 +643,7 @@ export default function GameScreenBase({
             padding: 16,
           }}
         >
+          <Confetti visible={solved && !usedHints} />
           <Text style={{ fontSize: 20, fontWeight: '700', color: theme.foreground }}>
             {solved ? 'Puzzle solved!' : 'Game over'}
           </Text>
