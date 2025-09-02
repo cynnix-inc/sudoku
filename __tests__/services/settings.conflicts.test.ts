@@ -20,6 +20,7 @@ describe('settings conflict detection (#52)', () => {
         haptics: true,
         teachingPrompts: true,
         hintPathMode: 'off' as const,
+        timedChallenge: 'off' as const,
         theme: 'system' as const,
         accentColor: '#22c55e',
         gridSize: 1,
