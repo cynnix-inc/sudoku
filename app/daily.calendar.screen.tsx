@@ -1,20 +1,46 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { buildMonthMatrix } from './services/dailyCalendar';
 import { ThemeContext } from './_layout';
+import type { StatsData } from './services/stats';
+import { loadStats, getStreaks } from './services/stats';
 
 export default function DailyCalendarScreen() {
   const theme = React.useContext(ThemeContext);
+  const [stats, setStats] = React.useState<StatsData | null>(null);
+  const [streak, setStreak] = React.useState<{ current: number; best: number }>({
+    current: 0,
+    best: 0,
+  });
   const now = useMemo(() => new Date(), []);
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
-  const grid = useMemo(() => buildMonthMatrix(year, month, null, now), [year, month, now]);
+  const grid = useMemo(() => buildMonthMatrix(year, month, stats, now), [year, month, stats, now]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const s = await loadStats();
+      const st = await getStreaks();
+      if (!mounted) return;
+      setStats(s);
+      setStreak(st);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 12 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: theme.foreground }}>
-        Daily Calendar (UTC)
-      </Text>
+      <View style={{ marginBottom: 12 }}>
+        <Text style={{ fontSize: 22, fontWeight: '700', color: theme.foreground }}>
+          Daily Calendar (UTC)
+        </Text>
+        <Text style={{ marginTop: 4, color: theme.isDark ? '#9ca3af' : '#4b5563' }}>
+          Current Streak: {streak.current} • Best: {streak.best}
+        </Text>
+      </View>
       <View style={{ gap: 6 }}>
         {grid.map((week, wi) => (
           <View key={`w-${wi}`} style={{ flexDirection: 'row', gap: 6 }}>
