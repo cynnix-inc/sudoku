@@ -6,11 +6,15 @@ import SettingsScreen from './settings.screen';
 import DailyScreen from './daily.screen';
 import DailyCalendarScreen from './daily.calendar.screen';
 import StatsScreen from './stats.screen';
+<<<<<<< HEAD
 import HelpScreen from './help.screen';
+=======
+>>>>>>> 753225f (feat: implement stats screen for issue #46)
 
 export default function IndexScreen() {
   const theme = useContext(ThemeContext);
   const [screen, setScreen] = useState<
+<<<<<<< HEAD
     'home' | 'classic' | 'daily' | 'calendar' | 'settings' | 'stats' | 'help'
   >('home');
 
@@ -27,6 +31,10 @@ export default function IndexScreen() {
       </Pressable>
     </View>
   );
+=======
+    'home' | 'classic' | 'daily' | 'calendar' | 'settings' | 'stats'
+  >('home');
+>>>>>>> 753225f (feat: implement stats screen for issue #46)
 
   if (screen === 'classic') {
     return (
@@ -67,12 +75,27 @@ export default function IndexScreen() {
   if (screen === 'stats') {
     return (
       <View style={{ flex: 1 }}>
+<<<<<<< HEAD
         {renderBackButton()}
+=======
+        <View style={{ paddingHorizontal: 20, paddingTop: 12, alignItems: 'flex-start' }}>
+          <Pressable
+            onPress={() => setScreen('home')}
+            accessibilityRole="button"
+            accessibilityLabel="Return Home"
+            hitSlop={10}
+            style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+          >
+            <Text style={{ color: theme.foreground, fontSize: 16 }}>{'← Home'}</Text>
+          </Pressable>
+        </View>
+>>>>>>> 753225f (feat: implement stats screen for issue #46)
         <StatsScreen />
       </View>
     );
   }
 
+<<<<<<< HEAD
   if (screen === 'help') {
     return (
       <View style={{ flex: 1 }}>
@@ -82,6 +105,8 @@ export default function IndexScreen() {
     );
   }
 
+=======
+>>>>>>> 753225f (feat: implement stats screen for issue #46)
   return (
     <View
       style={{
@@ -162,6 +187,7 @@ export default function IndexScreen() {
           </Text>
         </Pressable>
 
+<<<<<<< HEAD
         <Pressable
           onPress={() => setScreen('calendar')}
           accessibilityRole="button"
@@ -196,6 +222,25 @@ export default function IndexScreen() {
           }}
         >
           Tools & Information
+=======
+      <Pressable
+        onPress={() => setScreen('stats')}
+        accessibilityRole="button"
+        accessibilityLabel="Go to Stats"
+      >
+        <Text style={{ fontSize: 18, marginTop: 12, color: theme.isDark ? '#93c5fd' : '#2563eb' }}>
+          Statistics
+        </Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => setScreen('settings')}
+        accessibilityRole="button"
+        accessibilityLabel="Go to Settings"
+      >
+        <Text style={{ fontSize: 18, marginTop: 12, color: theme.isDark ? '#93c5fd' : '#2563eb' }}>
+          Settings
+>>>>>>> 753225f (feat: implement stats screen for issue #46)
         </Text>
 
         <Pressable
