@@ -22,6 +22,7 @@ import { generatePuzzle } from './game/engine/generator';
 import type { UltimateLevel } from './game/engine/levels';
 import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
 import { recordResult } from './services/stats';
+import { loadSettings } from './services/settings';
 
 type Preferences = { lastDifficulty?: Difficulty };
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'];
@@ -60,6 +61,8 @@ export default function ClassicScreen() {
   const [paused, setPaused] = useState(false);
   const [chooseVisible, setChooseVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
+  const [showErrorHighlighting, setShowErrorHighlighting] = useState(true);
+  const [autoAdvance, setAutoAdvance] = useState(true);
 
   const selectedRef = useRef(selected);
   const lockedRef = useRef(lockedDigit);
@@ -136,6 +139,16 @@ export default function ClassicScreen() {
     // Load last-selected difficulty and allow user to start a new game with it later
     // Do not auto-switch existing fixture-backed board to avoid test flakiness
     void loadProgress<Preferences>('sudoku-preferences');
+    (async () => {
+      try {
+        const s = await loadSettings();
+        setShowErrorHighlighting(!!s.values.errorHighlighting);
+        setAutoAdvance(!!s.values.autoAdvance);
+      } catch {
+        setShowErrorHighlighting(true);
+        setAutoAdvance(true);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -391,6 +404,7 @@ export default function ClassicScreen() {
         board={game.board}
         selected={selected}
         highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
+        showErrorHighlighting={showErrorHighlighting}
         cellSize={cellSize}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
@@ -407,6 +421,11 @@ export default function ClassicScreen() {
                   })
                 : applyAction(prev, { type: 'place', row: r, col: c, value: lockedDigit }),
             );
+            if (!notesMode && autoAdvance) {
+              const next = { row: r, col: Math.min(8, c + 1) };
+              selectedRef.current = next;
+              setSelected(next);
+            }
           }
         }}
       />
@@ -428,6 +447,11 @@ export default function ClassicScreen() {
                 })
               : applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value }),
           );
+          if (!notesMode && autoAdvance) {
+            const next = { row: selected.row, col: Math.min(8, selected.col + 1) };
+            selectedRef.current = next;
+            setSelected(next);
+          }
         }}
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />

@@ -16,6 +16,7 @@ import { applyAction, initializeGame } from '../game/state';
 import type { Digit, Difficulty, GameAction } from '../game/types';
 import { isSolved } from '../game/rules';
 import { saveProgress, loadProgress } from '../services/storage';
+import { loadSettings } from '../services/settings';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export type BasePuzzle = {
@@ -58,6 +59,7 @@ export default function GameScreenBase({
   const [paused, setPaused] = useState(false);
   const [chooseVisible, setChooseVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
+  const [autoAdvance, setAutoAdvance] = useState(true);
 
   const selectedRef = useRef(selected);
   const lockedRef = useRef(lockedDigit);
@@ -76,6 +78,16 @@ export default function GameScreenBase({
   const solved = isSolved(game.board);
   const finished = gameOver || solved;
   const hasRecordedRef = useRef(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await loadSettings();
+        setAutoAdvance(!!s.values.autoAdvance);
+      } catch {
+        setAutoAdvance(true);
+      }
+    })();
+  }, []);
 
   const selectedDigit: Digit | null = (() => {
     if (!selected) return null;
@@ -381,6 +393,11 @@ export default function GameScreenBase({
                   })
                 : applyAction(prev, { type: 'place', row: r, col: c, value: lockedDigit }),
             );
+            if (!notesMode && autoAdvance) {
+              const next = { row: r, col: Math.min(8, c + 1) };
+              selectedRef.current = next;
+              setSelected(next);
+            }
           }
         }}
       />
@@ -403,6 +420,11 @@ export default function GameScreenBase({
                 })
               : applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value }),
           );
+          if (!notesMode && autoAdvance) {
+            const next = { row: selected.row, col: Math.min(8, selected.col + 1) };
+            selectedRef.current = next;
+            setSelected(next);
+          }
         }}
         onToggleLock={(d) => setLockedDigit((prev) => (prev === d ? null : d))}
       />
