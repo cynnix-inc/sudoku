@@ -22,12 +22,8 @@ import SeedFooter from './components/SeedFooter';
 import { generatePuzzle } from './game/engine/generator';
 import type { UltimateLevel } from './game/engine/levels';
 import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
-<<<<<<< HEAD
-import { recordResult } from './services/stats';
-import { hapticError, hapticSuccess } from './services/haptics';
-=======
 import { recordResult, recordGameHistory } from './services/stats';
->>>>>>> 30bee89 (Epic #19 — finalize to staging (#473))
+import { hapticError, hapticSuccess } from './services/haptics';
 
 type Preferences = { lastDifficulty?: Difficulty };
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'];
@@ -596,7 +592,7 @@ export default function ClassicScreen() {
             color={theme.foreground}
           />
         </Pressable>
-
+        
         <Pressable
           onPress={() => {
             if (!selected) return;

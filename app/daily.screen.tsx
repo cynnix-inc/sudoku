@@ -6,6 +6,7 @@ import { storageKeys } from './services/storage';
 import { recordDailyResult } from './services/stats';
 import { loadDailyPuzzle, dailyCacheKey } from './services/daily';
 import SeedFooter from './components/SeedFooter';
+
 // Router params not available in tests; default to today or to ?date=YYYYMMDD when router exists
 
 function livesForDifficulty(d: Difficulty): number {
