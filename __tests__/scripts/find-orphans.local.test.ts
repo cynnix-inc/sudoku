@@ -27,7 +27,7 @@ function runScriptLocal(): Row[] {
 describe('find-orphans.ps1 (local mode)', () => {
   it('produces rows with parentState and is_orphan flags', () => {
     const script = join(process.cwd(), 'scripts', 'find-orphans.ps1');
-    if (process.env.CI || !existsSync(script)) {
+    if (process.env['CI'] || !existsSync(script)) {
       // Skip in CI or when script is unavailable on this environment
       return;
     }
