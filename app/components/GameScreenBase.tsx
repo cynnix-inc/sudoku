@@ -62,6 +62,7 @@ export default function GameScreenBase({
   const [chooseVisible, setChooseVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
   const [showErrorHighlighting, setShowErrorHighlighting] = useState(true);
+  const [enableAutoCandidates, setEnableAutoCandidates] = useState(false);
 
   const selectedRef = useRef(selected);
   const lockedRef = useRef(lockedDigit);
@@ -82,13 +83,18 @@ export default function GameScreenBase({
   const [usedHints] = useState(false);
   const hasRecordedRef = useRef(false);
   useEffect(() => {
-    // Load UI settings (error highlighting)
+    // Load UI settings (error highlighting, auto-candidates)
     (async () => {
       try {
         const s = await loadSettings();
         setShowErrorHighlighting(!!s.values.errorHighlighting);
+        const setting = s.values.autoCandidates;
+        const isEasyOrMedium =
+          game.config.difficulty === 'easy' || game.config.difficulty === 'medium';
+        setEnableAutoCandidates(setting === 'on' || (setting === 'default' && isEasyOrMedium));
       } catch {
         setShowErrorHighlighting(true);
+        setEnableAutoCandidates(false);
       }
     })();
   }, []);
@@ -383,6 +389,7 @@ export default function GameScreenBase({
         selected={selected}
         highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
         showErrorHighlighting={showErrorHighlighting}
+        enableAutoCandidates={enableAutoCandidates}
         cellSize={cellSize}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
