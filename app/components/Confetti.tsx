@@ -7,17 +7,17 @@ type ConfettiProps = {
 
 export default function Confetti({ visible }: ConfettiProps) {
   if (!visible) return null;
-  const pieces: { x: number; y: number; e: string }[] = [
-    { x: 20, y: 20, e: '🎉' },
-    { x: 280, y: 24, e: '🎊' },
-    { x: 90, y: 60, e: '✨' },
-    { x: 200, y: 80, e: '🎉' },
-    { x: 40, y: 140, e: '🎊' },
-    { x: 230, y: 160, e: '✨' },
-    { x: 120, y: 220, e: '🎉' },
-    { x: 300, y: 240, e: '🎊' },
-    { x: 60, y: 280, e: '✨' },
-    { x: 180, y: 320, e: '🎉' },
+  const pieces = [
+    { x: '10%', y: '10%', r: 0, e: '🎉' },
+    { x: '80%', y: '12%', r: 0, e: '🎊' },
+    { x: '25%', y: '20%', r: 0, e: '✨' },
+    { x: '60%', y: '25%', r: 0, e: '🎉' },
+    { x: '15%', y: '40%', r: 0, e: '🎊' },
+    { x: '70%', y: '45%', r: 0, e: '✨' },
+    { x: '35%', y: '60%', r: 0, e: '🎉' },
+    { x: '85%', y: '65%', r: 0, e: '🎊' },
+    { x: '20%', y: '75%', r: 0, e: '✨' },
+    { x: '55%', y: '80%', r: 0, e: '🎉' },
   ];
   return (
     <View
