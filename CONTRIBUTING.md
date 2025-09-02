@@ -79,6 +79,52 @@ Thank you for contributing! Please follow this guide to keep the project healthy
 - Implementation tasks are Issues; Epics link to their children via sub-issues.
 - Use the GitHub CLI sub-issues extension to manage hierarchy: see `gh-sub-issue`.
 
+### Epic Processing Automation
+
+The `scripts/epic-run.ps1` script automates the complete epic workflow:
+
+#### Basic Usage
+
+```bash
+# Process the highest priority epic
+.\epic-run.ps1
+
+# Process a specific epic
+.\epic-run.ps1 -EpicNumber 18
+
+# Dry-run mode (see what would happen)
+.\epic-run.ps1 -DryRun
+```
+
+#### Continuous Processing
+
+```bash
+# Process all epics sequentially
+.\epic-run.ps1 -Continuous
+
+# Start with a specific epic, then continue with others
+.\epic-run.ps1 -EpicNumber 18 -Continuous
+```
+
+#### Features
+
+- **Automatic epic selection** by priority (p0 > p1 > p2 > p3)
+- **Sub-issue discovery** via gh-sub-issue or GitHub search fallback
+- **Git branch management** with automatic rebasing and conflict resolution
+- **CI integration** with automatic testing and validation
+- **PR creation and management** with auto-merge when possible
+- **Checkpoint system** for resume capability after interruptions
+- **Continuous mode** for processing multiple epics in sequence
+
+#### Resume Capability
+
+If the script is interrupted, it can resume from where it left off:
+
+- Saves progress after each sub-issue
+- Tracks completed, failed, and current issues
+- Automatically skips already-processed work
+- Checkpoint files stored as `epic-{number}-checkpoint.json`
+
 ### Install the CLI extension
 
 ```bash
@@ -116,26 +162,6 @@ gh sub-issue list <epic-number> -R cynnix-inc/sudoku --state all
 
 Reference: `gh-sub-issue` usage and options are documented here: https://github.com/yahsan2/gh-sub-issue
 
-## Sub-Issue Templates
-
-- Use the following templates when creating sub-issues under an Epic and include `Parent: #<epic-number>` in the body.
-  - `docs/templates/feature-sub-issue.md`
-  - `docs/templates/bug-sub-issue.md`
-  - `docs/templates/chore-sub-issue.md`
-- After creating, link them as sub-issues of the Epic. If you have the GitHub CLI extension installed, you can run:
-  - `gh sub-issue add --parent <epic-number> --child <issue-number>`
-
-## Automation
-
-- See `.cursor/rules/epic-prompts.md` for prompts to scope Epics and prepare sub-issues.
-- Epic automation can be run via `scripts/epic-run.ps1` or by commenting `/run-epic <number>` on the Epic.
-
 ## Styling
 
 - Tailwind/NativeWind is scaffolded and kept for upcoming UI work. It may not be widely used in the codebase yet; prefer consistent usage where practical and avoid mixing multiple styling paradigms in the same component.
-
-## Additional Resources
-
-- **Style, testing, and DevOps rules**: See `.cursor/rules/` for detailed guidelines
-- **Epic automation**: See `.cursor/rules/epic-prompts.md` for comprehensive Epic management
-- **CI/CD**: See `.cursor/rules/50-devops.md` for DevOps and release processes
