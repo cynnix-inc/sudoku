@@ -384,6 +384,17 @@ export default function GameScreenBase({
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
           selectedRef.current = { row: r, col: c };
+          // If tapping a given, set the locked digit to that given's value
+          try {
+            const cell = game.board[r]?.[c];
+            if (cell && cell.isGiven && typeof cell.value === 'number') {
+              setLockedDigit(cell.value as Digit);
+              lockedRef.current = cell.value as Digit;
+              return;
+            }
+          } catch {
+            // ignore out-of-bounds or unexpected access
+          }
           if (lockedDigit != null) {
             setGame((prev) =>
               notesMode
