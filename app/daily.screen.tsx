@@ -6,7 +6,7 @@ import { storageKeys } from './services/storage';
 import { recordDailyResult } from './services/stats';
 import { loadDailyPuzzle, dailyCacheKey } from './services/daily';
 import SeedFooter from './components/SeedFooter';
-// Router params not available in tests; default to today
+// Router params not available in tests; default to today or to ?date=YYYYMMDD when router exists
 
 function livesForDifficulty(d: Difficulty): number {
   switch (d) {
@@ -26,7 +26,27 @@ function livesForDifficulty(d: Difficulty): number {
 }
 
 export default function DailyScreen() {
-  const selectedDate = useMemo(() => new Date(), []);
+  const selectedDate = useMemo(() => {
+    try {
+      const exp = require('expo-router');
+      const useLocalSearchParams = exp?.useLocalSearchParams as
+        | undefined
+        | (() => Record<string, unknown>);
+      if (typeof useLocalSearchParams === 'function') {
+        const params = useLocalSearchParams() as { date?: unknown };
+        const raw = typeof params?.date === 'string' ? params.date : undefined;
+        if (raw && /^\d{8}$/.test(raw)) {
+          const y = Number(raw.slice(0, 4));
+          const m = Number(raw.slice(4, 6)) - 1;
+          const d = Number(raw.slice(6, 8));
+          return new Date(Date.UTC(y, m, d));
+        }
+      }
+    } catch {
+      // Router not available (tests/web without expo-router); fall back to today
+    }
+    return new Date();
+  }, []);
   const seedObj = useMemo(() => createDailySeed(selectedDate), [selectedDate]);
   const seed = useMemo(() => formatDailySeed(seedObj), [seedObj]);
 
