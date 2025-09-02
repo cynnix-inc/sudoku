@@ -11,6 +11,8 @@ export type SettingsValues = {
   autoCandidates: 'on' | 'off' | 'default';
   autoAdvance: boolean;
   haptics: boolean;
+  teachingPrompts: boolean; // Novice level prompts
+  hintPathMode: 'off' | 'skilled'; // Skilled hint path influence
   theme: 'system' | 'light' | 'dark';
   accentColor: string;
   gridSize: number; // 0..2 small/medium/large
@@ -36,6 +38,8 @@ const DEFAULT_SETTINGS: SettingsData = {
     autoCandidates: 'default',
     autoAdvance: true,
     haptics: true,
+    teachingPrompts: true,
+    hintPathMode: 'off',
     theme: 'system',
     accentColor: '#22c55e',
     gridSize: 1,

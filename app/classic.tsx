@@ -19,11 +19,13 @@ import { ThemeContext } from './_layout';
 import Header from './components/Header';
 import SeedFooter from './components/SeedFooter';
 import { generatePuzzle } from './game/engine/generator';
+import type { UltimateLevel } from './game/engine/levels';
 import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
 import { recordResult } from './services/stats';
 
 type Preferences = { lastDifficulty?: Difficulty };
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'];
+const LEVELS: UltimateLevel[] = ['novice', 'skilled', 'advanced', 'expert', 'fiendish', 'ultimate'];
 function livesForDifficulty(d: Difficulty): number {
   switch (d) {
     case 'easy':
@@ -87,9 +89,11 @@ export default function ClassicScreen() {
     return typeof value === 'number' ? (value as Digit) : null;
   })();
 
-  function startNewGame(difficulty: Difficulty) {
+  function startNewGame(difficulty: Difficulty, level?: UltimateLevel) {
     const newSeed = String(Math.floor(Date.now() / 1000));
-    const puzzle = generatePuzzle({ seed: newSeed, difficulty });
+    const puzzle = level
+      ? generatePuzzle({ seed: newSeed, level })
+      : generatePuzzle({ seed: newSeed, difficulty });
     setSeed(newSeed);
     const reset = initializeGame(puzzle.givens as { row: number; col: number; value: Digit }[], {
       difficulty,
@@ -628,7 +632,7 @@ export default function ClassicScreen() {
           <Text
             style={{ fontSize: 18, fontWeight: '700', color: theme.foreground, marginBottom: 12 }}
           >
-            Select difficulty
+            Select difficulty / level
           </Text>
           <View
             style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}
@@ -653,6 +657,49 @@ export default function ClassicScreen() {
               >
                 <Text style={{ fontSize: 14, fontWeight: '600', color: theme.foreground }}>
                   {d}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <View style={{ height: 12 }} />
+          <Text
+            style={{ fontSize: 14, fontWeight: '700', color: theme.foreground, marginBottom: 8 }}
+          >
+            Ultimate Levels
+          </Text>
+          <View
+            style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}
+          >
+            {LEVELS.map((lvl) => (
+              <Pressable
+                key={lvl}
+                onPress={() => {
+                  // Map level to closest legacy difficulty for lives/labeling
+                  const map: Record<UltimateLevel, Difficulty> = {
+                    novice: 'easy',
+                    skilled: 'medium',
+                    advanced: 'hard',
+                    expert: 'expert',
+                    fiendish: 'master',
+                    ultimate: 'extreme',
+                  };
+                  const d = map[lvl];
+                  startNewGame(d, lvl);
+                  setChooseVisible(false);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Start ${lvl} game`}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderWidth: 1,
+                  borderColor: theme.isDark ? '#374151' : '#d1d5db',
+                  borderRadius: 6,
+                  backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '600', color: theme.foreground }}>
+                  {lvl}
                 </Text>
               </Pressable>
             ))}
