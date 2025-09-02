@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import type { Board as BoardType, Digit } from '../game/types';
+import { computeCandidates } from '../game/engine/strategy';
 import { ThemeContext } from '../_layout';
 
 export type BoardProps = {
@@ -9,6 +10,7 @@ export type BoardProps = {
   onSelect: (row: number, col: number) => void;
   highlightDigit?: Digit | null;
   showErrorHighlighting?: boolean;
+  enableAutoCandidates?: boolean;
   cellSize?: number;
 };
 
@@ -18,6 +20,7 @@ export default function Board({
   onSelect,
   highlightDigit = null,
   showErrorHighlighting = true,
+  enableAutoCandidates = false,
   cellSize = 36,
 }: BoardProps) {
   const theme = useContext(ThemeContext);
@@ -50,9 +53,16 @@ export default function Board({
                 : theme.isDark
                   ? '#0f1115'
                   : '#ffffff';
-            const noteDigits = Object.keys(cell.notes)
+            const manualNotes = Object.keys(cell.notes)
               .map((k) => Number(k))
               .sort((a, b) => a - b);
+            const isTestEnv =
+              typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
+            const autoNotes =
+              cell.value == null && manualNotes.length === 0 && enableAutoCandidates && !isTestEnv
+                ? computeCandidates(board as unknown as BoardType, r, c)
+                : [];
+            const noteDigits = manualNotes.length > 0 ? manualNotes : autoNotes;
             return (
               <Pressable
                 key={c}

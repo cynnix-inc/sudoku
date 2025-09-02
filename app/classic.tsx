@@ -63,13 +63,20 @@ export default function ClassicScreen() {
   const [chooseVisible, setChooseVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
   const [showErrorHighlighting, setShowErrorHighlighting] = useState(true);
+  const [enableAutoCandidates, setEnableAutoCandidates] = useState(false);
   useEffect(() => {
     (async () => {
       try {
         const s = await loadSettings();
         setShowErrorHighlighting(!!s.values.errorHighlighting);
+        // Difficulty-based auto-candidates default: ON for easy/medium when setting is default
+        const setting = s.values.autoCandidates;
+        const isEasyOrMedium =
+          game.config.difficulty === 'easy' || game.config.difficulty === 'medium';
+        setEnableAutoCandidates(setting === 'on' || (setting === 'default' && isEasyOrMedium));
       } catch {
         setShowErrorHighlighting(true);
+        setEnableAutoCandidates(false);
       }
     })();
   }, []);
@@ -406,6 +413,7 @@ export default function ClassicScreen() {
         selected={selected}
         highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
         showErrorHighlighting={showErrorHighlighting}
+        enableAutoCandidates={enableAutoCandidates}
         cellSize={cellSize}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
