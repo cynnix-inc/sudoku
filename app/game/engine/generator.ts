@@ -3,6 +3,8 @@ import type { UltimateLevel } from './levels';
 import { pickTargetCluesForLevel } from './levels';
 import { createRng, hashStringToSeed, shuffled } from './random';
 import { cloneGrid, countSolutions } from './solver';
+import type { VariantsConfig } from './variants';
+import { DEFAULT_VARIANTS, validateVariants } from './variants';
 import { pickTargetClues, generateMask, symmetryModes } from './masks';
 
 export type GenerateOptions = {
@@ -10,6 +12,7 @@ export type GenerateOptions = {
   difficulty?: Difficulty; // if provided, aim to meet clue thresholds fast
   minClues?: number; // legacy/override when uniqueness mode used
   level?: UltimateLevel; // new Ultimate levels API
+  variants?: VariantsConfig; // optional variants scaffold
 };
 
 export type GeneratedPuzzle = {
@@ -56,7 +59,7 @@ function generateSolvedGrid(seed: string): (Digit | null)[][] {
 }
 
 export function generatePuzzle(options: GenerateOptions): GeneratedPuzzle {
-  const { seed, difficulty, minClues, level } = options;
+  const { seed, difficulty, minClues, level, variants = DEFAULT_VARIANTS } = options;
 
   // Always compute a solved grid quickly
   const solution = cloneGrid(generateSolvedGrid(seed));
@@ -81,6 +84,10 @@ export function generatePuzzle(options: GenerateOptions): GeneratedPuzzle {
           givens.push({ row: r, col: c, value: solution[r]![c]! });
         }
       }
+    }
+    // Variants validation (scaffold only)
+    if (!validateVariants(solution, variants)) {
+      // If invalid under variants, retry by falling back to uniqueness mode later
     }
     return { givens, solution };
   }
