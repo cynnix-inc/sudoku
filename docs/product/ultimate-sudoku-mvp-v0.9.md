@@ -1,5 +1,7 @@
 # Ultimate Sudoku – MVP Requirements & Roadmap (v0.9)
 
+Note (2025‑09‑02): Ultimate Sudoku Levels implemented per ADR‑0007 (Epic #399). Classic tier engine remains documented below for historical context and seed compatibility; see ADR‑0007 for the new levels design.
+
 ## Index / High-Level Summary
 
 1. **MVP Snapshot** – Gameplay, Controls, Modes, Difficulty, Hints (Phase 1)
