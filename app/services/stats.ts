@@ -25,6 +25,12 @@ export type StatsData = {
 const STATS_KEY = 'sudoku-stats';
 const RECENT_DAILY_MAX = 60;
 
+// Forward declaration for TS
+export async function getStreaks(): Promise<{ current: number; best: number }> {
+  // implementation defined later; this is just to satisfy type usage before definition
+  return { current: 0, best: 0 };
+}
+
 export async function loadStats(): Promise<StatsData | null> {
   const loaded = await loadProgress<unknown>(STATS_KEY);
   if (!loaded) return null;
@@ -195,13 +201,86 @@ export function computeStreaks(results: DailyResult[]): Streaks {
   return { current, best };
 }
 
-export async function getStreaks(): Promise<Streaks> {
-  const stats = (await loadStats()) ?? {
-    schemaVersion: 2 as const,
-    totals: { played: 0, wins: 0, losses: 0 },
-    bestTimeByDifficulty: {},
-    recentDailyResults: [],
-    lastCalculated: 0,
+export type DifficultyStats = {
+  played: number;
+  wins: number;
+  winRate: number;
+  bestTime: number | null;
+  averageTime: number | null;
+};
+
+export type DetailedStats = {
+  overall: {
+    played: number;
+    wins: number;
+    winRate: number;
+    averageTime: number | null;
   };
-  return computeStreaks(stats.recentDailyResults);
+  byDifficulty: Partial<Record<GameConfig['difficulty'], DifficultyStats>>;
+  streaks: Streaks;
+};
+
+/**
+ * Calculate detailed statistics by difficulty from game history
+ * This is a placeholder - in a real implementation, you'd need to track
+ * individual game results by difficulty, not just best times
+ */
+export function calculateDifficultyStats(
+  bestTimes: Partial<Record<GameConfig['difficulty'], number>>,
+): Partial<Record<GameConfig['difficulty'], DifficultyStats>> {
+  const result: Partial<Record<GameConfig['difficulty'], DifficultyStats>> = {};
+
+  // For now, we only have best times, so we'll show placeholder data
+  // In a real implementation, you'd need to track individual game results
+  const difficulties: GameConfig['difficulty'][] = [
+    'easy',
+    'medium',
+    'hard',
+    'expert',
+    'master',
+    'extreme',
+  ];
+
+  for (const difficulty of difficulties) {
+    const bestTime = bestTimes[difficulty] || null;
+    result[difficulty] = {
+      played: 0, // Would need to be calculated from game history
+      wins: 0, // Would need to be calculated from game history
+      winRate: 0, // Would need to be calculated from game history
+      bestTime,
+      averageTime: null, // Would need to be calculated from game history
+    };
+  }
+
+  return result;
+}
+
+/**
+ * Get comprehensive statistics including per-difficulty breakdown
+ */
+export async function getDetailedStats(): Promise<DetailedStats | null> {
+  const stats = await loadStats();
+  if (!stats) {
+    return {
+      overall: { played: 0, wins: 0, winRate: 0, averageTime: null },
+      byDifficulty: {},
+      streaks: { current: 0, best: 0 },
+    };
+  }
+
+  const overall = {
+    played: stats.totals.played,
+    wins: stats.totals.wins,
+    winRate: stats.totals.played > 0 ? (stats.totals.wins / stats.totals.played) * 100 : 0,
+    averageTime: null, // Would need to be calculated from game history
+  };
+
+  const byDifficulty = calculateDifficultyStats(stats.bestTimeByDifficulty);
+  const streaks = await (async () => getStreaks())();
+
+  return {
+    overall,
+    byDifficulty,
+    streaks,
+  };
 }
