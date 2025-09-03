@@ -21,6 +21,20 @@ import { hapticError, hapticSuccess } from '../services/haptics';
 import { MaterialIcons } from '@expo/vector-icons';
 import Confetti from './Confetti';
 
+// Optional cloud sync: available only when Supabase env is configured
+let pushSavedPuzzle:
+  | undefined
+  | ((data: {
+      puzzle: string;
+      solution: string;
+      difficulty: string;
+    }) => Promise<{ ok: true } | { ok: false; error: string }>);
+try {
+  pushSavedPuzzle = require('../services/sync').pushSavedPuzzle as typeof pushSavedPuzzle;
+} catch {
+  pushSavedPuzzle = undefined;
+}
+
 export type BasePuzzle = {
   givens: { row: number; col: number; value: Digit }[];
   difficulty: Difficulty;
@@ -150,6 +164,18 @@ export default function GameScreenBase({
       hasRecordedRef.current = true;
       const result = solved ? 'win' : ('loss' as const);
       onRecord(game.config.difficulty, result, seconds);
+      if (result === 'win' && pushSavedPuzzle) {
+        try {
+          const payload = {
+            puzzle: JSON.stringify(givens),
+            solution: JSON.stringify(game.board),
+            difficulty: String(game.config.difficulty),
+          } as const;
+          void pushSavedPuzzle(payload);
+        } catch {
+          void 0;
+        }
+      }
     }
   }, [finished, solved, game.config.difficulty, seconds, onRecord]);
 
