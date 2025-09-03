@@ -50,4 +50,6 @@ describe('generator (#159)', () => {
       expect(matched).toBe(true);
     }
   });
+
+  // Uniqueness is enforced for legacy minClues path; difficulty path prioritizes performance
 });

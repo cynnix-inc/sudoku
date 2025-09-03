@@ -77,6 +77,7 @@ export default function GameScreenBase({
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
   const [showErrorHighlighting, setShowErrorHighlighting] = useState(true);
   const [enableAutoCandidates, setEnableAutoCandidates] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(true);
 
   const selectedRef = useRef(selected);
   const lockedRef = useRef(lockedDigit);
@@ -97,7 +98,7 @@ export default function GameScreenBase({
   const [usedHints] = useState(false);
   const hasRecordedRef = useRef(false);
   useEffect(() => {
-    // Load UI settings (error highlighting, auto-candidates)
+    // Load UI settings (error highlighting, auto-candidates, auto-advance)
     (async () => {
       try {
         const s = await loadSettings();
@@ -106,9 +107,11 @@ export default function GameScreenBase({
         const isEasyOrMedium =
           game.config.difficulty === 'easy' || game.config.difficulty === 'medium';
         setEnableAutoCandidates(setting === 'on' || (setting === 'default' && isEasyOrMedium));
+        setAutoAdvance(!!s.values.autoAdvance);
       } catch {
         setShowErrorHighlighting(true);
         setEnableAutoCandidates(false);
+        setAutoAdvance(true);
       }
     })();
   }, []);
@@ -469,21 +472,48 @@ export default function GameScreenBase({
           if (!selected) return;
           const value = lockedDigit ?? d;
           setGame((prev) => {
+            const sel = selected;
             const next = notesMode
               ? applyAction(prev, {
                   type: 'note',
-                  row: selected.row,
-                  col: selected.col,
+                  row: sel.row,
+                  col: sel.col,
                   value,
                   present: true,
                 })
-              : applyAction(prev, { type: 'place', row: selected.row, col: selected.col, value });
+              : applyAction(prev, { type: 'place', row: sel.row, col: sel.col, value });
             try {
               if (!notesMode) {
                 const beforeLives = prev.livesRemaining;
                 const afterLives = next.livesRemaining;
                 if (afterLives < beforeLives) void hapticError();
                 else void hapticSuccess();
+                // Auto-advance to next empty cell on successful placement
+                if (autoAdvance && afterLives === beforeLives) {
+                  try {
+                    // Find next empty cell row-major after current
+                    const startIndex = sel.row * 9 + sel.col;
+                    let moved = false;
+                    for (let i = 1; i < 81; i++) {
+                      const idx = (startIndex + i) % 81;
+                      const r = Math.floor(idx / 9);
+                      const c = idx % 9;
+                      const cell = next.board[r]?.[c];
+                      if (cell && (cell.value == null || cell.value === null)) {
+                        const nextSel = { row: r, col: c };
+                        selectedRef.current = nextSel;
+                        setSelected(nextSel);
+                        moved = true;
+                        break;
+                      }
+                    }
+                    if (!moved) {
+                      // no empty found; keep selection
+                    }
+                  } catch {
+                    // ignore
+                  }
+                }
               } else {
                 void hapticSuccess();
               }

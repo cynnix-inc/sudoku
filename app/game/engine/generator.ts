@@ -6,6 +6,7 @@ import { cloneGrid, countSolutions } from './solver';
 import type { VariantsConfig } from './variants';
 import { DEFAULT_VARIANTS, validateVariants } from './variants';
 import { pickTargetClues, generateMask, symmetryModes } from './masks';
+// no import for thresholds in fast difficulty path
 
 export type GenerateOptions = {
   seed: string;
