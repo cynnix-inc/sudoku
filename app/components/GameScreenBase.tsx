@@ -37,20 +37,6 @@ try {
   pushSavedPuzzle = undefined;
 }
 
-// Optional cloud sync: available only when Supabase env is configured
-let pushSavedPuzzle:
-  | undefined
-  | ((data: {
-      puzzle: string;
-      solution: string;
-      difficulty: string;
-    }) => Promise<{ ok: true } | { ok: false; error: string }>);
-try {
-  pushSavedPuzzle = require('../services/sync').pushSavedPuzzle as typeof pushSavedPuzzle;
-} catch {
-  pushSavedPuzzle = undefined;
-}
-
 export type BasePuzzle = {
   givens: { row: number; col: number; value: Digit }[];
   difficulty: Difficulty;
