@@ -20,6 +20,7 @@ import { loadSettings } from '../services/settings';
 import { hapticError, hapticSuccess } from '../services/haptics';
 import { MaterialIcons } from '@expo/vector-icons';
 import Confetti from './Confetti';
+import { findNextStep } from '../game/engine/strategy';
 
 // Optional cloud sync: available only when Supabase env is configured
 let pushSavedPuzzle:
@@ -78,6 +79,9 @@ export default function GameScreenBase({
   const [showErrorHighlighting, setShowErrorHighlighting] = useState(true);
   const [enableAutoCandidates, setEnableAutoCandidates] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
+  const [usedHints, setUsedHints] = useState(false);
+  const [hintsUsedCount, setHintsUsedCount] = useState(0);
+  const maxHints = 3;
 
   const selectedRef = useRef(selected);
   const lockedRef = useRef(lockedDigit);
@@ -95,7 +99,7 @@ export default function GameScreenBase({
   const gameOver = game.livesRemaining === 0;
   const solved = isSolved(game.board);
   const finished = gameOver || solved;
-  const [usedHints] = useState(false);
+  // usedHints is tracked via state when hint button used
   const hasRecordedRef = useRef(false);
   useEffect(() => {
     // Load UI settings (error highlighting, auto-candidates, auto-advance)
@@ -163,7 +167,17 @@ export default function GameScreenBase({
     if (finished && !hasRecordedRef.current) {
       hasRecordedRef.current = true;
       const result = solved ? 'win' : ('loss' as const);
-      onRecord(game.config.difficulty, result, seconds);
+      if (typeof onRecord === 'function' && onRecord.length >= 4) {
+        const maybeExtended = onRecord as unknown as (
+          d: Difficulty,
+          r: 'win' | 'loss',
+          s: number,
+          o?: { usedHints?: boolean },
+        ) => void;
+        maybeExtended(game.config.difficulty, result, seconds, { usedHints });
+      } else {
+        onRecord(game.config.difficulty, result, seconds);
+      }
       if (result === 'win' && pushSavedPuzzle) {
         try {
           const payload = {
@@ -530,6 +544,50 @@ export default function GameScreenBase({
         testID="tools-row"
         style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}
       >
+        <Pressable
+          onPress={() => {
+            if (finished) return;
+            if (hintsUsedCount >= maxHints) return;
+            try {
+              const step = findNextStep(game.board);
+              if (!step) return;
+              setGame((prev) =>
+                applyAction(prev, {
+                  type: 'place',
+                  row: step.row,
+                  col: step.col,
+                  value: step.value,
+                }),
+              );
+              setHintsUsedCount((n) => n + 1);
+              setUsedHints(true);
+              setSeconds((s) => s + 30);
+            } catch {
+              // ignore
+            }
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={hintsUsedCount >= maxHints ? 'No hints remaining' : 'Get hint'}
+          accessibilityHint={
+            hintsUsedCount >= maxHints
+              ? 'You have used all available hints'
+              : 'Places a logically deducible value and adds 30 seconds'
+          }
+          style={{
+            width: 36,
+            height: 36,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? '#374151' : '#d1d5db',
+            borderRadius: 6,
+            backgroundColor: theme.isDark ? '#0f1115' : '#ffffff',
+            marginRight: 6,
+            opacity: hintsUsedCount >= maxHints || finished ? 0.5 : 1,
+          }}
+        >
+          <MaterialIcons name="lightbulb-outline" size={20} color={theme.foreground} />
+        </Pressable>
         <Pressable
           onPress={() => setNotesMode((p) => !p)}
           accessibilityRole="button"
