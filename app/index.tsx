@@ -130,9 +130,11 @@ export default function IndexScreen() {
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
@@ -153,9 +155,11 @@ export default function IndexScreen() {
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
@@ -176,9 +180,11 @@ export default function IndexScreen() {
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
@@ -214,9 +220,11 @@ export default function IndexScreen() {
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
@@ -237,9 +245,11 @@ export default function IndexScreen() {
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
