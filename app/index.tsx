@@ -1,5 +1,6 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { ThemeContext } from './_layout';
 import ClassicScreen from './classic';
 import SettingsScreen from './settings.screen';
@@ -127,14 +128,28 @@ export default function IndexScreen() {
           style={{
             width: '100%',
             maxWidth: 420,
-            backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,17,19,0.06)',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOpacity: theme.isDark ? 0.25 : 0.15,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
           }}
         >
+          <BlurView
+            intensity={30}
+            tint={theme.isDark ? 'dark' : 'light'}
+            style={{ ...StyleSheet.absoluteFillObject }}
+          />
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
             🎯 Play Classic 9×9
           </Text>
@@ -150,14 +165,28 @@ export default function IndexScreen() {
           style={{
             width: '100%',
             maxWidth: 420,
-            backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,17,19,0.06)',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOpacity: theme.isDark ? 0.25 : 0.15,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
           }}
         >
+          <BlurView
+            intensity={30}
+            tint={theme.isDark ? 'dark' : 'light'}
+            style={{ ...StyleSheet.absoluteFillObject }}
+          />
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
             📅 Daily Challenge
           </Text>
@@ -173,14 +202,28 @@ export default function IndexScreen() {
           style={{
             width: '100%',
             maxWidth: 420,
-            backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,17,19,0.06)',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOpacity: theme.isDark ? 0.25 : 0.15,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
           }}
         >
+          <BlurView
+            intensity={30}
+            tint={theme.isDark ? 'dark' : 'light'}
+            style={{ ...StyleSheet.absoluteFillObject }}
+          />
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
             📆 Daily Calendar
           </Text>
@@ -211,14 +254,28 @@ export default function IndexScreen() {
           style={{
             width: '100%',
             maxWidth: 420,
-            backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,17,19,0.06)',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOpacity: theme.isDark ? 0.25 : 0.15,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
           }}
         >
+          <BlurView
+            intensity={30}
+            tint={theme.isDark ? 'dark' : 'light'}
+            style={{ ...StyleSheet.absoluteFillObject }}
+          />
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
             📊 Statistics
           </Text>
@@ -234,14 +291,28 @@ export default function IndexScreen() {
           style={{
             width: '100%',
             maxWidth: 420,
-            backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,17,19,0.06)',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOpacity: theme.isDark ? 0.25 : 0.15,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
           }}
         >
+          <BlurView
+            intensity={30}
+            tint={theme.isDark ? 'dark' : 'light'}
+            style={{ ...StyleSheet.absoluteFillObject }}
+          />
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
             ⚙️ Settings
           </Text>
@@ -257,14 +328,28 @@ export default function IndexScreen() {
           style={{
             width: '100%',
             maxWidth: 420,
-            backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,17,19,0.06)',
             paddingVertical: 16,
             paddingHorizontal: 20,
+            minHeight: 96,
             borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOpacity: theme.isDark ? 0.25 : 0.15,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
           }}
         >
+          <BlurView
+            intensity={30}
+            tint={theme.isDark ? 'dark' : 'light'}
+            style={{ ...StyleSheet.absoluteFillObject }}
+          />
           <Text style={{ fontSize: 18, fontWeight: '600', color: theme.foreground }}>
             ❓ Help & About
           </Text>
