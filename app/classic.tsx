@@ -21,7 +21,7 @@ import SeedFooter from './components/SeedFooter';
 import { generatePuzzle } from './game/engine/generator';
 import type { UltimateLevel } from './game/engine/levels';
 import { FIXED_EASY_SEED, seedToGivens } from './game/fixtures';
-import { recordResult } from './services/stats';
+import { recordResult, recordGameHistory } from './services/stats';
 
 type Preferences = { lastDifficulty?: Difficulty };
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'];
@@ -144,8 +144,29 @@ export default function ClassicScreen() {
       hasRecordedRef.current = true;
       const result = solved ? 'win' : ('loss' as const);
       void recordResult(game.config.difficulty, result, seconds);
+
+      // Calculate total moves from game history
+      const totalMoves = game.history.past.length;
+
+      // Record game history entry
+      void recordGameHistory(
+        game.config.difficulty,
+        result,
+        seconds,
+        game.hintState.hintsUsed > 0,
+        game.livesRemaining,
+        totalMoves,
+      );
     }
-  }, [finished, solved, game.config.difficulty, seconds]);
+  }, [
+    finished,
+    solved,
+    game.config.difficulty,
+    seconds,
+    game.history.past.length,
+    game.hintState.hintsUsed,
+    game.livesRemaining,
+  ]);
 
   useEffect(() => {
     if (!finished) {
