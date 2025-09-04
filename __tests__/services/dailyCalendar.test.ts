@@ -6,7 +6,7 @@ describe('daily calendar service (#39)', () => {
     const today = new Date(Date.UTC(2025, 0, 15)); // Jan 15, 2025 UTC
     const completedUTC = ['20250102', '20250110', '20250115'];
     const stats: StatsData = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       totals: { played: 0, wins: 0, losses: 0 },
       bestTimeByDifficulty: {},
       recentDailyResults: completedUTC.map((d) => ({
@@ -15,6 +15,7 @@ describe('daily calendar service (#39)', () => {
         seconds: 100,
         usedHints: false,
       })),
+      gameHistory: [],
       lastCalculated: today.getTime(),
     };
 

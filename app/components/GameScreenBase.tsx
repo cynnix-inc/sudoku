@@ -18,6 +18,7 @@ import { isSolved } from '../game/rules';
 import { saveProgress, loadProgress } from '../services/storage';
 import { loadSettings } from '../services/settings';
 import { hapticError, hapticSuccess } from '../services/haptics';
+import { recordGameHistory } from '../services/stats';
 import { MaterialIcons } from '@expo/vector-icons';
 import Confetti from './Confetti';
 import { findNextStep } from '../game/engine/strategy';
@@ -167,6 +168,7 @@ export default function GameScreenBase({
     if (finished && !hasRecordedRef.current) {
       hasRecordedRef.current = true;
       const result = solved ? 'win' : ('loss' as const);
+      // Support extended onRecord signature with optional usedHints flag
       if (typeof onRecord === 'function' && onRecord.length >= 4) {
         const maybeExtended = onRecord as unknown as (
           d: Difficulty,
@@ -178,6 +180,19 @@ export default function GameScreenBase({
       } else {
         onRecord(game.config.difficulty, result, seconds);
       }
+
+      // Record game history entry
+      const totalMoves = game.history.past.length;
+      void recordGameHistory(
+        game.config.difficulty,
+        result,
+        seconds,
+        game.hintState.hintsUsed > 0,
+        game.livesRemaining,
+        totalMoves,
+      );
+
+      // Push saved puzzle to cloud on win when available
       if (result === 'win' && pushSavedPuzzle) {
         try {
           const payload = {
@@ -191,7 +206,16 @@ export default function GameScreenBase({
         }
       }
     }
-  }, [finished, solved, game.config.difficulty, seconds, onRecord]);
+  }, [
+    finished,
+    solved,
+    game.config.difficulty,
+    seconds,
+    onRecord,
+    game.history.past.length,
+    game.hintState.hintsUsed,
+    game.livesRemaining,
+  ]);
 
   useEffect(() => {
     if (!finished) {
