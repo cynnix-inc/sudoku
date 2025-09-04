@@ -19,6 +19,15 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
   },
 }));
+// Mock expo-blur BlurView to a simple View for tests
+jest.mock('expo-blur', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    BlurView: ({ children, style }: { children?: React.ReactNode; style?: unknown }) =>
+      React.createElement(View, { style }, children),
+  };
+});
 // Mock expo-haptics to avoid native calls in tests
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(async () => undefined),
