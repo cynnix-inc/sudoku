@@ -28,15 +28,21 @@ export default function TimeHistogram({ stats, theme }: TimeHistogramProps) {
       { range: '20m+', count: 0, maxCount: 0 },
     ];
 
+    const getBinIndex = (minutes: number): number => {
+      if (minutes <= 2) return 0;
+      if (minutes <= 5) return 1;
+      if (minutes <= 10) return 2;
+      if (minutes <= 15) return 3;
+      if (minutes <= 20) return 4;
+      return 5;
+    };
+
     // Count games in each time bin
     stats.gameHistory.forEach((game) => {
       const timeInMinutes = game.seconds / 60;
-      if (timeInMinutes <= 2) bins[0].count++;
-      else if (timeInMinutes <= 5) bins[1].count++;
-      else if (timeInMinutes <= 10) bins[2].count++;
-      else if (timeInMinutes <= 15) bins[3].count++;
-      else if (timeInMinutes <= 20) bins[4].count++;
-      else bins[5].count++;
+      const idx = getBinIndex(timeInMinutes);
+      const target = bins[idx];
+      if (target) target.count += 1;
     });
 
     // Find the maximum count for scaling
