@@ -2,7 +2,7 @@ import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import { beforeEach } from '@jest/globals';
 import StatsScreen from '../../app/stats.screen';
-import { getDetailedStats } from '../../app/services/stats';
+import { getDetailedStats, type DetailedStats } from '../../app/services/stats';
 import { ThemeContext } from '../../app/_layout';
 
 // Mock the stats service
@@ -17,7 +17,7 @@ const mockTheme = {
   toggle: jest.fn(),
 };
 
-// Helper function to render with theme context
+// Helper to render with theme
 const renderWithTheme = (component: React.ReactElement) => {
   return render(<ThemeContext.Provider value={mockTheme}>{component}</ThemeContext.Provider>);
 };
@@ -28,7 +28,7 @@ describe('StatsScreen', () => {
   });
 
   it('renders loading state initially', () => {
-    // Mock the function to return a promise that never resolves
+    // Return a pending promise to keep loading state
     mockGetDetailedStats.mockImplementation(() => new Promise(() => {}));
 
     const { getByText } = renderWithTheme(<StatsScreen />);
@@ -77,128 +77,10 @@ describe('StatsScreen', () => {
           hintsUsageRate: 0,
         },
       },
-      streaks: {
-        current: 3,
-        best: 5,
-      },
-      trends: {
-        recentWinRate: 70,
-        recentAverageTime: null,
-        improvementTrend: 'stable' as const,
-      },
-      gameHistory: [
-        {
-          id: '1',
-          date: '20240101',
-          difficulty: 'easy',
-          result: 'win',
-          seconds: 120,
-          usedHints: false,
-          livesRemaining: 3,
-          totalMoves: 40,
-          completedAt: Date.now(),
-        },
-        {
-          id: '2',
-          date: '20240101',
-          difficulty: 'easy',
-          result: 'win',
-          seconds: 150,
-          usedHints: false,
-          livesRemaining: 3,
-          totalMoves: 42,
-          completedAt: Date.now(),
-        },
-        {
-          id: '3',
-          date: '20240101',
-          difficulty: 'easy',
-          result: 'win',
-          seconds: 180,
-          usedHints: true,
-          livesRemaining: 2,
-          totalMoves: 45,
-          completedAt: Date.now(),
-        },
-        {
-          id: '4',
-          date: '20240101',
-          difficulty: 'easy',
-          result: 'loss',
-          seconds: 200,
-          usedHints: true,
-          livesRemaining: 0,
-          totalMoves: 50,
-          completedAt: Date.now(),
-        },
-        {
-          id: '5',
-          date: '20240101',
-          difficulty: 'easy',
-          result: 'win',
-          seconds: 160,
-          usedHints: false,
-          livesRemaining: 3,
-          totalMoves: 41,
-          completedAt: Date.now(),
-        },
-        {
-          id: '6',
-          date: '20240101',
-          difficulty: 'medium',
-          result: 'win',
-          seconds: 200,
-          usedHints: false,
-          livesRemaining: 3,
-          totalMoves: 48,
-          completedAt: Date.now(),
-        },
-        {
-          id: '7',
-          date: '20240101',
-          difficulty: 'medium',
-          result: 'win',
-          seconds: 240,
-          usedHints: true,
-          livesRemaining: 2,
-          totalMoves: 50,
-          completedAt: Date.now(),
-        },
-        {
-          id: '8',
-          date: '20240101',
-          difficulty: 'medium',
-          result: 'loss',
-          seconds: 300,
-          usedHints: true,
-          livesRemaining: 0,
-          totalMoves: 55,
-          completedAt: Date.now(),
-        },
-        {
-          id: '9',
-          date: '20240101',
-          difficulty: 'hard',
-          result: 'win',
-          seconds: 300,
-          usedHints: false,
-          livesRemaining: 3,
-          totalMoves: 55,
-          completedAt: Date.now(),
-        },
-        {
-          id: '10',
-          date: '20240101',
-          difficulty: 'hard',
-          result: 'loss',
-          seconds: 350,
-          usedHints: true,
-          livesRemaining: 0,
-          totalMoves: 60,
-          completedAt: Date.now(),
-        },
-      ],
-    };
+      streaks: { current: 3, best: 5 },
+      trends: { recentWinRate: 70, recentAverageTime: null, improvementTrend: 'stable' as const },
+      gameHistory: [],
+    } as unknown as DetailedStats;
 
     mockGetDetailedStats.mockResolvedValue(mockStats);
 
@@ -233,17 +115,10 @@ describe('StatsScreen', () => {
         hintsUsageRate: 0,
       },
       byDifficulty: {},
-      streaks: {
-        current: 0,
-        best: 0,
-      },
-      trends: {
-        recentWinRate: 0,
-        recentAverageTime: null,
-        improvementTrend: 'stable' as const,
-      },
+      streaks: { current: 0, best: 0 },
+      trends: { recentWinRate: 0, recentAverageTime: null, improvementTrend: 'stable' as const },
       gameHistory: [],
-    };
+    } as unknown as DetailedStats;
 
     mockGetDetailedStats.mockResolvedValue(mockStats);
 
@@ -257,10 +132,8 @@ describe('StatsScreen', () => {
       expect(getByText('Current')).toBeTruthy();
       expect(getByText('Best')).toBeTruthy();
       expect(getByText('Recent Trends')).toBeTruthy();
-
-      // Check that we have multiple "0" values (which is expected for empty stats)
-      const zeroElements = getAllByText('0');
-      expect(zeroElements.length).toBeGreaterThan(0);
+      const zeros = getAllByText('0');
+      expect(zeros.length).toBeGreaterThan(0);
     });
   });
 
@@ -283,7 +156,7 @@ describe('StatsScreen', () => {
           played: 1,
           wins: 1,
           winRate: 100,
-          bestTime: 125, // 2:05
+          bestTime: 125,
           averageTime: null,
           medianTime: null,
           fastestTime: null,
@@ -293,15 +166,8 @@ describe('StatsScreen', () => {
           hintsUsageRate: 0,
         },
       },
-      streaks: {
-        current: 1,
-        best: 1,
-      },
-      trends: {
-        recentWinRate: 100,
-        recentAverageTime: null,
-        improvementTrend: 'stable' as const,
-      },
+      streaks: { current: 1, best: 1 },
+      trends: { recentWinRate: 100, recentAverageTime: null, improvementTrend: 'stable' as const },
       gameHistory: [
         {
           id: '1',
@@ -315,14 +181,14 @@ describe('StatsScreen', () => {
           completedAt: Date.now(),
         },
       ],
-    };
+    } as unknown as DetailedStats;
 
     mockGetDetailedStats.mockResolvedValue(mockStats);
 
     const { getByText } = renderWithTheme(<StatsScreen />);
 
     await waitFor(() => {
-      expect(getByText('2:05')).toBeTruthy(); // Formatted time
+      expect(getByText('2:05')).toBeTruthy();
     });
   });
 });
