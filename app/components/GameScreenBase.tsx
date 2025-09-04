@@ -16,6 +16,7 @@ import { applyAction, initializeGame } from '../game/state';
 import type { Digit, Difficulty, GameAction } from '../game/types';
 import { isSolved } from '../game/rules';
 import { saveProgress, loadProgress } from '../services/storage';
+import { recordGameHistory } from '../services/stats';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export type BasePuzzle = {
@@ -125,8 +126,28 @@ export default function GameScreenBase({
       hasRecordedRef.current = true;
       const result = solved ? 'win' : ('loss' as const);
       onRecord(game.config.difficulty, result, seconds);
+
+      // Record game history entry
+      const totalMoves = game.history.past.length;
+      void recordGameHistory(
+        game.config.difficulty,
+        result,
+        seconds,
+        game.hintState.hintsUsed > 0,
+        game.livesRemaining,
+        totalMoves,
+      );
     }
-  }, [finished, solved, game.config.difficulty, seconds, onRecord]);
+  }, [
+    finished,
+    solved,
+    game.config.difficulty,
+    seconds,
+    onRecord,
+    game.history.past.length,
+    game.hintState.hintsUsed,
+    game.livesRemaining,
+  ]);
 
   useEffect(() => {
     if (!finished) {
