@@ -57,9 +57,12 @@ export function formatDailySeed(seed: DailySeed): string {
 }
 
 export function difficultyForDate(date: Date): Difficulty {
-  const mix = WEEKLY_MIXES[getWeekMixIndex(date)];
+  const mixIndex = getWeekMixIndex(date);
+  const maybeMix = WEEKLY_MIXES[mixIndex];
+  const safeMix: Difficulty[] = Array.isArray(maybeMix) ? maybeMix : WEEKLY_MIXES[0]!;
   const dayIdx = getDayOfWeekIndexUtc(date);
-  return mix[dayIdx]!;
+  const val = safeMix[dayIdx];
+  return val ?? 'medium';
 }
 
 export function levelForDate(date: Date): UltimateLevel {
