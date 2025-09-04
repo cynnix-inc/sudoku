@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.2](https://github.com/cynnix-inc/sudoku/compare/v1.13.1...v1.13.2) (2025-09-04)
+
+
+### Bug Fixes
+
+* **web:** normalize home button widths and vertical alignment ([#488](https://github.com/cynnix-inc/sudoku/issues/488)) ([88a71c0](https://github.com/cynnix-inc/sudoku/commit/88a71c02210afea87d15de69eb137b7d2442fa03))
+* **web:** prevent desktop home buttons from stretching full width ([#486](https://github.com/cynnix-inc/sudoku/issues/486)) ([8841833](https://github.com/cynnix-inc/sudoku/commit/88418339573cb0f8739b99cb0ab19f3f46abd52e))
+
 ## [1.13.1](https://github.com/cynnix-inc/sudoku/compare/v1.13.0...v1.13.1) (2025-09-02)
 
 
