@@ -125,6 +125,8 @@ export default function IndexScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go to Classic Sudoku"
           style={{
+            width: '100%',
+            maxWidth: 420,
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
@@ -146,6 +148,8 @@ export default function IndexScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go to Daily Challenge"
           style={{
+            width: '100%',
+            maxWidth: 420,
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
@@ -167,6 +171,8 @@ export default function IndexScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go to Daily Calendar"
           style={{
+            width: '100%',
+            maxWidth: 420,
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
@@ -203,6 +209,8 @@ export default function IndexScreen() {
           accessibilityRole="button"
           accessibilityLabel="View Game Statistics"
           style={{
+            width: '100%',
+            maxWidth: 420,
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
@@ -224,6 +232,8 @@ export default function IndexScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go to Settings"
           style={{
+            width: '100%',
+            maxWidth: 420,
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
@@ -245,6 +255,8 @@ export default function IndexScreen() {
           accessibilityRole="button"
           accessibilityLabel="Get Help and Information"
           style={{
+            width: '100%',
+            maxWidth: 420,
             backgroundColor: theme.isDark ? '#1f2937' : '#f3f4f6',
             paddingVertical: 16,
             paddingHorizontal: 20,
