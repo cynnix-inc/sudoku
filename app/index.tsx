@@ -107,7 +107,7 @@ export default function IndexScreen() {
       </Text>
 
       {/* Game Modes */}
-      <View style={{ width: '100%', marginBottom: 32 }}>
+      <View style={{ width: '100%', marginBottom: 32, alignItems: 'center' }}>
         <Text
           style={{
             fontSize: 18,
@@ -185,7 +185,7 @@ export default function IndexScreen() {
       </View>
 
       {/* Tools & Info */}
-      <View style={{ width: '100%' }}>
+      <View style={{ width: '100%', alignItems: 'center' }}>
         <Text
           style={{
             fontSize: 18,
