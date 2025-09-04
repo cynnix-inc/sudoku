@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/cynnix-inc/sudoku/compare/v1.13.2...v1.14.0) (2025-09-04)
+
+
+### Features
+
+* **web:** strengthen glassmorphism (blur=36, bg alpha=0.08, deeper shadow) ([#489](https://github.com/cynnix-inc/sudoku/issues/489)) ([8bedc0b](https://github.com/cynnix-inc/sudoku/commit/8bedc0baa87b44a62790db8d1ddc59d63f2427da))
+
 ## [1.13.2](https://github.com/cynnix-inc/sudoku/compare/v1.13.1...v1.13.2) (2025-09-04)
 
 
