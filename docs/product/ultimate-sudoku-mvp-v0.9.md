@@ -81,6 +81,10 @@ Note (2025‑09‑02): Ultimate Sudoku Levels implemented per ADR‑0007 (Epic #
 
 - Deterministic seed = `YYYYMMDD + patternId + difficulty`.
 - **Weekly difficulty patterns**: rotate from 4 predefined mixes; `patternId` recorded per week/date.
+  - Mix A (Mon→Sun): easy, medium, hard, expert, master, extreme, medium
+  - Mix B (Mon→Sun): medium, hard, expert, master, extreme, hard, easy
+  - Mix C (Mon→Sun): hard, expert, master, extreme, hard, medium, easy
+  - Mix D (Mon→Sun): expert, master, extreme, hard, medium, easy, medium
 - Full calendar view; archive playable by date.
 - Fixed lives by difficulty (Easy 6 → Extreme 1).
 

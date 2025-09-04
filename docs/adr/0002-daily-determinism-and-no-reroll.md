@@ -12,6 +12,10 @@ Daily must be the same worldwide, encourage fairness, and be simple.
 
 - Daily seed = `YYYYMMDD + patternId + difficulty` (UTC).
 - Rotate **weekly difficulty patterns** from four predefined mixes (`patternId`).
+  - A: easy, medium, hard, expert, master, extreme, medium
+  - B: medium, hard, expert, master, extreme, hard, easy
+  - C: hard, expert, master, extreme, hard, medium, easy
+  - D: expert, master, extreme, hard, medium, easy, medium
 - **Remove reroll** for MVP.
 
 ## Consequences

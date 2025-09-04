@@ -4,23 +4,51 @@ import { generatePuzzle } from '../engine/generator';
 
 export type DailySeed = {
   utcDate: string; // YYYYMMDD
-  patternId: string; // single uppercase letter A-Z
+  patternId: string; // single uppercase letter A-D (weekly mix id)
   difficulty: Difficulty; // legacy tier used for seed format & lives mapping
   level: UltimateLevel; // Ultimate Sudoku level displayed in UI
 };
+
+// Four predefined weekly difficulty mixes (Mon..Sun)
+// A balanced rotation per ADR-0002 and MVP v0.9
+const WEEKLY_MIXES: Difficulty[][] = [
+  // A
+  ['easy', 'medium', 'hard', 'expert', 'master', 'extreme', 'medium'],
+  // B
+  ['medium', 'hard', 'expert', 'master', 'extreme', 'hard', 'easy'],
+  // C
+  ['hard', 'expert', 'master', 'extreme', 'hard', 'medium', 'easy'],
+  // D
+  ['expert', 'master', 'extreme', 'hard', 'medium', 'easy', 'medium'],
+];
+
+function getIsoWeekZeroBasedIndex(date: Date): number {
+  // Baseline Monday for rotation: 2025-01-06 (UTC)
+  const baselineMonday = Date.UTC(2025, 0, 6);
+  return Math.floor((date.getTime() - baselineMonday) / (7 * 86400000));
+}
+
+function getWeekMixIndex(date: Date): number {
+  const idx = getIsoWeekZeroBasedIndex(date);
+  const mod = ((idx % WEEKLY_MIXES.length) + WEEKLY_MIXES.length) % WEEKLY_MIXES.length;
+  return mod;
+}
+
+function getDayOfWeekIndexUtc(date: Date): number {
+  // Monday=0 .. Sunday=6
+  return (date.getUTCDay() + 6) % 7;
+}
 
 export function createDailySeed(date: Date): DailySeed {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
   const d = String(date.getUTCDate()).padStart(2, '0');
   const utcDate = `${y}${m}${d}`;
-  // Rotate a simple pattern weekly: A..Z cycling based on ISO week number
-  const jan4 = new Date(Date.UTC(y, 0, 4));
-  const week1Monday = new Date(jan4.getTime() - ((jan4.getUTCDay() + 6) % 7) * 86400000);
-  const weekIndex = Math.floor((date.getTime() - week1Monday.getTime()) / (7 * 86400000));
-  const patternId = String.fromCharCode('A'.charCodeAt(0) + (weekIndex % 26));
-  const level = levelForDate(date);
+  // Weekly pattern id A..D and difficulty from predefined mixes
+  const mixIndex = getWeekMixIndex(date);
+  const patternId = String.fromCharCode('A'.charCodeAt(0) + mixIndex);
   const difficulty = difficultyForDate(date);
+  const level = levelForDate(date);
   return { utcDate, patternId, difficulty, level };
 }
 
@@ -29,25 +57,17 @@ export function formatDailySeed(seed: DailySeed): string {
 }
 
 export function difficultyForDate(date: Date): Difficulty {
-  // Cycle tiers weekly: easy, medium, hard, expert, master, extreme
-  const tiers: Difficulty[] = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme'];
-  const start = Date.UTC(2025, 0, 6); // Monday baseline for rotation
-  const weekIndex = Math.floor((date.getTime() - start) / (7 * 86400000));
-  return tiers[((weekIndex % tiers.length) + tiers.length) % tiers.length]!;
+  const mixIndex = getWeekMixIndex(date);
+  const maybeMix = WEEKLY_MIXES[mixIndex];
+  const safeMix: Difficulty[] = Array.isArray(maybeMix) ? maybeMix : WEEKLY_MIXES[0]!;
+  const dayIdx = getDayOfWeekIndexUtc(date);
+  const val = safeMix[dayIdx];
+  return val ?? 'medium';
 }
 
 export function levelForDate(date: Date): UltimateLevel {
-  const levels: UltimateLevel[] = [
-    'novice',
-    'skilled',
-    'advanced',
-    'expert',
-    'fiendish',
-    'ultimate',
-  ];
-  const start = Date.UTC(2025, 0, 6); // Monday baseline for rotation
-  const weekIndex = Math.floor((date.getTime() - start) / (7 * 86400000));
-  return levels[((weekIndex % levels.length) + levels.length) % levels.length]!;
+  const difficulty = difficultyForDate(date);
+  return mapDifficultyToLevel(difficulty);
 }
 
 export function mapLevelToDifficulty(level: UltimateLevel): Difficulty {
@@ -64,6 +84,23 @@ export function mapLevelToDifficulty(level: UltimateLevel): Difficulty {
       return 'master';
     case 'ultimate':
       return 'extreme';
+  }
+}
+
+export function mapDifficultyToLevel(difficulty: Difficulty): UltimateLevel {
+  switch (difficulty) {
+    case 'easy':
+      return 'novice';
+    case 'medium':
+      return 'skilled';
+    case 'hard':
+      return 'advanced';
+    case 'expert':
+      return 'expert';
+    case 'master':
+      return 'fiendish';
+    case 'extreme':
+      return 'ultimate';
   }
 }
 

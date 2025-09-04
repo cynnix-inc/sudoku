@@ -23,4 +23,13 @@ describe('daily module (#163)', () => {
     const b = generateDailyPuzzle(monday);
     expect(a.givens).toEqual(b.givens);
   });
+
+  it('uses weekly mixes (A..D) to select difficulty per weekday', () => {
+    const monday = new Date(Date.UTC(2025, 0, 6)); // Baseline Monday
+    const expectedForMixA = ['easy', 'medium', 'hard', 'expert', 'master', 'extreme', 'medium'];
+    const observed = [0, 1, 2, 3, 4, 5, 6].map((i) =>
+      difficultyForDate(new Date(monday.getTime() + i * 86400000)),
+    );
+    expect(observed).toEqual(expectedForMixA);
+  });
 });
