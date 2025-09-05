@@ -8,7 +8,7 @@ const prettier = require("eslint-config-prettier");
 
 module.exports = [
 	{
-		ignores: ["node_modules/**", "dist/**", "build/**", "web-build/**"],
+		ignores: ["node_modules/**", "dist/**", "build/**", "web-build/**", ".expo/**", "**/*.d.ts"],
 	},
 	js.configs.recommended,
 	{
@@ -37,6 +37,24 @@ module.exports = [
 		rules: {
 			...tsPlugin.configs.recommended.rules,
 			"@typescript-eslint/no-require-imports": "off",
+			"@typescript-eslint/consistent-type-imports": [
+				"warn",
+				{ "prefer": "type-imports", "fixStyle": "inline-type-imports" }
+			],
+			"@typescript-eslint/no-floating-promises": [
+				"warn",
+				{ "ignoreVoid": true, "ignoreIIFE": true }
+			],
+			"sort-imports": [
+				"warn",
+				{
+					"ignoreCase": true,
+					"ignoreDeclarationSort": false,
+					"ignoreMemberSort": false,
+					"allowSeparatedGroups": true
+				}
+			],
+			"no-console": ["error", { "allow": ["warn", "error"] }],
 			"no-restricted-imports": [
 				"error",
 				{
@@ -99,6 +117,9 @@ module.exports = [
 				jest: "readonly",
 			},
 		},
+		rules: {
+			"no-console": "off"
+		}
 	},
 	{
 		files: [
