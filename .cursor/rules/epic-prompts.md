@@ -1,5 +1,31 @@
-This file has been consolidated into `epic-prompts.md` in the same directory.
-Please update references accordingly.
+# Epic Prompts Cheat Sheet
+
+Quick reference for all prompts. Each has a **Human Notes** section (read only) and a **Copy/Paste Prompt** section (use in Cursor).
+Click a prompt name to jump to its section.
+
+| Prompt # | Name                                                                                                            | When to Use                                                  |
+| -------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 1a       | [New Issue Discovery (Batch Input)](#-prompt-1a--new-issue-discovery-batch-input)                               | During testing when multiple issues are found at once        |
+| 1b       | [New Issue Discovery (Use Previous Chat Findings)](#-prompt-1b--new-issue-discovery-use-previous-chat-findings) | When issues were already listed in chat, no retyping         |
+| 2        | [Orphaned Issues Review](#-prompt-2--orphaned-issues-review)                                                    | Weekly or before planning; ensure all issues belong to Epics |
+| 3        | [Automate Epic Work (Preselected Epic)](#-prompt-3--automate-epic-work-preselected-epic)                        | You know which Epic to work on; process its sub-issues       |
+| 4        | [Automate Next Epic Work (Auto-select)](#-prompt-4--automate-next-epic-work-auto-select)                        | Keep progress moving; automatically pick next Epic           |
+| 5        | [Epic Review](#-prompt-5--epic-review-post-sub-issues-completion)                                               | After all sub-issues are merged, before final Epic merge     |
+| 6        | [Finalize Epic](#-prompt-6--finalize-epic)                                                                      | When Epic is ready to merge into staging                     |
+| 7        | [Workflow Fix After Staging PR](#-prompt-7--workflow-fix-after-staging-pr)                                      | A staging PR causes workflow failures                        |
+| 8        | [Dependency Update & Audit](#-prompt-8--dependency-update--audit)                                               | Regularly (monthly/quarterly) or when alerts appear          |
+| 9        | [ADR & Architecture Alignment](#-prompt-9--adr--architecture-alignment)                                         | Whenever architecture/design changes are made                |
+| 10       | [Release Readiness Check](#-prompt-10--release-readiness-check)                                                 | Before cutting a release candidate (staging → production)    |
+
+---
+
+# Epic Prompts
+
+These prompts define how to automate Epic work, review, and finalize into staging.
+They follow repository standards from `.cursor/rules` and guidance in `docs/README.md`.
+Environment: **PowerShell** (avoid non-portable pipes like `| cat`).
+
+---
 
 ## 🔹 Prompt 1a — New Issue Discovery (Batch Input)
 
