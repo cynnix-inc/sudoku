@@ -6,6 +6,7 @@ When to use: as a starting point to find the right rule file.
 - 10-architecture.md — Boundaries, layering, ADRs
 - 20-style-guide.md — TS/React patterns, a11y, imports
 - 30-testing.md — Coverage gates, test utilities, fakes/MSW
+- 35-test-data.md — Deterministic test data and fixtures policy
 - 40-security.md — Secrets, data handling, dependency audits
 - 50-devops.md — CI, releases, npm audit, bundle delta
 - 60-prompts.md — Cursor task macros
