@@ -23,6 +23,7 @@ Definition of Done:
 - Tag with semver.
 - Generate release notes from conventional commits.
 - For mobile, use EAS channels or equivalent; prefer progressive rollout.
+- Standard: Changesets drives versioning and changelog. Remove Release Please configs/workflows. Base branch is `staging`.
 
 # Environments
 

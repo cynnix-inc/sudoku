@@ -29,7 +29,7 @@ See `CONTRIBUTING.md` for branching, commit style, quality gates, and PR expecta
 
 - Uses **Husky** + **lint-staged** to enforce linting and tests pre-commit
 - **Commitlint** enforces Conventional Commits (pre-commit + CI)
-- **Changesets** for versioning and changelog; base branch is `staging`
+- **Changesets** for versioning and changelog (standard). Release Please has been removed.
 - **Dependabot** keeps dependencies up to date
 
 Netlify runs Lighthouse audits via its Lighthouse plugin on deploys.
