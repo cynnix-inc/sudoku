@@ -8,9 +8,18 @@ const prettier = require("eslint-config-prettier");
 
 module.exports = [
 	{
-		ignores: ["node_modules/**", "dist/**", "build/**", "web-build/**", ".expo/**", "**/*.d.ts"],
+		ignores: [
+			"node_modules/**",
+			"dist/**",
+			"build/**",
+			"web-build/**",
+			".expo/**",
+			"**/*.d.ts",
+		],
 	},
+
 	js.configs.recommended,
+
 	{
 		files: ["**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
 		languageOptions: {
@@ -39,35 +48,54 @@ module.exports = [
 			"@typescript-eslint/no-require-imports": "off",
 			"@typescript-eslint/consistent-type-imports": [
 				"warn",
-				{ "prefer": "type-imports", "fixStyle": "inline-type-imports" }
-			],
-			"@typescript-eslint/no-floating-promises": [
-				"warn",
-				{ "ignoreVoid": true, "ignoreIIFE": true }
+				{ prefer: "type-imports", fixStyle: "inline-type-imports" },
 			],
 			"sort-imports": [
 				"warn",
 				{
-					"ignoreCase": true,
-					"ignoreDeclarationSort": false,
-					"ignoreMemberSort": false,
-					"allowSeparatedGroups": true
-				}
+					ignoreCase: true,
+					ignoreDeclarationSort: false,
+					ignoreMemberSort: false,
+					allowSeparatedGroups: true,
+				},
 			],
-			"no-console": ["error", { "allow": ["warn", "error"] }],
+			"no-console": ["error", { allow: ["warn", "error"] }],
 			"no-restricted-imports": [
 				"error",
 				{
-					"patterns": [
+					patterns: [
 						{
-							"group": ["**/_game/**", "**/../_game/**", "**/../../_game/**"],
-							"message": "Do not import from app/_game; use app/game as the canonical module."
-						}
-					]
-				}
-			]
+							group: ["**/_game/**", "**/../_game/**", "**/../../_game/**"],
+							message:
+								"Do not import from app/_game; use app/game as the canonical module.",
+						},
+					],
+				},
+			],
 		},
 	},
+
+	// Typed linting for selected TS sources only
+	{
+		files: ["app/**/*.{ts,tsx}", "scripts/**/*.{ts,tsx}"],
+		languageOptions: {
+			parser: tsParser,
+			parserOptions: {
+				projectService: true,
+			},
+		},
+		plugins: {
+			"@typescript-eslint": tsPlugin,
+		},
+		rules: {
+			"@typescript-eslint/no-floating-promises": [
+				"warn",
+				{ ignoreVoid: true, ignoreIIFE: true },
+			],
+		},
+	},
+
+	// UI boundaries (warnings) for screens/components
 	{
 		files: [
 			"app/*.screen.tsx",
@@ -77,34 +105,40 @@ module.exports = [
 			"no-restricted-imports": [
 				"warn",
 				{
-					"paths": [
+					paths: [
 						{
-							"name": "app/services/storage",
-							"message": "UI should not import storage directly; prefer a container/hook boundary."
+							name: "app/services/storage",
+							message:
+								"UI should not import storage directly; prefer a container/hook boundary.",
 						},
 						{
-							"name": "app/services/supabase",
-							"message": "UI should not import Supabase/network directly; prefer a container/hook boundary."
+							name: "app/services/supabase",
+							message:
+								"UI should not import Supabase/network directly; prefer a container/hook boundary.",
 						},
 						{
-							"name": "app/services/sync",
-							"message": "UI should not import network sync directly; prefer a container/hook boundary."
-						}
+							name: "app/services/sync",
+							message:
+								"UI should not import network sync directly; prefer a container/hook boundary.",
+						},
 					],
-					"patterns": [
+					patterns: [
 						{
-							"group": [
+							group: [
 								"app/services/storage*",
 								"app/services/supabase*",
-								"app/services/sync*"
+								"app/services/sync*",
 							],
-							"message": "UI should not import storage/network services directly."
-						}
-					]
-				}
-			]
-		}
+							message:
+								"UI should not import storage/network services directly.",
+						},
+					],
+				},
+			],
+		},
 	},
+
+	// Tests
 	{
 		files: ["**/__tests__/**/*.{ts,tsx,js,jsx}", "jest.setup.ts"],
 		languageOptions: {
@@ -118,9 +152,11 @@ module.exports = [
 			},
 		},
 		rules: {
-			"no-console": "off"
-		}
+			"no-console": "off",
+		},
 	},
+
+	// Tooling/configs/scripts
 	{
 		files: [
 			"*.config.js",
@@ -143,6 +179,7 @@ module.exports = [
 			},
 		},
 	},
+
 	// Prettier should be last to disable conflicting rules
 	prettier,
 ];
