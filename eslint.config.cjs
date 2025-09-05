@@ -51,6 +51,43 @@ module.exports = [
 		},
 	},
 	{
+		files: [
+			"app/*.screen.tsx",
+			"app/components/**/*.{ts,tsx}",
+		],
+		rules: {
+			"no-restricted-imports": [
+				"warn",
+				{
+					"paths": [
+						{
+							"name": "app/services/storage",
+							"message": "UI should not import storage directly; prefer a container/hook boundary."
+						},
+						{
+							"name": "app/services/supabase",
+							"message": "UI should not import Supabase/network directly; prefer a container/hook boundary."
+						},
+						{
+							"name": "app/services/sync",
+							"message": "UI should not import network sync directly; prefer a container/hook boundary."
+						}
+					],
+					"patterns": [
+						{
+							"group": [
+								"app/services/storage*",
+								"app/services/supabase*",
+								"app/services/sync*"
+							],
+							"message": "UI should not import storage/network services directly."
+						}
+					]
+				}
+			]
+		}
+	},
+	{
 		files: ["**/__tests__/**/*.{ts,tsx,js,jsx}", "jest.setup.ts"],
 		languageOptions: {
 			globals: {
