@@ -19,6 +19,7 @@ Definition of Done:
 - Functional components with hooks only.
 - Keep components small and pure. Extract hooks for complex logic.
 - Accessibility: use accessible roles, labels, and test with screen readers.
+  See `25-accessibility.md` for RN and Web specifics (roles, labels, focus, modals, testing).
 
 # Imports and Structure
 

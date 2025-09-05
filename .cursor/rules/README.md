@@ -6,10 +6,13 @@ When to use: as a starting point to find the right rule file.
 - 10-architecture.md — Boundaries, layering, ADRs
 - 20-style-guide.md — TS/React patterns, a11y, imports
 - 30-testing.md — Coverage gates, test utilities, fakes/MSW
+- 35-test-data.md — Deterministic test data and fixtures policy
 - 40-security.md — Secrets, data handling, dependency audits
 - 50-devops.md — CI, releases, npm audit, bundle delta
+- 55-bundle-performance.md — Bundle and performance budgets, heavy-dep checklist
 - 60-prompts.md — Cursor task macros
-- 61-epic-prompts.md — Epic automation and finalize prompts
+- epic-prompts.md — Epic automation and finalize prompts (consolidated)
+- 70-supabase.md — Supabase engineering rules (envs, client guards, tests, migrations)
 - 99-glossary.md — Project-specific terminology and definitions
 
 Conventions

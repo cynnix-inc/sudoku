@@ -8,9 +8,18 @@ const prettier = require("eslint-config-prettier");
 
 module.exports = [
 	{
-		ignores: ["node_modules/**", "dist/**", "build/**", "web-build/**"],
+		ignores: [
+			"node_modules/**",
+			"dist/**",
+			"build/**",
+			"web-build/**",
+			".expo/**",
+			"**/*.d.ts",
+		],
 	},
+
 	js.configs.recommended,
+
 	{
 		files: ["**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
 		languageOptions: {
@@ -37,18 +46,135 @@ module.exports = [
 		rules: {
 			...tsPlugin.configs.recommended.rules,
 			"@typescript-eslint/no-require-imports": "off",
+			"@typescript-eslint/consistent-type-imports": [
+				"warn",
+				{ prefer: "type-imports", fixStyle: "inline-type-imports" },
+			],
+			"sort-imports": [
+				"warn",
+				{
+					ignoreCase: true,
+					ignoreDeclarationSort: false,
+					ignoreMemberSort: false,
+					allowSeparatedGroups: true,
+				},
+			],
+			"no-console": ["error", { allow: ["warn", "error"] }],
 			"no-restricted-imports": [
 				"error",
 				{
+					patterns: [
+						{
+							group: ["**/_game/**", "**/../_game/**", "**/../../_game/**"],
+							message:
+								"Do not import from app/_game; use app/game as the canonical module.",
+						},
+					],
+				},
+			],
+		},
+	},
+
+	// Typed linting for selected TS sources only
+	{
+		files: ["app/**/*.{ts,tsx}", "scripts/**/*.{ts,tsx}"],
+		languageOptions: {
+			parser: tsParser,
+			parserOptions: {
+				projectService: true,
+			},
+		},
+		plugins: {
+			"@typescript-eslint": tsPlugin,
+		},
+		rules: {
+			"@typescript-eslint/no-floating-promises": [
+				"warn",
+				{ ignoreVoid: true, ignoreIIFE: true },
+			],
+		},
+	},
+
+	// UI boundaries (warnings) for screens/components
+	{
+		files: [
+			"app/*.screen.tsx",
+			"app/components/**/*.{ts,tsx}",
+		],
+		rules: {
+			"no-restricted-imports": [
+				"warn",
+				{
+					paths: [
+						{
+							name: "app/services/storage",
+							message:
+								"UI should not import storage directly; prefer a container/hook boundary.",
+						},
+						{
+							name: "app/services/supabase",
+							message:
+								"UI should not import Supabase/network directly; prefer a container/hook boundary.",
+						},
+						{
+							name: "app/services/sync",
+							message:
+								"UI should not import network sync directly; prefer a container/hook boundary.",
+						},
+					],
+					patterns: [
+						{
+							group: [
+								"app/services/storage*",
+								"app/services/supabase*",
+								"app/services/sync*",
+							],
+							message:
+								"UI should not import storage/network services directly.",
+						},
+					],
+				},
+			],
+		},
+	},
+
+	// Tests
+	{
+		files: [
+			"app/*.screen.tsx",
+			"app/components/**/*.{ts,tsx}",
+		],
+		rules: {
+			"no-restricted-imports": [
+				"warn",
+				{
+					"paths": [
+						{
+							"name": "app/services/storage",
+							"message": "UI should not import storage directly; prefer a container/hook boundary."
+						},
+						{
+							"name": "app/services/supabase",
+							"message": "UI should not import Supabase/network directly; prefer a container/hook boundary."
+						},
+						{
+							"name": "app/services/sync",
+							"message": "UI should not import network sync directly; prefer a container/hook boundary."
+						}
+					],
 					"patterns": [
 						{
-							"group": ["**/_game/**", "**/../_game/**", "**/../../_game/**"],
-							"message": "Do not import from app/_game; use app/game as the canonical module."
+							"group": [
+								"app/services/storage*",
+								"app/services/supabase*",
+								"app/services/sync*"
+							],
+							"message": "UI should not import storage/network services directly."
 						}
 					]
 				}
 			]
-		},
+		}
 	},
 	{
 		files: ["**/__tests__/**/*.{ts,tsx,js,jsx}", "jest.setup.ts"],
@@ -62,7 +188,12 @@ module.exports = [
 				jest: "readonly",
 			},
 		},
+		rules: {
+			"no-console": "off",
+		},
 	},
+
+	// Tooling/configs/scripts
 	{
 		files: [
 			"*.config.js",
@@ -85,6 +216,7 @@ module.exports = [
 			},
 		},
 	},
+
 	// Prettier should be last to disable conflicting rules
 	prettier,
 ];
