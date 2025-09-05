@@ -31,6 +31,9 @@
     "build": "npx expo export --platform web --output-dir dist",
     "ci": "npm run lint && npm run typecheck && node scripts/check-android-version.mjs --fix && npm test -- --ci && npm run build",
     "prepare": "husky",
+    "release": "changeset version && git add . && git commit -m \"chore(release): version packages\" || true",
+    "release:tag": "node -e \"const v=require('./package.json').version; if(v){console.log('v'+v)}\" | set /p TAG= && git tag %TAG% && git push origin %TAG%",
+    "release:pr": "changeset status --verbose",
     "commit": "npx git-cz || true",
     "lint-staged": "lint-staged"
   },

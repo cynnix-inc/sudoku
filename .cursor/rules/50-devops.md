@@ -23,6 +23,7 @@ Definition of Done:
 - Tag with semver.
 - Generate release notes from conventional commits.
 - For mobile, use EAS channels or equivalent; prefer progressive rollout.
+- Standard: Changesets drives versioning and changelog. Remove Release Please configs/workflows. Base branch is `staging`.
 
 - Standard: Changesets drives versioning and changelog. Base branch is `staging`. Use Node version from `engines.node` in `package.json` (repo standard: Node 20.x via Volta) when configuring CI.
 
