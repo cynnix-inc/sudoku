@@ -27,6 +27,8 @@ Definition of Done:
 
 - Standard: Changesets drives versioning and changelog. Base branch is `staging`. Use Node version from `engines.node` in `package.json` (repo standard: Node 20.x via Volta) when configuring CI.
 
+- Standard: Changesets drives versioning and changelog. Base branch is `staging`. Use Node version from `engines.node` in `package.json` (repo standard: Node 20.x via Volta) when configuring CI.
+
 # Environments
 
 - Keep staging mirror close to production config.
