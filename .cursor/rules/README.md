@@ -9,6 +9,7 @@ When to use: as a starting point to find the right rule file.
 - 35-test-data.md — Deterministic test data and fixtures policy
 - 40-security.md — Secrets, data handling, dependency audits
 - 50-devops.md — CI, releases, npm audit, bundle delta
+- 55-bundle-performance.md — Bundle and performance budgets, heavy-dep checklist
 - 60-prompts.md — Cursor task macros
 - epic-prompts.md — Epic automation and finalize prompts (consolidated)
 - 99-glossary.md — Project-specific terminology and definitions
