@@ -21,11 +21,11 @@ jobs:
           manifest-file: .release-please-manifest.json
           target-branch: staging
           skip-github-release: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - name: Enable auto-merge on Release PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
         run: |
           set -euo pipefail
           # Find the open Release Please PR on staging by label
