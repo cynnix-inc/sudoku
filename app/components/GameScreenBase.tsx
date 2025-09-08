@@ -1,21 +1,22 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  Pressable,
-  Platform,
   AppState,
   type AppStateStatus,
+  Platform,
+  Pressable,
+  Text,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import Header from './Header';
 import Board from './Board';
 import Numpad from './Numpad';
+import CellInspector from './CellInspector';
 import { ThemeContext } from '../_layout';
 import { applyAction, initializeGame } from '../game/state';
-import type { Digit, Difficulty, GameAction } from '../game/types';
+import type { Difficulty, Digit, GameAction } from '../game/types';
 import { isSolved } from '../game/rules';
-import { saveProgress, loadProgress } from '../services/storage';
+import { loadProgress, saveProgress } from '../services/storage';
 import { recordGameHistory } from '../services/stats';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -52,12 +53,13 @@ export default function GameScreenBase({
       maxLives: initial.maxLives,
     }),
   );
-  const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
+  const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
   const [lockedDigit, setLockedDigit] = useState<Digit | null>(null);
   const [notesMode, setNotesMode] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [paused, setPaused] = useState(false);
   const [chooseVisible, setChooseVisible] = useState(false);
+  const [inspect, setInspect] = useState<{ row: number; col: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof globalThis.setInterval> | null>(null);
 
   const selectedRef = useRef(selected);
@@ -387,6 +389,10 @@ export default function GameScreenBase({
         selected={selected}
         highlightDigit={(lockedDigit as Digit | null) ?? (selectedDigit as Digit | null)}
         cellSize={cellSize}
+        onInspect={(r, c) => {
+          // dev-only overlay: enabled in all builds but only discoverable via long-press
+          setInspect({ row: r, col: c });
+        }}
         onSelect={(r, c) => {
           setSelected({ row: r, col: c });
           selectedRef.current = { row: r, col: c };
@@ -610,6 +616,14 @@ export default function GameScreenBase({
             </Text>
           </Pressable>
         </View>
+      ) : null}
+
+      {inspect ? (
+        <CellInspector
+          cell={game.board[inspect.row]![inspect.col]!}
+          visible={true}
+          onClose={() => setInspect(null)}
+        />
       ) : null}
 
       {enableNewGame && chooseVisible ? (
