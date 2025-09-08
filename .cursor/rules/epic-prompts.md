@@ -335,3 +335,50 @@ Workflow:
 5. Run security scan + ensure CI all green.
 6. Prepare rollback plan.
 ```
+
+---
+
+## 🛠 CI Troubleshooting Cheatsheet
+
+📘 Human Notes
+
+- Environment: PowerShell on Windows. Avoid non-portable pipes like `| cat`. Prefer structured JSON and PowerShell cmdlets.
+- Node: Keep Node/Volta/CI aligned to Node 20.x.
+- Use GitHub CLI to list, inspect, and watch workflow runs. Prefer JSON + ConvertFrom-Json.
+
+Common Commands
+
+```powershell
+# List recent workflow runs
+gh run list -R cynnix-inc/sudoku --limit 20
+
+# View a specific run summary (JSON)
+$run = gh run view <run-id> -R cynnix-inc/sudoku --json name,status,conclusion,createdAt,updatedAt,jobs
+$data = $run | ConvertFrom-Json
+$data | Format-List
+
+# Watch a run until completion
+gh run watch <run-id> -R cynnix-inc/sudoku
+
+# Download logs or artifacts for a run
+gh run download <run-id> -R cynnix-inc/sudoku -D ./.tmp/gh-logs/<run-id>
+
+# Re-run a failed run
+gh run rerun <run-id> -R cynnix-inc/sudoku
+
+# Trigger workflow_dispatch with inputs (example)
+gh workflow run ci.yml -R cynnix-inc/sudoku -f ref=staging
+
+# View job details and logs for a specific job
+gh run view <run-id> -R cynnix-inc/sudoku --job <job-id> --log
+
+# PowerShell-friendly JSON inspection for a job list
+$jobs = gh run view <run-id> -R cynnix-inc/sudoku --json jobs | ConvertFrom-Json
+$jobs.jobs | Select-Object name,status,conclusion | Format-Table -AutoSize
+```
+
+Tips
+
+- If JSON parsing fails, assign to a variable first; avoid piping to utilities that change encoding.
+- Use `Set-Content -Encoding UTF8` for saving JSON snapshots locally.
+- When a run is stuck, check concurrency groups, required checks, and branch protection.
