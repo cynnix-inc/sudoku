@@ -121,6 +121,8 @@ Note (2025‑09‑02): Ultimate Sudoku Levels implemented per ADR‑0007 (Epic #
 
 ### 5.1 Game Board (MVP)
 
+See also: Epic #21 responsive layout summary (docs/epics/0021-responsive-layout-summary.md)
+
 ```
  -------------------------------------------------
 | [Home]        Classic – Hard                   |
