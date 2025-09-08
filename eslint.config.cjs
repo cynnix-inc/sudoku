@@ -46,6 +46,25 @@ module.exports = [
 		rules: {
 			...tsPlugin.configs.recommended.rules,
 			"@typescript-eslint/no-require-imports": "off",
+			// Disallow TS path aliases to keep imports explicit and tooling-simple
+			"no-restricted-imports": [
+				"error",
+				{
+					paths: [],
+					patterns: [
+						{
+							group: ["@/*", "~/*", "src/*"],
+							message:
+								"Path aliases are disabled. Use relative or package imports (see rule 50-devops.md).",
+						},
+						{
+							group: ["**/_game/**", "**/../_game/**", "**/../../_game/**"],
+							message:
+								"Do not import from app/_game; use app/game as the canonical module.",
+						},
+					],
+				},
+			],
 			"@typescript-eslint/consistent-type-imports": [
 				"warn",
 				{ prefer: "type-imports", fixStyle: "inline-type-imports" },
@@ -60,18 +79,7 @@ module.exports = [
 				},
 			],
 			"no-console": ["error", { allow: ["warn", "error"] }],
-			"no-restricted-imports": [
-				"error",
-				{
-					patterns: [
-						{
-							group: ["**/_game/**", "**/../_game/**", "**/../../_game/**"],
-							message:
-								"Do not import from app/_game; use app/game as the canonical module.",
-						},
-					],
-				},
-			],
+			// merged into the top-level TS rule
 		},
 	},
 
