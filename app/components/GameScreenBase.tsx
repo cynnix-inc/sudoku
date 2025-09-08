@@ -1,21 +1,21 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  Pressable,
-  Platform,
   AppState,
   type AppStateStatus,
+  Platform,
+  Pressable,
+  Text,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import Header from './Header';
 import Board from './Board';
 import Numpad from './Numpad';
 import { ThemeContext } from '../_layout';
 import { applyAction, initializeGame } from '../game/state';
-import type { Digit, Difficulty, GameAction } from '../game/types';
+import type { Difficulty, Digit, GameAction } from '../game/types';
 import { isSolved } from '../game/rules';
-import { saveProgress, loadProgress } from '../services/storage';
+import { loadProgress, saveProgress } from '../services/storage';
 import { recordGameHistory } from '../services/stats';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -52,7 +52,7 @@ export default function GameScreenBase({
       maxLives: initial.maxLives,
     }),
   );
-  const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
+  const [selected, setSelected] = useState<{ row: number; col: number } | null>({ row: 0, col: 0 });
   const [lockedDigit, setLockedDigit] = useState<Digit | null>(null);
   const [notesMode, setNotesMode] = useState(false);
   const [seconds, setSeconds] = useState(0);

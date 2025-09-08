@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { Digit } from '../game/types';
 import { ThemeContext } from '../_layout';
 
@@ -72,6 +72,13 @@ export default function Numpad({
                   {d}
                 </Text>
               </Pressable>
+              {(isLocked || isHighlighted) && (
+                <View
+                  accessible
+                  accessibilityLabel={`Digit ${d}`}
+                  style={{ width: 0, height: 0, overflow: 'hidden' }}
+                />
+              )}
             </View>
           );
         })}
