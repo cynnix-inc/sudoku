@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { Board as BoardType, Digit } from '../game/types';
 import { ThemeContext } from '../_layout';
 
@@ -9,6 +9,7 @@ export type BoardProps = {
   onSelect: (row: number, col: number) => void;
   highlightDigit?: Digit | null;
   cellSize?: number;
+  onInspect?: (row: number, col: number) => void;
 };
 
 export default function Board({
@@ -17,6 +18,7 @@ export default function Board({
   onSelect,
   highlightDigit = null,
   cellSize = 36,
+  onInspect,
 }: BoardProps) {
   const theme = useContext(ThemeContext);
   const bandGap = 6;
@@ -55,6 +57,7 @@ export default function Board({
                 key={c}
                 onPress={() => onSelect(r, c)}
                 onFocus={() => onSelect(r, c)}
+                onLongPress={() => onInspect && onInspect(r, c)}
                 accessibilityRole="button"
                 accessibilityLabel={`Cell ${r + 1},${c + 1}`}
                 accessibilityState={{ selected: !!isSelected, disabled: false }}
