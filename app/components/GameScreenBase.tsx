@@ -163,11 +163,32 @@ export default function GameScreenBase({
       notesMode?: boolean;
       paused?: boolean;
       lockedDigit?: Digit | null;
+      hintState?: { hintsUsed?: number; hintsRemaining?: number };
     };
     loadProgress<SavedShape>(persistenceKey).then((saved) => {
       if (!saved) return;
       if (saved.board) {
         setGame((prev) => ({ ...prev, board: saved.board! }));
+      }
+      if (
+        saved.hintState &&
+        (typeof saved.hintState.hintsUsed === 'number' ||
+          typeof saved.hintState.hintsRemaining === 'number')
+      ) {
+        setGame((prev) => ({
+          ...prev,
+          hintState: {
+            ...prev.hintState,
+            hintsUsed:
+              typeof saved.hintState.hintsUsed === 'number'
+                ? saved.hintState.hintsUsed
+                : prev.hintState.hintsUsed,
+            hintsRemaining:
+              typeof saved.hintState.hintsRemaining === 'number'
+                ? saved.hintState.hintsRemaining
+                : prev.hintState.hintsRemaining,
+          },
+        }));
       }
       if (typeof saved.notesMode === 'boolean') {
         setNotesMode(saved.notesMode);
@@ -189,8 +210,20 @@ export default function GameScreenBase({
       notesMode: notesModeRef.current,
       paused,
       lockedDigit: lockedRef.current,
+      hintState: {
+        hintsUsed: game.hintState.hintsUsed,
+        hintsRemaining: game.hintState.hintsRemaining,
+      },
     });
-  }, [game.board, paused, notesMode, lockedDigit, persistenceKey]);
+  }, [
+    game.board,
+    paused,
+    notesMode,
+    lockedDigit,
+    game.hintState.hintsUsed,
+    game.hintState.hintsRemaining,
+    persistenceKey,
+  ]);
 
   useEffect(() => {
     if (paused) {
