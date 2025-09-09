@@ -8,6 +8,7 @@ When to use: as a starting point to find the right rule file.
 - 30-testing.md — Coverage gates, test utilities, fakes/MSW
 - 35-test-data.md — Deterministic test data and fixtures policy
 - 40-security.md — Secrets, data handling, dependency audits
+- 45-expo-permissions.md — Expo permissions guidance and defaults
 - 50-devops.md — CI, releases, npm audit, bundle delta
 - 55-bundle-performance.md — Bundle and performance budgets, heavy-dep checklist
 - 60-prompts.md — Cursor task macros
