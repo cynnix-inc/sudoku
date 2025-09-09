@@ -32,6 +32,44 @@ Definition of Done:
 - Model success, error, and edge cases; reset handlers between tests.
 - Keep a small number of CI smoke tests for serialization/shape using recorded fixtures.
 
+### Example: MSW setup pattern
+
+```ts
+// __tests__/msw/handlers/supabase.ts
+import { http, HttpResponse } from 'msw';
+
+export const supabaseHandlers = [
+  http.post('https://supabase.example.com/auth/v1/token*', () =>
+    HttpResponse.json({ access_token: 'test', expires_in: 3600 }),
+  ),
+  http.get('https://supabase.example.com/rest/v1/profile*', () =>
+    HttpResponse.json([{ id: 'u_1', name: 'Test User' }]),
+  ),
+];
+```
+
+```ts
+// __tests__/msw/server.ts
+import { setupServer } from 'msw/node';
+import { supabaseHandlers } from './handlers/supabase';
+
+export const server = setupServer(...supabaseHandlers);
+```
+
+```ts
+// jest.setup.ts (augment existing)
+import { server } from './__tests__/msw/server';
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+```
+
+Notes
+
+- Handlers live under `__tests__/msw/handlers/*` grouped by service.
+- Keep URLs parametric if possible; prefer reading base URL from a single module.
+- Tests must pass without real env keys; MSW covers contract-level behavior.
+
 ## Local Profiles
 
 - Document local profiles (e.g., `.env.development`, `.env.test`) and how to obtain URL/key.
