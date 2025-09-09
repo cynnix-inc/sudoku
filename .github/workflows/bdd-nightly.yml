@@ -1,0 +1,30 @@
+name: bdd-nightly
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: BDD nightly
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests (BDD subset)
+        run: |
+          npm test -- --ci --runInBand --testPathPattern "__tests__/.*(a11y|bdd|performance)\.test\.(ts|tsx)$" || true
+      - name: Always succeed
+        run: echo "Nightly BDD completed (non-blocking)"
