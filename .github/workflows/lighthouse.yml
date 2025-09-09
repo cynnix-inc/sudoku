@@ -1,6 +1,9 @@
-name: Lighthouse CI (removed)
+name: Lighthouse CI (noop)
 
 on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
   workflow_call:
     inputs: {}
     secrets: {}
@@ -9,6 +12,6 @@ jobs:
   noop:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Lighthouse CI workflow removed; Netlify Lighthouse plugin handles audits."
+      - run: echo "Lighthouse audits handled by Netlify plugin; scheduled noop to preserve visibility."
 
 
