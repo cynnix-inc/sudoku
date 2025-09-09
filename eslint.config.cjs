@@ -65,6 +65,11 @@ module.exports = [
 				{
 					patterns: [
 						{
+							group: ["@/*", "~/*", "src/*"],
+							message:
+								"Path aliases are disallowed; use relative or absolute app/ paths.",
+						},
+						{
 							group: ["**/_game/**", "**/../_game/**", "**/../../_game/**"],
 							message:
 								"Do not import from app/_game; use app/game as the canonical module.",

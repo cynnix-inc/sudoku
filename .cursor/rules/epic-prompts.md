@@ -335,3 +335,48 @@ Workflow:
 5. Run security scan + ensure CI all green.
 6. Prepare rollback plan.
 ```
+
+---
+
+## CI Troubleshooting Cheatsheet
+
+- General rules (PowerShell):
+  - Avoid non-portable pipes; prefer plain output or assign to variables.
+  - Prefer built-in commands; only parse JSON if absolutely needed.
+
+- List recent runs
+
+```powershell
+gh run list --limit 20 -R cynnix-inc/sudoku
+```
+
+- View run details
+
+```powershell
+gh run view <run-id> -R cynnix-inc/sudoku
+```
+
+- Watch logs until completion
+
+```powershell
+gh run watch <run-id> -R cynnix-inc/sudoku --exit-status
+```
+
+- Download artifacts
+
+```powershell
+gh run download <run-id> -R cynnix-inc/sudoku -D artifacts/<run-id>
+```
+
+- PR merge watcher to close an issue after merge
+
+```powershell
+$pr = 519
+$issue = 439
+while ($true) {
+  $state = (gh pr view $pr -R cynnix-inc/sudoku --json state | ConvertFrom-Json).state
+  if ($state -eq 'MERGED') { break }
+  Start-Sleep -Seconds 20
+}
+gh issue close $issue -R cynnix-inc/sudoku -c "Verified: resolved via PR #$pr."
+```
