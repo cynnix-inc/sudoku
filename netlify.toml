@@ -40,6 +40,7 @@
 
   [plugins.inputs]
     output_path = "lighthouse"
+    fail_deploy_on_score_thresholds = false
 
   [plugins.inputs.thresholds]
     performance = 0.90
