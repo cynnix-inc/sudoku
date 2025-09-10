@@ -1,4 +1,4 @@
-Rules index
+# Rules index
 
 When to use: as a starting point to find the right rule file.
 
@@ -13,6 +13,8 @@ When to use: as a starting point to find the right rule file.
 - 60-prompts.md — Cursor task macros
 - epic-prompts.md — Epic automation and finalize prompts (consolidated)
 - 70-supabase.md — Supabase engineering rules (envs, client guards, tests, migrations)
+- 80-n8n-governance.md — n8n workflow governance
+- 85-observability.md — Observability, alerting, log/metric/trace, DLQ standards
 - 99-glossary.md — Project-specific terminology and definitions
 
 Conventions
