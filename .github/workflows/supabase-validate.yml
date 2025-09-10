@@ -6,6 +6,7 @@ on:
     paths:
       - "supabase/**"
       - ".github/workflows/supabase-validate.yml"
+  workflow_dispatch:
 
 jobs:
   validate:
@@ -13,28 +14,70 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: supabase_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Detect migration changes
+        id: changes
+        uses: dorny/paths-filter@v3
         with:
-          node-version: 20
+          filters: |
+            migs:
+              - 'supabase/migrations/**'
 
-      - name: Install Supabase CLI
-        run: |
-          curl -L https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz | tar -xz
-          sudo mv supabase /usr/local/bin/supabase
+      - name: Skip if no migration changes
+        if: steps.changes.outputs.migs != 'true'
+        run: echo "No migration changes; skipping."
 
-      - name: Validate migrations (dry-run)
+      - name: Install Postgres client
+        if: steps.changes.outputs.migs == 'true'
         run: |
-          if [ -d "supabase/migrations" ]; then
-            echo "Found migrations; running validate..."
-            supabase migration list || true
-          else
-            echo "No migrations directory present; skipping."
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres
+        if: steps.changes.outputs.migs == 'true'
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for i in {1..30}; do
+            if pg_isready -h localhost -U postgres; then exit 0; fi
+            echo "Waiting for Postgres..."
+            sleep 2
+          done
+          echo "Postgres did not become ready in time" >&2
+          exit 1
+
+      - name: Apply migrations into clean DB (fail on error)
+        if: steps.changes.outputs.migs == 'true'
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: supabase_ci
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mapfile -t files < <(find supabase/migrations -type f -name '*.sql' | sort)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No .sql files found under supabase/migrations; skipping."
+            exit 0
           fi
-
-      - name: Always succeed (non-blocking)
-        run: echo "Non-blocking validation complete"
+          for f in "${files[@]}"; do
+            echo "Applying $f"
+            psql -v ON_ERROR_STOP=1 -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -f "$f"
+          done
